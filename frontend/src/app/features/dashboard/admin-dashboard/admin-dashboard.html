@@ -1,0 +1,30 @@
+<app-top-bar (logout)="logout()"></app-top-bar>
+
+<div class="admin-dashboard">
+	<h2>Admin Dashboard (mock)</h2>
+
+	<div class="account-summary">
+		<strong>Selected account:</strong> {{ selectedAccount().name }} ({{ selectedAccount().id }})
+	</div>
+
+	<div class="tabs">
+		<button (click)="setTab('portfolio')" [class.active]="activeTab() === 'portfolio'">Portfolio</button>
+		<button (click)="setTab('orders')" [class.active]="activeTab() === 'orders'">Orders</button>
+		<button (click)="setTab('analytics')" [class.active]="activeTab() === 'analytics'">Analytics</button>
+	</div>
+
+	<div class="tab-content">
+		<div *ngIf="activeTab() === 'portfolio'">
+			<app-portfolio-table [rowData]="portfolioHoldings()"></app-portfolio-table>
+		</div>
+		<div *ngIf="activeTab() === 'orders'">
+			<app-orders-table [rowData]="orderHistory()"></app-orders-table>
+		</div>
+		<div *ngIf="activeTab() === 'analytics'">
+			<div class="analytics">
+                <h3>Analytics</h3>
+				<app-pie-chart [data]="analyticsData()"></app-pie-chart>
+			</div>
+		</div>
+	</div>
+</div>
