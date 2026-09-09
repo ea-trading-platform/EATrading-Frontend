@@ -30,10 +30,9 @@
 }
 
 .graph-card {
-    margin-top: 1.5rem;
+    margin-top: 0.5rem;
     min-height: 22rem;
     border-radius: 1rem;
-    border: 1px solid var(--border-light);
 }
 
 .trade-sidebar {
