@@ -1,11 +1,13 @@
-import { Component, signal, computed } from '@angular/core';
+import { Component, signal, computed, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Router } from '@angular/router';
 import { PortfolioTableComponent } from '../components/portfolio-table/portfolio-table';
 import { PortfolioTable } from '../interfaces/portfolio-table.interface';
 import { OrdersTableComponent } from '../components/orders-table/orders-table';
 import { OrdersTable } from '../interfaces/orders-table.interface';
 import { TopBar } from '../../components/top-bar/top-bar';
 import { PieChartComponent } from '../components/pie-chart/pie-chart';
+import { AuthService } from '../../../core/services/auth.service';
 type AdminDashboardTab = 'portfolio' | 'orders' | 'analytics';
 
 const MOCK_PORTFOLIO: PortfolioTable[] = [
@@ -73,6 +75,8 @@ const MOCK_ORDERS: OrdersTable[] = [
     templateUrl: './admin-dashboard.html',
 })
 export class AdminDashboard {
+        private readonly auth = inject(AuthService);
+        private readonly router = inject(Router);
 
         // Simulate a selected account (single mock account for now)
         protected readonly selectedAccountId = signal('mock-account-id');
@@ -100,4 +104,9 @@ export class AdminDashboard {
         protected readonly analyticsData = computed(() =>
             this.portfolioHoldings().map(h => ({ label: h.symbol, value: h.value })),
         );
+
+        logout(): void {
+                this.auth.signOut();
+                this.router.navigate(['/']);
+        }
 }
