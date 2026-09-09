@@ -8,6 +8,7 @@ import {
   NumberAxisModule,
   UnitTimeAxisModule,
 } from "ag-charts-community";
+import { BalanceGraphInterface } from '../../interfaces/balances-graph.interface';
 
 ModuleRegistry.registerModules([
   LegendModule,
@@ -24,7 +25,7 @@ ModuleRegistry.registerModules([
   templateUrl: './balance-graph.html',
 })
 export class BalanceGraph {
-  graphData = input<any[]>([]);
+  graphData = input<BalanceGraphInterface[]>([]);
 
   options = computed(() => ({
     title: {
