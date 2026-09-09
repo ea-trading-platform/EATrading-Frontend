@@ -34,7 +34,7 @@ export class BalanceGraph {
     series: [
       {
         type: "line",
-        data: this.graphData,
+        data: this.graphData(),
         xKey: "date",
         yKey: "balance",
         yName: "Account Balance",

@@ -8,8 +8,23 @@ import { PortfolioTableComponent } from '../components/portfolio-table/portfolio
 import { PortfolioTable } from '../interfaces/portfolio-table.interface';
 import { OrdersTable } from '../interfaces/orders-table.interface';
 import { OrdersTableComponent } from '../components/orders-table/orders-table';
+import { BalanceGraphInterface } from '../interfaces/balances-graph.interface';
+import { BalanceGraph } from '../components/balance-graph/balance-graph';
 import { TopBar } from '../../components/top-bar/top-bar';
 type ClientDashboardTab = 'portfolio' | 'orders';
+
+const MOCK_BALANCES: BalanceGraphInterface[] = [
+    { date: '2024-01-01', balance: 50000 },
+    { date: '2024-01-02', balance: 51200 },
+    { date: '2024-01-03', balance: 50800 },
+    { date: '2024-01-04', balance: 52500 },
+    { date: '2024-01-05', balance: 53100 },
+    { date: '2024-01-08', balance: 52900 },
+    { date: '2024-01-09', balance: 54300 },
+    { date: '2024-01-10', balance: 55600 },
+    { date: '2024-01-11', balance: 56200 },
+    { date: '2024-01-12', balance: 57100 },
+];
 
 const MOCK_PORTFOLIO: PortfolioTable[] = [
     { symbol: 'AAPL', name: 'Apple Inc.', shares: 12, value: 2271.84, allocation: 30, dayChange: 3.42, overallReturn: 0 },
@@ -68,7 +83,9 @@ const MOCK_ORDERS: OrdersTable[] = [
     StockSearch, 
     PortfolioTableComponent, 
     OrdersTableComponent,
-    TopBar],
+    TopBar,
+    BalanceGraph
+  ],
   selector: 'app-client-dashboard',
   standalone: true,
   styleUrl: './client-dashboard.css',
@@ -89,6 +106,7 @@ export class ClientDashboard implements OnInit {
     protected readonly orderHistory = computed(() => 
         [...MOCK_ORDERS].sort((a, b) => b.transactionDate.getTime() - a.transactionDate.getTime()),
     );
+    protected readonly balanceData = [...MOCK_BALANCES];
   
     ngOnInit(): void {
         this.fetchAccount();
