@@ -12,10 +12,20 @@
     margin: 0 auto;
 }
 
+.stock-search-container {
+    padding: 0 2rem 1rem 2rem;
+    display: flex;
+    justify-content: flex-start;
+}
+
 .client-dashboard .row {
     margin: 0 auto;
     padding: 0 2rem;
     max-width: 1400px;
+}
+
+.client-dashboard .col-lg-4 {
+    overflow: visible !important;
 }
 
 .welcome-card {
@@ -29,6 +39,11 @@
     flex-wrap: wrap;
 }
 
+.stock-search-section {
+    margin-bottom: 1.5rem;
+    border-radius: 1rem;
+}
+
 .graph-card {
     margin-top: 0.5rem;
     min-height: 22rem;
@@ -39,6 +54,7 @@
     border-radius: 1rem;
     border: 1px solid var(--border-light);
     min-height: 100%;
+    overflow: visible !important;
 }
 
 .greeting {
@@ -148,18 +164,18 @@
     }
 
     /* First greeting (welcome name) takes full width */
-    .welcome-card > .greeting:nth-child(1) {
+    .welcome-card>.greeting:nth-child(1) {
         flex-basis: 100%;
     }
 
     /* Hide first divider */
-    .welcome-card > .divider:nth-child(2) {
+    .welcome-card>.divider:nth-child(2) {
         display: none;
     }
 
     /* Second greeting and stat share equal space */
-    .welcome-card > .greeting:nth-child(3),
-    .welcome-card > .stat:nth-child(5) {
+    .welcome-card>.greeting:nth-child(3),
+    .welcome-card>.stat:nth-child(5) {
         flex: 1;
         min-width: 0;
     }

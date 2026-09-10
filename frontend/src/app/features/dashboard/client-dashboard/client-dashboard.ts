@@ -1,5 +1,4 @@
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
-import { DecimalPipe } from '@angular/common';
 import { Router } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
 import { ApiService, User } from '../../../core/services/api.service';
@@ -11,6 +10,7 @@ import { OrdersTableComponent } from '../components/orders-table/orders-table';
 import { BalanceGraphInterface } from '../interfaces/balances-graph.interface';
 import { BalanceGraph } from '../components/balance-graph/balance-graph';
 import { TopBar } from '../../components/top-bar/top-bar';
+import { NewsSidebarComponent } from '../components/news-sidebar/news-sidebar';
 type ClientDashboardTab = 'portfolio' | 'orders';
 
 const MOCK_BALANCES: BalanceGraphInterface[] = [
@@ -78,24 +78,24 @@ const MOCK_ORDERS: OrdersTable[] = [
 ];
 
 @Component({
-  imports: [
-    DecimalPipe, 
-    StockSearch, 
-    PortfolioTableComponent, 
-    OrdersTableComponent,
-    TopBar,
-    BalanceGraph
-  ],
-  selector: 'app-client-dashboard',
-  standalone: true,
-  styleUrls: ['./client-dashboard.css', '../styles/dashboard.css'],
-  templateUrl: './client-dashboard.html',
+    imports: [
+        StockSearch,
+        PortfolioTableComponent,
+        OrdersTableComponent,
+        TopBar,
+        BalanceGraph,
+        NewsSidebarComponent,
+    ],
+    selector: 'app-client-dashboard',
+    standalone: true,
+    styleUrls: ['./client-dashboard.css', '../styles/dashboard.css'],
+    templateUrl: './client-dashboard.html',
 })
 export class ClientDashboard implements OnInit {
     protected readonly auth = inject(AuthService);
     private readonly router = inject(Router);
     private readonly api = inject(ApiService);
-  
+
     protected readonly account = signal<User | null>(null);
     protected readonly loadingAccount = signal(false);
 
@@ -103,19 +103,19 @@ export class ClientDashboard implements OnInit {
     protected readonly portfolioHoldings = computed(() =>
         [...MOCK_PORTFOLIO].sort((a, b) => a.symbol.localeCompare(b.symbol)),
     );
-    protected readonly orderHistory = computed(() => 
+    protected readonly orderHistory = computed(() =>
         [...MOCK_ORDERS].sort((a, b) => b.transactionDate.getTime() - a.transactionDate.getTime()),
     );
     protected readonly balanceData = [...MOCK_BALANCES];
-  
+
     ngOnInit(): void {
         this.fetchAccount();
     }
-  
+
     setTab(tab: ClientDashboardTab): void {
         this.activeTab.set(tab);
     }
-  
+
     private fetchAccount(): void {
         const userId = this.auth.user()?.id;
         if (!userId) {
@@ -139,5 +139,4 @@ export class ClientDashboard implements OnInit {
         await this.auth.signOut();
         this.router.navigateByUrl('/');
     }
-  }
-  
+}

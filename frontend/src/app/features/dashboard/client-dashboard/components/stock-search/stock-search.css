@@ -1,7 +1,9 @@
 .search-trigger {
-    display: inline-flex;
+    display: flex;
     align-items: center;
+    justify-content: center;
     gap: 0.5rem;
+    width: 100%;
 }
 
 .search-icon {
@@ -9,26 +11,31 @@
 }
 
 .modal-backdrop {
-    position: fixed;
-    inset: 0;
-    background: rgba(6, 9, 18, 0.65);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 1.5rem;
-    z-index: 100;
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    background: transparent !important;
+    z-index: 9998 !important;
+    cursor: pointer !important;
 }
 
 .modal {
-    width: 100%;
-    max-width: 26rem;
-    max-height: 85vh;
-    overflow-y: auto;
-    background: #161d33;
-    border: 1px solid rgba(244, 246, 251, 0.12);
-    border-radius: 1rem;
-    padding: 1.5rem;
-    color: #f4f6fb;
+    position: fixed !important;
+    width: 26rem !important;
+    max-height: 75vh !important;
+    overflow-y: auto !important;
+    background: #0f1419 !important;
+    border: 2px solid #6fd6a8 !important;
+    border-radius: 1rem !important;
+    padding: 1.5rem !important;
+    color: #f4f6fb !important;
+    box-shadow: 0 15px 50px rgba(0, 0, 0, 0.7) !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    display: block !important;
+    z-index: 99999 !important;
 }
 
 .modal-header {
@@ -36,12 +43,26 @@
     align-items: center;
     gap: 0.75rem;
     margin-bottom: 1.25rem;
+    cursor: grab;
+    user-select: none;
+    padding: 0.5rem 0;
+}
+
+.modal-header:active {
+    cursor: grabbing;
 }
 
 .modal-header h2 {
     flex: 1;
     margin: 0;
     font-size: 1.1rem;
+}
+
+.modal-body {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    width: 100%;
 }
 
 .btn-icon {
