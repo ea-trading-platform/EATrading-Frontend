@@ -1,9 +1,3 @@
-<<<<<<< HEAD
-import { Component } from '@angular/core';
-
-@Component({
-  imports: [],
-=======
 import { Component, input, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { SparklineChart } from '../sparkline/sparkline';
@@ -11,14 +5,10 @@ import { StockTickerData } from '../../interfaces/stock-ticker.interface';
 
 @Component({
   imports: [CommonModule, SparklineChart],
->>>>>>> feat/stock-ticker
   selector: 'app-stock-ticker',
   styleUrl: './stock-ticker.css',
   templateUrl: './stock-ticker.html',
 })
-<<<<<<< HEAD
-export class StockTicker {}
-=======
 export class StockTicker {
   stocks = input<StockTickerData[]>([]);
   
@@ -38,4 +28,3 @@ export class StockTicker {
     return duplicated;
   });
 }
->>>>>>> feat/stock-ticker
