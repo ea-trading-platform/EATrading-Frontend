@@ -1,0 +1,197 @@
+.search-trigger {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.search-icon {
+    font-size: 0.95rem;
+}
+
+.modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(6, 9, 18, 0.65);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1.5rem;
+    z-index: 100;
+}
+
+.modal {
+    width: 100%;
+    max-width: 26rem;
+    max-height: 85vh;
+    overflow-y: auto;
+    background: #161d33;
+    border: 1px solid rgba(244, 246, 251, 0.12);
+    border-radius: 1rem;
+    padding: 1.5rem;
+    color: #f4f6fb;
+}
+
+.modal-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1.25rem;
+}
+
+.modal-header h2 {
+    flex: 1;
+    margin: 0;
+    font-size: 1.1rem;
+}
+
+.btn-icon {
+    background: transparent;
+    border: 1px solid rgba(244, 246, 251, 0.2);
+    color: #f4f6fb;
+    border-radius: 0.5rem;
+    width: 2rem;
+    height: 2rem;
+    cursor: pointer;
+    font-size: 0.95rem;
+    line-height: 1;
+}
+
+.btn-icon:hover {
+    background: rgba(244, 246, 251, 0.08);
+}
+
+.search-input {
+    width: 100%;
+    padding: 0.65rem 0.85rem;
+    border-radius: 0.6rem;
+    border: 1px solid rgba(244, 246, 251, 0.2);
+    background: rgba(244, 246, 251, 0.05);
+    color: #f4f6fb;
+    font-size: 0.95rem;
+    margin-bottom: 1rem;
+    box-sizing: border-box;
+}
+
+.search-input:focus {
+    outline: none;
+    border-color: #6fd6a8;
+}
+
+.results-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    max-height: 20rem;
+    overflow-y: auto;
+}
+
+.result-item {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.6rem 0.75rem;
+    background: rgba(244, 246, 251, 0.04);
+    border: 1px solid transparent;
+    border-radius: 0.6rem;
+    color: #f4f6fb;
+    cursor: pointer;
+    text-align: left;
+}
+
+.result-item:hover {
+    border-color: rgba(244, 246, 251, 0.2);
+    background: rgba(244, 246, 251, 0.08);
+}
+
+.result-symbol {
+    font-weight: 700;
+    width: 3.5rem;
+}
+
+.result-name {
+    flex: 1;
+    color: #aab3c8;
+    font-size: 0.9rem;
+}
+
+.result-price {
+    font-weight: 600;
+}
+
+.no-results {
+    color: #aab3c8;
+    font-size: 0.9rem;
+    padding: 0.5rem 0.25rem;
+}
+
+.stock-detail-header {
+    margin-bottom: 1rem;
+}
+
+.detail-name {
+    display: block;
+    color: #aab3c8;
+    font-size: 0.9rem;
+}
+
+.detail-price {
+    display: block;
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-top: 0.15rem;
+}
+
+.action-row {
+    display: flex;
+    gap: 0.6rem;
+    margin-top: 1.25rem;
+}
+
+.btn {
+    padding: 0.55rem 1.1rem;
+    border-radius: 0.6rem;
+    font-size: 0.9rem;
+    font-weight: 600;
+    border: 1px solid rgba(244, 246, 251, 0.35);
+    background: transparent;
+    color: #f4f6fb;
+    cursor: pointer;
+    transition: background 0.2s ease;
+}
+
+.btn-ghost:hover {
+    background: rgba(244, 246, 251, 0.08);
+}
+
+.btn-ghost:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.btn-buy {
+    background: #1f8a5c;
+    border-color: #1f8a5c;
+}
+
+.btn-buy:hover {
+    background: #229964;
+}
+
+.btn-sell {
+    background: #a33b4c;
+    border-color: #a33b4c;
+}
+
+.btn-sell:hover {
+    background: #b34456;
+}
+
+.action-message {
+    margin: 0.9rem 0 0;
+    font-size: 0.85rem;
+    color: #aab3c8;
+}

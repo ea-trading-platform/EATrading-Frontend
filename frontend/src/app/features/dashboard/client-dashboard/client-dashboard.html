@@ -1,0 +1,70 @@
+<main class="client-dashboard">
+    <app-top-bar (logout)="logout()"></app-top-bar>
+    <app-stock-ticker [stocks]="stocksSignal()"></app-stock-ticker>
+    <div class="container-fluid">
+        <div class="row">
+
+            <!-- Main content: welcome, graph, tables -->
+            <div class="col-lg-8 col-md-12">
+
+                <!-- @if (loadingAccount()) {
+                <p class="loading-text">Loading account...</p>
+                } @else if (account(); as acc) { -->
+
+                <section class="welcome-card">
+                    <div class="greeting">
+                        <p class="stat-label">Welcome back,</p>
+                        <h1> LongName1234 </h1>
+                        <!-- {{ acc.name ?? auth.user()?.email }} -->
+                    </div>
+
+                    <div class="greeting">
+                        <span class="stat-label">Account balance</span>
+                        <span class="stat-value">$1,200,000 USD (^12%)</span>
+                        <!-- {{ acc.totalBalance | number: '1.2-2' }} -->
+                    </div>
+
+                    <div class="stat">
+                        <span class="stat-label">Available to Trade</span>
+                        <span class="stat-value">$500 USD</span>
+                        <!-- {{ acc.totalBalance | number: '1.2-2' }} -->
+                    </div>
+                </section>
+
+                <!-- Balance graph component -->
+                <section class="graph-card">
+                    <app-balance-graph [graphData]="balanceData"></app-balance-graph>
+                </section>
+
+                <nav class="dashboard-tabs">
+                    <button type="button" class="tab-button" [class.active]="activeTab() === 'portfolio'"
+                        (click)="setTab('portfolio')">
+                        Portfolio
+                    </button>
+                    <button type="button" class="tab-button" [class.active]="activeTab() === 'orders'" (click)="setTab('orders')">
+                        Orders
+                    </button>
+                </nav>
+
+                @if (activeTab() === 'portfolio') {
+                <section class="tab-panel">
+                    <app-portfolio-table [rowData]="portfolioHoldings()"></app-portfolio-table>
+                </section>
+                } @else if (activeTab() === 'orders') {
+                <section class="tab-panel">
+                    <app-orders-table [rowData]="orderHistory()"></app-orders-table>
+                </section>
+                }
+                <!-- } -->
+
+            </div>
+
+            <!-- Trade order sidebar (not built yet) -->
+            <div class="col-lg-4 col-md-4">
+                <aside class="trade-sidebar">
+                </aside>
+            </div>
+
+        </div>
+    </div>
+</main>

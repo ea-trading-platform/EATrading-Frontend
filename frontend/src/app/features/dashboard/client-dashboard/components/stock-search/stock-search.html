@@ -1,0 +1,60 @@
+<button type="button" class="btn btn-ghost search-trigger" (click)="open()">
+    <span class="search-icon" aria-hidden="true">🔍</span>
+    <span>Search stocks</span>
+</button>
+
+@if (isOpen()) {
+<div class="modal-backdrop" (click)="close()">
+    <div class="modal" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+            @if (selected()) {
+            <button type="button" class="btn-icon" (click)="backToResults()" aria-label="Back to results">←</button>
+            }
+            <h2>{{ selected() ? selected()!.symbol : 'Search stocks' }}</h2>
+            <button type="button" class="btn-icon" (click)="close()" aria-label="Close">✕</button>
+        </div>
+
+        @if (!selected()) {
+        <div class="modal-body">
+            <input type="text" class="search-input" placeholder="Search by symbol or name..." [ngModel]="query()"
+                (ngModelChange)="query.set($event)" autofocus />
+
+            <ul class="results-list">
+                @for (stock of filteredStocks(); track stock.symbol) {
+                <li>
+                    <button type="button" class="result-item" (click)="selectStock(stock)">
+                        <span class="result-symbol">{{ stock.symbol }}</span>
+                        <span class="result-name">{{ stock.name }}</span>
+                        <span class="result-price">{{ stock.price | number: '1.2-2' }}</span>
+                    </button>
+                </li>
+                } @empty {
+                <li class="no-results">No stocks match your search.</li>
+                }
+            </ul>
+        </div>
+        } @else {
+        <div class="modal-body">
+            <div class="stock-detail-header">
+                <div>
+                    <span class="detail-name">{{ selected()!.name }}</span>
+                    <span class="detail-price">{{ selected()!.price | number: '1.2-2' }} USD</span>
+                </div>
+            </div>
+
+            <!-- TODO(someone-else): re-add stock price graph here (ag-grid charts integration) -->
+
+            <div class="action-row">
+                <button type="button" class="btn btn-buy" (click)="placeOrder('buy')">Buy</button>
+                <button type="button" class="btn btn-sell" (click)="placeOrder('sell')">Sell</button>
+                <button type="button" class="btn btn-ghost" disabled>Add to watchlist</button>
+            </div>
+
+            @if (actionMessage()) {
+            <p class="action-message">{{ actionMessage() }}</p>
+            }
+        </div>
+        }
+    </div>
+</div>
+}

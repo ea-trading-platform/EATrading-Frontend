@@ -1,0 +1,6 @@
+:host {
+    display: block;
+    min-height: 100dvh;
+    background: linear-gradient(160deg, var(--dark-primary) 0%, var(--dark-secondary) 50%, var(--dark-tertiary) 100%);
+    color: var(--text-light);
+}

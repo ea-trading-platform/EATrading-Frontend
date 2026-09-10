@@ -1,1 +1,25 @@
-/* You can add global styles to this file, and also import other style files */
+:root {
+    --dark-primary: #171A21;
+    --dark-secondary: #343A46;
+    --dark-tertiary: #2a2e37;
+    --text-light: #f4f6fb;
+    --text-muted: #ABB3BF;
+    --accent: #007a7a;
+    --accent-secondary: #4ecccc;
+    --neg-accent: #FF4D85;
+    --neg-secondary-accent: #D96D8C;
+    --border-light: rgba(171, 179, 191, 0.15);
+    --border-lighter: rgba(171, 179, 191, 0.1);
+    --bg-subtle: rgba(171, 179, 191, 0.05);
+    --bg-hover: rgba(171, 179, 191, 0.08);
+}
+
+html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}

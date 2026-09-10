@@ -1,7 +1,8 @@
 {
     "/api": {
-        "target": "http://10.23.137.152:8081",
+        "target": "http://10.23.132.254:8081",
         "secure": false,
         "changeOrigin": true
     }
 }
+

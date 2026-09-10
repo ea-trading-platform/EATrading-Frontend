@@ -1,0 +1,6 @@
+:host {
+  display: block;
+  width: 100%;
+  /* cushion roughly one extra row so the last data row doesn't feel clipped */
+  padding-bottom: 2.75rem;
+}

@@ -1,0 +1,13 @@
+<ag-grid-angular
+  class="grid"
+  [theme]="theme"
+  [columnDefs]="columnDefs()"
+  [rowData]="rowData()"
+  [gridOptions]="gridOptions()"
+  [defaultColDef]="defaultColDef()"
+  [loading]="loading()"
+  [rowSelection]="rowSelection()"
+  (rowClicked)="rowClicked.emit($event)"
+  (selectionChanged)="selectionChanged.emit($event)"
+>
+</ag-grid-angular>
