@@ -147,6 +147,7 @@
 
     .welcome-card {
         gap: 1rem;
+        padding: 1.5rem 1.5rem 1.5rem 0rem;
     }
 
     /* First greeting (welcome name) takes full width */
@@ -172,6 +173,7 @@
         flex-direction: column;
         align-items: flex-start;
         gap: 1.5rem;
+        padding: 1.5rem 1.5rem 1.5rem 0rem;
         max-width: 100%;
     }
 
@@ -189,6 +191,10 @@
 }
 
 @media (max-width: 480px) {
+    .welcome-card {
+        padding: 1.5rem 1.5rem 1.5rem 0rem;
+    }
+
     .topbar {
         flex-direction: column;
         align-items: flex-start;

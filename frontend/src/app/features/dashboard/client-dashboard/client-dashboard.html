@@ -1,6 +1,6 @@
 <main class="client-dashboard">
     <app-top-bar (logout)="logout()"></app-top-bar>
-
+    <app-stock-ticker [stocks]="stocksSignal()"></app-stock-ticker>
     <div class="container-fluid">
         <div class="row">
 
