@@ -7,7 +7,6 @@ import { authGuard, guestGuard, adminGuard } from './core/guards/auth.guard';
 export const routes: Routes = [
     { path: '', component: Landing, canActivate: [guestGuard] },
     { path: 'dashboard', component: ClientDashboard, canActivate: [authGuard] },
-    // { path: 'admin-dashboard', component: AdminDashboard },
     { path: 'admin-dashboard', component: AdminDashboard, canActivate: [authGuard, adminGuard] },
     { path: '**', redirectTo: '' },
 ];
