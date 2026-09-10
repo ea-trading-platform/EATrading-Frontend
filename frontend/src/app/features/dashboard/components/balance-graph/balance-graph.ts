@@ -92,7 +92,7 @@ export class BalanceGraph {
       y: {
         type: "number",
         label: {
-          format: "#${0.2f}",
+          format: "$#{0.2f}",
           fontSize: 12,
           color: 'rgba(255, 255, 255, 0.7)',
         },
