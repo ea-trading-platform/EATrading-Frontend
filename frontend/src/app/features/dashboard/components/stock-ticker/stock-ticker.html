@@ -1,0 +1,15 @@
+<div class="ticker-container">
+  <div class="ticker-track">
+    @for (stock of displayStocks(); track stock.symbol + '-' + stock._index) {
+      <div class="ticker-item">
+        <span class="ticker-symbol">{{ stock.symbol }}</span>
+        <span class="ticker-chart">
+          <app-sparkline [data]="stock.priceHistory" [width]="50" [height]="20"></app-sparkline>
+        </span>
+        <span class="ticker-change" [class.positive]="stock.percentChange >= 0" [class.negative]="stock.percentChange < 0">
+          {{ stock.percentChange >= 0 ? '+' : '' }}{{ stock.percentChange.toFixed(2) }}%
+        </span>
+      </div>
+    }
+  </div>
+</div>
