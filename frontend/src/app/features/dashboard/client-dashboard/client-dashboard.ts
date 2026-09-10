@@ -11,7 +11,32 @@ import { OrdersTableComponent } from '../components/orders-table/orders-table';
 import { BalanceGraphInterface } from '../interfaces/balances-graph.interface';
 import { BalanceGraph } from '../components/balance-graph/balance-graph';
 import { TopBar } from '../../components/top-bar/top-bar';
+import { StockTicker } from '../components/stock-ticker/stock-ticker';
+import { StockTickerData } from '../interfaces/stock-ticker.interface';
 type ClientDashboardTab = 'portfolio' | 'orders';
+
+const MOCK_TICKER: StockTickerData[] = [
+    {
+        symbol: 'TST1',
+        percentChange: 2.5,
+        priceHistory: [150, 152, 151, 153, 155, 154, 156, 158]
+    },
+    { 
+        symbol: 'TST2', 
+        percentChange: -1.2, 
+        priceHistory: [380, 379, 378, 377, 376, 375, 374, 373] 
+    },
+    { 
+        symbol: 'TST3', 
+        percentChange: -1.2, 
+        priceHistory: [380, 379, 378, 377, 376, 375, 374, 373] 
+    },
+    { 
+        symbol: 'TST4', 
+        percentChange: 2.5,
+        priceHistory: [150, 152, 151, 153, 155, 154, 156, 158] 
+    },
+];
 
 const MOCK_BALANCES: BalanceGraphInterface[] = [
     { date: '2024-01-01', balance: 50000 },
@@ -84,7 +109,8 @@ const MOCK_ORDERS: OrdersTable[] = [
     PortfolioTableComponent, 
     OrdersTableComponent,
     TopBar,
-    BalanceGraph
+    BalanceGraph,
+    StockTicker
   ],
   selector: 'app-client-dashboard',
   standalone: true,
@@ -107,6 +133,7 @@ export class ClientDashboard implements OnInit {
         [...MOCK_ORDERS].sort((a, b) => b.transactionDate.getTime() - a.transactionDate.getTime()),
     );
     protected readonly balanceData = [...MOCK_BALANCES];
+    protected readonly stocksSignal = signal<StockTickerData[]>(MOCK_TICKER);
   
     ngOnInit(): void {
         this.fetchAccount();

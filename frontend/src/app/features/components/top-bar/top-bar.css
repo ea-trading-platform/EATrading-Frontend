@@ -4,7 +4,6 @@
 
 .navbar {
     border-bottom: 1px solid var(--border-light);
-    margin-bottom: 1rem;
     padding: 0.25rem 0.25rem;
     display: flex;
     align-items: center;
