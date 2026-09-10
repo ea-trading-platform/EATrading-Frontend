@@ -14,7 +14,6 @@ export class StockTicker {
   
   private readonly DUPLICATE_COUNT = 5;
   
-  // Computed signal that duplicates stocks array N times for infinite scroll effect
   displayStocks = computed(() => {
     const original = this.stocks();
     if (original.length === 0) return [];
