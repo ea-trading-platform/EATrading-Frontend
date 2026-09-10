@@ -1,6 +1,6 @@
-<app-top-bar (logout)="logout()"></app-top-bar>
+<main class="admin-dashboard">
+	<app-top-bar (logout)="logout()"></app-top-bar>
 
-<div class="admin-dashboard">
 	<h2>Admin Dashboard (mock)</h2>
 
 	<div class="account-summary">
@@ -8,9 +8,11 @@
 	</div>
 
 	<nav class="dashboard-tabs">
-		<button class="tab-button" (click)="setTab('portfolio')" [class.active]="activeTab() === 'portfolio'">Portfolio</button>
+		<button class="tab-button" (click)="setTab('portfolio')"
+			[class.active]="activeTab() === 'portfolio'">Portfolio</button>
 		<button class="tab-button" (click)="setTab('orders')" [class.active]="activeTab() === 'orders'">Orders</button>
-		<button class="tab-button" (click)="setTab('analytics')" [class.active]="activeTab() === 'analytics'">Analytics</button>
+		<button class="tab-button" (click)="setTab('analytics')"
+			[class.active]="activeTab() === 'analytics'">Analytics</button>
 	</nav>
 
 	<div class="tab-content">
@@ -22,9 +24,9 @@
 		</div>
 		<div *ngIf="activeTab() === 'analytics'">
 			<div class="analytics">
-                <h3>Analytics</h3>
+				<h3>Analytics</h3>
 				<app-pie-chart [data]="analyticsData()"></app-pie-chart>
 			</div>
 		</div>
 	</div>
-</div>
+</main>
