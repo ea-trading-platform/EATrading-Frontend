@@ -88,7 +88,7 @@ const MOCK_ORDERS: OrdersTable[] = [
   ],
   selector: 'app-client-dashboard',
   standalone: true,
-  styleUrl: './client-dashboard.css',
+  styleUrls: ['./client-dashboard.css', '../styles/dashboard.css'],
   templateUrl: './client-dashboard.html',
 })
 export class ClientDashboard implements OnInit {

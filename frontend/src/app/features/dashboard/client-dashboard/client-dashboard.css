@@ -82,39 +82,6 @@
     color: white;
 }
 
-.client-dashboard-tabs {
-    display: flex;
-    gap: 0.5rem;
-    max-width: 28rem;
-    border-bottom: 1px solid var(--border-lighter);
-}
-
-.tab-button {
-    padding: 0.65rem 1rem;
-    background: transparent;
-    border: none;
-    border-bottom: 2px solid transparent;
-    color: var(--text-muted);
-    font-size: 0.9rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.2s ease;
-}
-
-.tab-button:hover {
-    color: var(--text-light);
-}
-
-.tab-button.active {
-    color: var(--text-light);
-    border-bottom-color: var(--accent);
-}
-
-.tab-panel {
-    width: 100%;
-    margin-top: 1.25rem;
-}
-
 .holdings-list {
     list-style: none;
     margin: 0;
@@ -210,7 +177,7 @@
         display: none;
     }
 
-    .client-dashboard-tabs {
+    .dashboard-tabs {
         max-width: 100%;
     }
 

@@ -70,9 +70,10 @@ const MOCK_ORDERS: OrdersTable[] = [
         PieChartComponent,
         TopBar,
     ],
-  selector: 'app-admin-dashboard',
+    selector: 'app-admin-dashboard',
     standalone: true,
     templateUrl: './admin-dashboard.html',
+    styleUrls: ['./admin-dashboard.css', '../styles/dashboard.css']
 })
 export class AdminDashboard {
         private readonly auth = inject(AuthService);

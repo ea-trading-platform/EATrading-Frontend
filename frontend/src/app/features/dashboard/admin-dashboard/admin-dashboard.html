@@ -7,11 +7,11 @@
 		<strong>Selected account:</strong> {{ selectedAccount().name }} ({{ selectedAccount().id }})
 	</div>
 
-	<div class="tabs">
-		<button (click)="setTab('portfolio')" [class.active]="activeTab() === 'portfolio'">Portfolio</button>
-		<button (click)="setTab('orders')" [class.active]="activeTab() === 'orders'">Orders</button>
-		<button (click)="setTab('analytics')" [class.active]="activeTab() === 'analytics'">Analytics</button>
-	</div>
+	<nav class="dashboard-tabs">
+		<button class="tab-button" (click)="setTab('portfolio')" [class.active]="activeTab() === 'portfolio'">Portfolio</button>
+		<button class="tab-button" (click)="setTab('orders')" [class.active]="activeTab() === 'orders'">Orders</button>
+		<button class="tab-button" (click)="setTab('analytics')" [class.active]="activeTab() === 'analytics'">Analytics</button>
+	</nav>
 
 	<div class="tab-content">
 		<div *ngIf="activeTab() === 'portfolio'">
