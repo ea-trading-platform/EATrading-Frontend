@@ -3,6 +3,8 @@
     min-height: 100dvh;
     background: linear-gradient(160deg, var(--dark-primary) 0%, var(--dark-secondary) 50%, var(--dark-tertiary) 100%);
     color: var(--text-light);
+    width: 100%;
+    overflow-x: hidden;
 }
 
 .client-dashboard {
@@ -10,12 +12,12 @@
     padding: 1.15rem;
     width: 100%;
     margin: 0 auto;
+    overflow-x: hidden;
 }
 
 .client-dashboard .row {
     margin: 0 auto;
     padding: 0 2rem;
-    max-width: 1400px;
 }
 
 .welcome-card {
