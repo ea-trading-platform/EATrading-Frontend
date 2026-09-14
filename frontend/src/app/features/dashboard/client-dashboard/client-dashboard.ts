@@ -1,4 +1,5 @@
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { DecimalPipe } from '@angular/common';
 import { Router } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
 import { ApiService, User } from '../../../core/services/api.service';
@@ -13,7 +14,6 @@ import { TopBar } from '../../components/top-bar/top-bar';
 import { NewsSidebarComponent } from '../components/news-sidebar/news-sidebar';
 import { StockTicker } from '../components/stock-ticker/stock-ticker';
 import { StockTickerData } from '../interfaces/stock-ticker.interface';
-import { DecimalPipe } from '@angular/common';
 type ClientDashboardTab = 'portfolio' | 'orders';
 
 const MOCK_TICKER: StockTickerData[] = [
