@@ -1,4 +1,4 @@
-import { Component, HostListener, computed, signal } from '@angular/core';
+import { Component, HostListener, computed, signal, ViewChild, ElementRef } from '@angular/core';
 import { DecimalPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 
@@ -24,12 +24,20 @@ const MOCK_STOCKS: MockStock[] = [
     imports: [DecimalPipe, FormsModule],
     templateUrl: './stock-search.html',
     styleUrl: './stock-search.css',
+    styles: [`:host { display: block; }`],
 })
 export class StockSearch {
     protected readonly isOpen = signal(false);
     protected readonly query = signal('');
     protected readonly selected = signal<MockStock | null>(null);
     protected readonly actionMessage = signal<string | null>(null);
+
+    // Drag tracking
+    protected readonly modalX = signal(0);
+    protected readonly modalY = signal(0);
+    private isDragging = false;
+    private dragOffsetX = 0;
+    private dragOffsetY = 0;
 
     protected readonly filteredStocks = computed(() => {
         const term = this.query().trim().toLowerCase();
@@ -43,13 +51,32 @@ export class StockSearch {
     });
 
     open(): void {
+        console.log('[StockSearch] Modal opening', { isOpen: !this.isOpen() });
         this.isOpen.set(true);
         this.query.set('');
         this.selected.set(null);
         this.actionMessage.set(null);
+        // Center modal on screen
+        this.centerModal();
+        console.log('[StockSearch] Modal opened', { isOpen: this.isOpen() });
+    }
+
+    /**
+     * Center modal on the viewport
+     */
+    private centerModal(): void {
+        const modalWidth = Math.min(416, window.innerWidth - 32); // 26rem (416px) or less on mobile
+        const modalHeight = Math.min(window.innerHeight * 0.75, 600);
+
+        const x = Math.max(16, (window.innerWidth - modalWidth) / 2);
+        const y = Math.max(16, (window.innerHeight - modalHeight) / 2);
+
+        this.modalX.set(x);
+        this.modalY.set(y);
     }
 
     close(): void {
+        console.log('[StockSearch] Modal closing');
         this.isOpen.set(false);
     }
 
@@ -75,5 +102,47 @@ export class StockSearch {
         if (this.isOpen()) {
             this.close();
         }
+    }
+
+    /**
+     * Start dragging the modal from anywhere within it
+     */
+    onMouseDown(event: MouseEvent): void {
+        // Don't drag if clicking on interactive elements like buttons or inputs
+        const target = event.target as HTMLElement;
+        if (target.tagName === 'BUTTON' || target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') {
+            return;
+        }
+
+        this.isDragging = true;
+        this.dragOffsetX = event.clientX - (this.modalX() || 50);
+        this.dragOffsetY = event.clientY - (this.modalY() || 50);
+        console.log('[StockSearch] Drag started', { x: this.modalX(), y: this.modalY(), offsetX: this.dragOffsetX, offsetY: this.dragOffsetY });
+    }
+
+    /**
+     * Handle modal dragging
+     */
+    @HostListener('document:mousemove', ['$event'])
+    onMouseMove(event: MouseEvent): void {
+        if (!this.isDragging || !this.isOpen()) return;
+        event.preventDefault();
+
+        const newX = event.clientX - this.dragOffsetX;
+        const newY = event.clientY - this.dragOffsetY;
+
+        this.modalX.set(newX);
+        this.modalY.set(newY);
+    }
+
+    /**
+     * Stop dragging
+     */
+    @HostListener('document:mouseup')
+    onMouseUp(): void {
+        if (this.isDragging) {
+            console.log('[StockSearch] Drag ended', { x: this.modalX(), y: this.modalY() });
+        }
+        this.isDragging = false;
     }
 }

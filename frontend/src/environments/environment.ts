@@ -4,4 +4,5 @@ export const environment = {
     apiBaseUrl: 'https://api.example.com',
     supabaseUrl: 'https://YOUR_PROJECT.supabase.co',
     supabaseAnonKey: 'YOUR_SUPABASE_ANON_KEY',
+    marketauxApiKey: 'YOUR_MARKETAUX_API_KEY',
 };

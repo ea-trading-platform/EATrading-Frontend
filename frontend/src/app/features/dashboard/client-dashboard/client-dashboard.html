@@ -41,7 +41,8 @@
                         (click)="setTab('portfolio')">
                         Portfolio
                     </button>
-                    <button type="button" class="tab-button" [class.active]="activeTab() === 'orders'" (click)="setTab('orders')">
+                    <button type="button" class="tab-button" [class.active]="activeTab() === 'orders'"
+                        (click)="setTab('orders')">
                         Orders
                     </button>
                 </nav>
@@ -59,9 +60,14 @@
 
             </div>
 
-            <!-- Trade order sidebar (not built yet) -->
+            <!-- Trade order sidebar -->
             <div class="col-lg-4 col-md-4">
                 <aside class="trade-sidebar">
+                    <!-- app-stock-search -->
+                    <app-stock-search></app-stock-search>
+                    <br />
+                    <!-- app-news-sidebar -->
+                    <app-news-sidebar></app-news-sidebar>
                 </aside>
             </div>
 

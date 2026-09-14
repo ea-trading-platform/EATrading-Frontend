@@ -1,0 +1,41 @@
+<div class="news-sidebar">
+    <!-- News Section -->
+    <section class="news-section">
+        <div class="news-header">
+            <h3 class="news-title">📰 Market News</h3>
+            <button type="button" class="refresh-button" (click)="refreshNews()" [disabled]="isLoading()"
+                title="Refresh news" aria-label="Refresh news">
+                @if (isLoading()) {
+                <span class="spinner"></span>
+                } @else {
+                ↻
+                }
+            </button>
+        </div>
+
+        @if (error()) {
+        <div class="error-message">
+            <p>{{ error() }}</p>
+            <button type="button" class="retry-button" (click)="refreshNews()">
+                Retry
+            </button>
+        </div>
+        } @else if (isLoading() && newsArticles().length === 0) {
+        <div class="loading-state">
+            <div class="skeleton-card"></div>
+            <div class="skeleton-card"></div>
+            <div class="skeleton-card"></div>
+        </div>
+        } @else if (newsArticles().length > 0) {
+        <div class="news-grid">
+            @for (article of newsArticles(); track article.id) {
+            <app-news-card [article]="article"></app-news-card>
+            }
+        </div>
+        } @else {
+        <div class="empty-state">
+            <p>No news available</p>
+        </div>
+        }
+    </section>
+</div>

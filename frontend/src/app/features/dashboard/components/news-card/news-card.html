@@ -1,0 +1,29 @@
+<div class="news-card" (click)="openArticle()" [title]="article.title">
+    <div class="card-header">
+        @if (article.image_url) {
+        <img [src]="article.image_url" [alt]="article.title" class="card-image" (error)="onImageError($event)" />
+        } @else {
+        <div class="card-image placeholder">
+            <span>📰</span>
+        </div>
+        }
+    </div>
+
+    <div class="card-body">
+        <h3 class="card-title">{{ article.title }}</h3>
+        <p class="card-description">
+            {{ truncateText(article.description, 80) }}
+        </p>
+
+        <div class="card-footer">
+            <span class="source">{{ article.source }}</span>
+            <span class="time" [title]="'Published: ' + getFullTimestamp(article.published_at)">
+                {{ getRelativeTime(article.published_at) }}
+            </span>
+        </div>
+    </div>
+
+    <div class="card-overlay">
+        <span class="read-more">Read →</span>
+    </div>
+</div>
