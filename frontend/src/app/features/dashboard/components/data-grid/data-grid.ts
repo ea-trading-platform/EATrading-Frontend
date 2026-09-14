@@ -27,7 +27,7 @@ export class DataGrid<T = any> {
   // autoHeight sizes the grid to fit all rows instead of scrolling within a fixed box
   gridOptions = input<GridOptions<T>>({ domLayout: 'autoHeight' });
   loading = input(false);
-  defaultColDef = input<ColDef<T>>({ sortable: true, resizable: true, flex: 1, suppressMovable: false });
+  defaultColDef = input<ColDef<T>>({ sortable: true, resizable: true, suppressMovable: false }); //flex: 1
   rowSelection = input<RowSelectionOptions<T> | undefined>(undefined);
 
   rowClicked = output<RowClickedEvent<T>>();
