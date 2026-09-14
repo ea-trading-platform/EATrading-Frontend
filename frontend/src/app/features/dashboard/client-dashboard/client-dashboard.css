@@ -57,6 +57,9 @@
     border: 1px solid var(--border-light);
     min-height: 100%;
     overflow: visible !important;
+    max-width: 320px;
+    margin: 0 auto;
+    padding: 0 12px;
 }
 
 .greeting {
@@ -157,8 +160,14 @@
         padding: 0 1rem;
     }
 
+    .client-dashboard .col-lg-4 {
+        margin-top: 2rem;
+    }
+
     .trade-sidebar {
-        display: none;
+        min-height: auto;
+        max-width: 100%;
+        padding: 0;
     }
 
     .welcome-card {
