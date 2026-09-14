@@ -56,10 +56,23 @@ export class StockSearch {
         this.query.set('');
         this.selected.set(null);
         this.actionMessage.set(null);
-        // Position modal at sidebar location (right side)
-        this.modalX.set(920);
-        this.modalY.set(120);
+        // Center modal on screen
+        this.centerModal();
         console.log('[StockSearch] Modal opened', { isOpen: this.isOpen() });
+    }
+
+    /**
+     * Center modal on the viewport
+     */
+    private centerModal(): void {
+        const modalWidth = Math.min(416, window.innerWidth - 32); // 26rem (416px) or less on mobile
+        const modalHeight = Math.min(window.innerHeight * 0.75, 600);
+
+        const x = Math.max(16, (window.innerWidth - modalWidth) / 2);
+        const y = Math.max(16, (window.innerHeight - modalHeight) / 2);
+
+        this.modalX.set(x);
+        this.modalY.set(y);
     }
 
     close(): void {

@@ -5,7 +5,7 @@
 
 @if (isOpen()) {
 <div class="modal-backdrop" (click)="close()"></div>
-<div class="modal" (click)="$event.stopPropagation()" [style.top.px]="modalY() || 120" [style.left.px]="modalX() || 920"
+<div class="modal" (click)="$event.stopPropagation()" [style.top.px]="modalY()" [style.left.px]="modalX()"
     (mousedown)="onMouseDown($event)">
     <div class="modal-header">
         @if (selected()) {
