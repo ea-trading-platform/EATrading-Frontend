@@ -11,7 +11,33 @@ import { BalanceGraphInterface } from '../interfaces/balances-graph.interface';
 import { BalanceGraph } from '../components/balance-graph/balance-graph';
 import { TopBar } from '../../components/top-bar/top-bar';
 import { NewsSidebarComponent } from '../components/news-sidebar/news-sidebar';
+import { StockTicker } from '../components/stock-ticker/stock-ticker';
+import { StockTickerData } from '../interfaces/stock-ticker.interface';
+import { DecimalPipe } from '@angular/common';
 type ClientDashboardTab = 'portfolio' | 'orders';
+
+const MOCK_TICKER: StockTickerData[] = [
+    {
+        symbol: 'TST1',
+        percentChange: 2.5,
+        priceHistory: [150, 152, 151, 153, 155, 154, 156, 158]
+    },
+    { 
+        symbol: 'TST2', 
+        percentChange: -1.2, 
+        priceHistory: [380, 379, 378, 377, 376, 375, 374, 373] 
+    },
+    { 
+        symbol: 'TST3', 
+        percentChange: -1.2, 
+        priceHistory: [380, 379, 378, 377, 376, 375, 374, 373] 
+    },
+    { 
+        symbol: 'TST4', 
+        percentChange: 2.5,
+        priceHistory: [150, 152, 151, 153, 155, 154, 156, 158] 
+    },
+];
 
 const MOCK_BALANCES: BalanceGraphInterface[] = [
     { date: '2024-01-01', balance: 50000 },
@@ -79,12 +105,14 @@ const MOCK_ORDERS: OrdersTable[] = [
 
 @Component({
     imports: [
+        DecimalPipe,
         StockSearch,
         PortfolioTableComponent,
         OrdersTableComponent,
         TopBar,
         BalanceGraph,
         NewsSidebarComponent,
+        StockTicker
     ],
     selector: 'app-client-dashboard',
     standalone: true,
@@ -108,6 +136,8 @@ export class ClientDashboard implements OnInit {
     );
     protected readonly balanceData = [...MOCK_BALANCES];
 
+    protected readonly stocksSignal = signal<StockTickerData[]>(MOCK_TICKER);
+  
     ngOnInit(): void {
         this.fetchAccount();
     }

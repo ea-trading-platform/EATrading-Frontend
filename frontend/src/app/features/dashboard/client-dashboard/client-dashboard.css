@@ -3,6 +3,8 @@
     min-height: 100dvh;
     background: linear-gradient(160deg, var(--dark-primary) 0%, var(--dark-secondary) 50%, var(--dark-tertiary) 100%);
     color: var(--text-light);
+    width: 100%;
+    overflow-x: hidden;
 }
 
 .client-dashboard {
@@ -10,6 +12,7 @@
     padding: 1.15rem;
     width: 100%;
     margin: 0 auto;
+    overflow-x: hidden;
 }
 
 .stock-search-container {
@@ -21,7 +24,6 @@
 .client-dashboard .row {
     margin: 0 auto;
     padding: 0 2rem;
-    max-width: 1400px;
 }
 
 .client-dashboard .col-lg-4 {
@@ -161,6 +163,7 @@
 
     .welcome-card {
         gap: 1rem;
+        padding: 1.5rem 1.5rem 1.5rem 0rem;
     }
 
     /* First greeting (welcome name) takes full width */
@@ -186,6 +189,7 @@
         flex-direction: column;
         align-items: flex-start;
         gap: 1.5rem;
+        padding: 1.5rem 1.5rem 1.5rem 0rem;
         max-width: 100%;
     }
 
@@ -203,6 +207,10 @@
 }
 
 @media (max-width: 480px) {
+    .welcome-card {
+        padding: 1.5rem 1.5rem 1.5rem 0rem;
+    }
+
     .topbar {
         flex-direction: column;
         align-items: flex-start;
