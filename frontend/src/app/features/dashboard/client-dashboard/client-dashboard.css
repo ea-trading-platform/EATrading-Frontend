@@ -1,6 +1,5 @@
 :host {
     display: block;
-    min-height: 100dvh;
     background: linear-gradient(160deg, var(--dark-primary) 0%, var(--dark-secondary) 50%, var(--dark-tertiary) 100%);
     color: var(--text-light);
     width: 100%;
@@ -8,7 +7,6 @@
 }
 
 .client-dashboard {
-    min-height: 100dvh;
     padding: 1.15rem;
     width: 100%;
     margin: 0 auto;
