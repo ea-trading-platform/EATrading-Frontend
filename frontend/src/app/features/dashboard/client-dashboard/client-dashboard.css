@@ -50,24 +50,6 @@
     border-radius: 1rem;
 }
 
-.trade-sidebar {
-    border-radius: 1rem;
-    border: 1px solid var(--border-light);
-    min-height: auto;
-    overflow: visible !important;
-    max-width: 320px;
-    margin: 0 auto;
-    padding: 0 12px;
-    background: transparent;
-}
-
-@media (max-width: 768px) {
-    .trade-sidebar {
-        min-height: auto;
-        margin-top: 1.5rem;
-    }
-}
-
 .greeting {
     display: flex;
     flex-direction: column;
