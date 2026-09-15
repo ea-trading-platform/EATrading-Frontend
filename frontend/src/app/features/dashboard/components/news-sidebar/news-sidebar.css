@@ -96,8 +96,8 @@
 
     .news-grid {
         grid-template-columns: 1fr;
-        overflow-y: visible;
-        max-height: 300px;
+        overflow-y: auto;
+        max-height: none;
         padding-left: 4px;
         padding-right: 8px;
     }
