@@ -23,7 +23,7 @@ const MOCK_STOCKS: MockStock[] = [
     standalone: true,
     imports: [DecimalPipe, FormsModule],
     templateUrl: './stock-search.html',
-    styleUrl: './stock-search.css',
+    styleUrls: ['./stock-search.css', '../../../styles/dashboard.css'],
     styles: [`:host { display: block; }`],
 })
 export class StockSearch {
