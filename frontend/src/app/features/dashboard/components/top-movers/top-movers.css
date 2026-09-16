@@ -1,5 +1,5 @@
 .top-movers-container {
-    border: 1px solid var(--border-light);
+    border: none;
     border-radius: 1rem;
     padding: 1.5rem;
     background: transparent;

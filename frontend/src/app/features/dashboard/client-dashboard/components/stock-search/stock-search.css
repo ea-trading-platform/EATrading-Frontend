@@ -11,7 +11,7 @@
     border-radius: 1rem;
     /* background: transparent; */
     border: none;
-    color: var(--text-light);
+    color: var(--dark-primary);
     font-size: 0.9rem;
     font-weight: 600;
     cursor: pointer;
