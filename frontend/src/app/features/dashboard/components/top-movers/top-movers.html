@@ -1,0 +1,91 @@
+<section class="top-movers-container">
+    <div class="top-movers-header">
+        <h3 class="top-movers-title">
+            @if (activeTab() === 'movers') {
+                @if (isShowingGainers()) {
+                    📈 Top Gainers
+                } @else {
+                    📉 Top Losers
+                }
+            } @else {
+                📰 Market News
+            }
+        </h3>
+        <div class="tab-buttons">
+            <button 
+                type="button"
+                class="tab-button"
+                [class.active]="activeTab() === 'movers'"
+                (click)="setTab('movers')"
+                aria-label="Show top movers">
+                Movers
+            </button>
+            <button 
+                type="button"
+                class="tab-button"
+                [class.active]="activeTab() === 'news'"
+                (click)="setTab('news')"
+                aria-label="Show news articles">
+                News
+            </button>
+        </div>
+    </div>
+
+    <!-- Movers Tab -->
+    @if (activeTab() === 'movers') {
+        <div class="movers-list">
+            @for (mover of movers(); track mover.symbol) {
+                <div class="mover-item" [style.border-left-color]="getMoverColor(mover.changePercent)">
+                    <div class="mover-info">
+                        <span class="mover-symbol">{{ mover.symbol }}</span>
+                        <span class="mover-change" [style.color]="getMoverColor(mover.changePercent)">
+                            {{ getChangeDisplay(mover.changePercent) }}
+                        </span>
+                    </div>
+                    <div class="mover-sparkline">
+                        <app-sparkline 
+                            [data]="mover.sparklineData"
+                            [width]="60"
+                            [height]="24">
+                        </app-sparkline>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+
+    <!-- News Tab -->
+    @if (activeTab() === 'news') {
+        @if (newsError()) {
+            <div class="news-error">
+                <p>{{ newsError() }}</p>
+                <button type="button" class="retry-button" (click)="refreshNews()">Retry</button>
+            </div>
+        } @else if (newsLoading() && newsArticles().length === 0) {
+            <div class="news-loading">
+                <div class="skeleton-card"></div>
+                <div class="skeleton-card"></div>
+                <div class="skeleton-card"></div>
+            </div>
+        } @else if (newsArticles().length > 0) {
+            <div class="news-list">
+                @for (article of newsArticles(); track article.id) {
+                    <div class="news-item">
+                        <div class="news-content">
+                            <a [href]="article.url" target="_blank" class="news-title">{{ article.title }}</a>
+                            <p class="news-description">{{ article.description }}</p>
+                            <div class="news-meta">
+                                <span class="news-source">{{ article.source }}</span>
+                                <span class="news-date">{{ getNewsDate(article.published_at) }}</span>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        } @else {
+            <div class="empty-state">
+                <p>No news available</p>
+            </div>
+        }
+    }
+</section>

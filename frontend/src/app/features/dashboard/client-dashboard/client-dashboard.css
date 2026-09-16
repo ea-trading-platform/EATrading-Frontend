@@ -26,11 +26,9 @@
 
 .client-dashboard .col-lg-4 {
     overflow: visible !important;
-}
-
-.news-section {
-    margin-top: 2rem;
-    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
 }
 
 .welcome-card {
