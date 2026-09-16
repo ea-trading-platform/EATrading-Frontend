@@ -1,13 +1,22 @@
-import { Component, OnInit, OnDestroy, signal, computed, inject } from '@angular/core';
+import { Component, OnInit, OnDestroy, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { SparklineChart } from '../sparkline/sparkline';
-import { NewsService, NewsArticle } from '../../../../core/services/news.service';
-import { Subject, takeUntil } from 'rxjs';
 
 export interface TopMover {
     symbol: string;
     changePercent: number;
     sparklineData: number[];
+}
+
+export interface NewsArticle {
+    id: string;
+    title: string;
+    description: string;
+    image_url: string | null;
+    url: string;
+    source: string;
+    published_at: string;
+    updated_at?: string;
 }
 
 type TabType = 'movers' | 'news';
@@ -20,9 +29,6 @@ type TabType = 'movers' | 'news';
     styleUrls: ['./top-movers.css'],
 })
 export class TopMoversComponent implements OnInit, OnDestroy {
-    private newsService = inject(NewsService);
-    private destroy$ = new Subject<void>();
-
     // Mock data - gainers
     private gainers: TopMover[] = [
         {
@@ -81,6 +87,37 @@ export class TopMoversComponent implements OnInit, OnDestroy {
         },
     ];
 
+    // Mock news data
+    private mockNews: NewsArticle[] = [
+        {
+            id: '1',
+            title: 'Market Rally Continues Amid Strong Economic Data',
+            description: 'Stock markets surge as positive economic indicators fuel investor confidence. The S&P 500 reaches new highs.',
+            image_url: null,
+            url: '#',
+            source: 'MarketNews',
+            published_at: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
+        },
+        {
+            id: '2',
+            title: 'Tech Sector Leads Gainers Today',
+            description: 'Technology stocks outperform as earnings season progresses. Major chip manufacturers report strong quarterly results.',
+            image_url: null,
+            url: '#',
+            source: 'FinanceToday',
+            published_at: new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString(),
+        },
+        {
+            id: '3',
+            title: 'Federal Reserve Holds Interest Rates Steady',
+            description: 'Central bank maintains current monetary policy amid stable inflation. Markets respond positively to the decision.',
+            image_url: null,
+            url: '#',
+            source: 'EconomicUpdate',
+            published_at: new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString(),
+        },
+    ];
+
     // Tab state
     activeTab = signal<TabType>('movers');
 
@@ -94,8 +131,6 @@ export class TopMoversComponent implements OnInit, OnDestroy {
     newsLoading = signal<boolean>(false);
     newsError = signal<string | null>(null);
 
-    readonly NEWS_LIMIT = 8;
-
     constructor() {}
 
     ngOnInit(): void {
@@ -107,8 +142,6 @@ export class TopMoversComponent implements OnInit, OnDestroy {
         if (this.moverInterval) {
             clearInterval(this.moverInterval);
         }
-        this.destroy$.next();
-        this.destroy$.complete();
     }
 
     setTab(tab: TabType): void {
@@ -142,20 +175,11 @@ export class TopMoversComponent implements OnInit, OnDestroy {
         this.newsLoading.set(true);
         this.newsError.set(null);
 
-        this.newsService
-            .getMarketNews(this.NEWS_LIMIT)
-            .pipe(takeUntil(this.destroy$))
-            .subscribe({
-                next: (articles: NewsArticle[]) => {
-                    this.newsArticles.set(articles);
-                    this.newsLoading.set(false);
-                },
-                error: (error: any) => {
-                    console.error('Failed to load news:', error);
-                    this.newsError.set('Failed to load news');
-                    this.newsLoading.set(false);
-                },
-            });
+        // Simulate slight delay for loading state
+        setTimeout(() => {
+            this.newsArticles.set(this.mockNews);
+            this.newsLoading.set(false);
+        }, 300);
     }
 
     refreshNews(): void {
