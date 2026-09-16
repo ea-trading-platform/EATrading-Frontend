@@ -30,3 +30,10 @@
     width: 100%;
     margin-top: 1.25rem;
 }
+
+.nav-with-action {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    gap: 1rem;
+}

@@ -1,6 +1,5 @@
 :host {
     display: block;
-    min-height: 100dvh;
     background: linear-gradient(160deg, var(--dark-primary) 0%, var(--dark-secondary) 50%, var(--dark-tertiary) 100%);
     color: var(--text-light);
     width: 100%;
@@ -8,7 +7,6 @@
 }
 
 .client-dashboard {
-    min-height: 100dvh;
     padding: 1.15rem;
     width: 100%;
     margin: 0 auto;
@@ -50,24 +48,6 @@
     margin-top: 0.5rem;
     min-height: 22rem;
     border-radius: 1rem;
-}
-
-.trade-sidebar {
-    border-radius: 1rem;
-    border: 1px solid var(--border-light);
-    min-height: auto;
-    overflow: visible !important;
-    max-width: 320px;
-    margin: 0 auto;
-    padding: 0 12px;
-    background: transparent;
-}
-
-@media (max-width: 768px) {
-    .trade-sidebar {
-        min-height: auto;
-        margin-top: 1.5rem;
-    }
 }
 
 .greeting {

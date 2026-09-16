@@ -1,17 +1,25 @@
 .news-sidebar {
-    background: rgba(15, 20, 25, 0.4);
+    /* background: rgba(15, 20, 25, 0.4);
     border-radius: 8px;
     padding: 12px;
-    height: 100%;
+    height: auto;
     display: flex;
     flex-direction: column;
     gap: 12px;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3); */
+    border-radius: 1rem;
+    border: 1px solid var(--border-light);
+    min-height: auto;
+    overflow: visible !important;
+    /* max-width: 320px; */
+    margin: 0 auto;
+    padding: 0 12px;
+    background: transparent;
 }
 
 /* News Section */
 .news-section {
-    flex: 1;
+    flex: 0 1 auto;
     display: flex;
     flex-direction: column;
     gap: 12px;
@@ -75,29 +83,43 @@
     grid-template-columns: 1fr;
     gap: 10px;
     overflow-y: auto;
-    flex: 1;
+    flex: 0 1 auto;
     min-height: 0;
-    padding-right: 4px;
-    padding-left: 8px;
-    padding-right: 12px;
+    padding: 0px 8px 0px 8px;
+}
+
+/* Responsive styling for medium screens - 2 columns */
+@media (min-width: 576px) and (max-width: 992px) {
+    .news-grid {
+        grid-template-columns: repeat(2, 1fr);
+        max-height: 500px;
+    }
+}
+
+/* Responsive styling for x-large screens - 2 columns */
+@media (min-width: 1400px) {
+    .news-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
 }
 
 /* Responsive styling for small screens */
 @media (max-width: 576px) {
     .news-sidebar {
         height: auto;
-        max-height: none;
+        max-height: 400px;
         margin-top: 1.5rem;
     }
 
     .news-section {
         min-height: auto;
+        flex: 1;
     }
 
     .news-grid {
         grid-template-columns: 1fr;
         overflow-y: auto;
-        max-height: none;
+        max-height: 300px;
         padding-left: 4px;
         padding-right: 8px;
     }
