@@ -28,6 +28,11 @@
     overflow: visible !important;
 }
 
+.news-section {
+    margin-top: 2rem;
+    width: 100%;
+}
+
 .welcome-card {
     display: flex;
     align-items: center;
@@ -146,10 +151,6 @@
 @media (max-width: 991px) {
     .client-dashboard .row {
         padding: 0 1rem;
-    }
-
-    .client-dashboard .col-lg-4 {
-        margin-top: 2rem;
     }
 
     .trade-sidebar {

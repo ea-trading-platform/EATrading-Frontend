@@ -96,10 +96,17 @@
     }
 }
 
-/* Responsive styling for x-large screens - 2 columns */
+/* Responsive styling for large screens - 3 columns */
+@media (min-width: 993px) and (max-width: 1399px) {
+    .news-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+/* Responsive styling for x-large screens - 4 columns */
 @media (min-width: 1400px) {
     .news-grid {
-        grid-template-columns: repeat(2, 1fr);
+        grid-template-columns: repeat(4, 1fr);
     }
 }
 
