@@ -1,6 +1,7 @@
-import { Component, HostListener, computed, signal, ViewChild, ElementRef } from '@angular/core';
+import { Component, HostListener, computed, signal, ViewChild, ElementRef, Input } from '@angular/core';
 import { DecimalPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { WatchlistService } from '../../../services/watchlist.service';
 
 interface MockStock {
     symbol: string;
@@ -31,6 +32,11 @@ export class StockSearch {
     protected readonly query = signal('');
     protected readonly selected = signal<MockStock | null>(null);
     protected readonly actionMessage = signal<string | null>(null);
+    
+    // Input to control whether the button is shown
+    @Input() showButton = true;
+    
+    constructor(private watchlistService: WatchlistService) {}
 
     // Drag tracking
     protected readonly modalX = signal(0);
@@ -95,6 +101,27 @@ export class StockSearch {
             return;
         }
         this.actionMessage.set(`${side === 'buy' ? 'Buy' : 'Sell'} order for ${stock.symbol} coming soon.`);
+    }
+
+    addToWatchlist(): void {
+        const stock = this.selected();
+        if (!stock) {
+            return;
+        }
+        
+        // Calculate percent change from history
+        const changePercent = stock.history.length >= 2
+            ? ((stock.history[stock.history.length - 1] - stock.history[0]) / stock.history[0]) * 100
+            : 0;
+        
+        this.watchlistService.addStock({
+            symbol: stock.symbol,
+            name: stock.name,
+            price: stock.price,
+            changePercent: changePercent,
+            history: stock.history,
+        });
+        this.actionMessage.set(`${stock.symbol} added to watchlist.`);
     }
 
     @HostListener('document:keydown.escape')

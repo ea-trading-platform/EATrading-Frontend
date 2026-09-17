@@ -1,0 +1,39 @@
+<div class="stock-card">
+    <!-- Unified Compact Card View -->
+    <div class="compact-card" [style.border-left-color]="getChangeColor(stock.changePercent)">
+        <div class="card-top">
+            <div class="stock-info">
+                <div class="stock-header">
+                    <span class="stock-symbol">{{ stock.symbol }}</span>
+                    @if (stock.name) {
+                        <span class="stock-name">{{ stock.name }}</span>
+                    }
+                </div>
+                @if (stock.price !== undefined) {
+                    <span class="stock-price">{{ stock.price | number: '1.2-2' }}</span>
+                }
+            </div>
+            <div class="card-actions">
+                @if (stock.changePercent !== undefined) {
+                    <span class="change" [style.color]="getChangeColor(stock.changePercent)">
+                        {{ getChangeDisplay(stock.changePercent) }}
+                    </span>
+                }
+            </div>
+        </div>
+        @if ((stock.sparklineData && stock.sparklineData.length > 0) || (stock.history && stock.history.length > 0)) {
+            <div class="card-sparkline">
+                <app-sparkline 
+                    [data]="stock.sparklineData || stock.history || []"
+                    [width]="60"
+                    [height]="20">
+                </app-sparkline>
+            </div>
+        }
+        @if (showRemoveButton) {
+            <button type="button" class="btn-remove" (click)="onRemove(); $event.stopPropagation()" aria-label="Remove from watchlist">
+                ✕
+            </button>
+        }
+    </div>
+</div>

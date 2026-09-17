@@ -1,3 +1,4 @@
+@if (showButton) {
 <button type="button" class="ea-action" (click)="open()"> 
     <svg width="30" height="30" viewBox="0 0 25 24" fill="none" xmlns="http://www.w3.org/2000/svg" transform="rotate(0 0 0)">
         <path d="M3.3777 10.4603C2.9776 10.3531 2.74017 9.94185 2.84737 9.54175C3.3886 7.52186 4.58121 5.737 6.24022 4.464C7.89924 3.19099 9.93195 2.50098 12.0231 2.50098C14.1142 2.50098 16.1469 3.19099 17.806 4.464C19.2116 5.54261 20.2825 6.98868 20.906 8.63384L21.6667 7.28259C21.8699 6.92165 22.3273 6.79378 22.6882 6.99699C23.0491 7.2002 23.177 7.65754 22.9738 8.01848L21.2392 11.0995C21.1416 11.2729 20.9791 11.4003 20.7875 11.4539C20.596 11.5074 20.391 11.4827 20.2176 11.3851L17.1369 9.65037C16.776 9.44713 16.6482 8.98979 16.8514 8.62886C17.0546 8.26794 17.512 8.1401 17.8729 8.34334L19.5481 9.28664C19.0305 7.8511 18.1109 6.58872 16.8928 5.65403C15.4958 4.58203 13.784 4.00098 12.0231 4.00098C10.2621 4.00098 8.55041 4.58203 7.15337 5.65403C5.75632 6.72602 4.75203 8.22904 4.29626 9.92998C4.18906 10.3301 3.7778 10.5675 3.3777 10.4603Z" fill="#171a21"/>
@@ -6,6 +7,7 @@
     </svg>
     Transact
 </button>
+}
 
 @if (isOpen()) {
 <div class="modal-backdrop" (click)="close()"></div>
@@ -52,7 +54,7 @@
         <div class="action-row">
             <button type="button" class="btn btn-buy" (click)="placeOrder('buy')">Buy</button>
             <button type="button" class="btn btn-sell" (click)="placeOrder('sell')">Sell</button>
-            <button type="button" class="btn btn-ghost" disabled>Add to watchlist</button>
+            <button type="button" class="btn btn-ghost" (click)="addToWatchlist()">Add to watchlist</button>
         </div>
 
         @if (actionMessage()) {

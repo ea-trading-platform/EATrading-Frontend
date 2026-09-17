@@ -11,12 +11,28 @@
                      9.59q9.5 9.58 9.5 23.75 0 13.66-9.59 23.5-9.58 9.83-23.75 9.83Z"/></svg> 
             Watchlist
         </h3>
-        <button type="button" class="add-button" title="Add to watchlist" aria-label="Add to watchlist">
+        <button type="button" class="add-button" (click)="openAddStock()" title="Add to watchlist" aria-label="Add to watchlist">
             +
         </button>
     </div>
-    <div class="watchlist-empty">
-        <p class="empty-text">No items in watchlist</p>
-        <p class="empty-hint">Click the + button to add stocks</p>
-    </div>
+    
+    @if (watchlistService.stocks().length > 0) {
+        <div class="watchlist-items">
+            @for (stock of watchlistService.stocks(); track stock.symbol) {
+                <app-stock-card 
+                    [stock]="stock"
+                    [showRemoveButton]="true"
+                    (remove)="removeStock($event)">
+                </app-stock-card>
+            }
+        </div>
+    } @else {
+        <div class="watchlist-empty">
+            <p class="empty-text">No items in watchlist</p>
+            <p class="empty-hint">Click the + button to add stocks</p>
+        </div>
+    }
+    
+    <!-- Hidden stock search modal (shown when opened) -->
+    <app-stock-search [showButton]="false"></app-stock-search>
 </section>
