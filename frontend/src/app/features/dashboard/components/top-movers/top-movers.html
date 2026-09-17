@@ -1,0 +1,121 @@
+<section class="top-movers-container">
+    <div class="top-movers-header">
+        <h3 class="top-movers-title">
+            @if (activeTab() === 'movers') {
+                @if (isShowingGainers()) {
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" transform="rotate(0 0 0)">
+                        <path d="M4.75 4C4.75 3.58579 4.41421 3.25 4 3.25C3.58579 3.25 3.25 3.58579 3.25 4V18.5C3.25 19.7426 
+                        4.25736 20.75 5.5 20.75H20.0005C20.4147 20.75 20.7505 20.4142 20.7505 20C20.7505 19.5858 20.4147 19.25 
+                        20.0005 19.25H5.5C5.08579 19.25 4.75 18.9142 4.75 18.5V15.7301L9.19964 11.2802L12.622 14.7026C12.7626 
+                        14.8432 12.9534 14.9222 13.1523 14.9222C13.3512 14.9222 13.542 14.8432 13.6826 14.7026L17.9972 
+                        10.388L17.9971 12.1165C17.997 12.5308 18.3328 12.8666 18.747 12.8666C19.1612 12.8666 19.497
+                         12.5309 19.4971 12.1166L19.4973 8.58111C19.4973 8.38218 19.4183 8.19141 19.2777 8.05074C19.137
+                          7.91008 18.9462 7.83105 18.7473 7.83105H15.2115C14.7973 7.83105 14.4615 8.16684 14.4615 8.58105C14.4615
+                           8.99527 14.7973 9.33105 15.2115 9.33105H16.9328L13.1523 13.1116L9.72996 9.68923C9.58931 9.54857 9.39854
+                            9.46956 9.19963 9.46956C9.00071 9.46956 8.80994 9.54858 8.66929 9.68924L4.75 13.6087V4Z" 
+                            fill="#22c55e"/>
+                    </svg>
+
+                    Top Gainers
+                } @else {
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" transform="rotate(0 0 0)">
+                        <path d="M4.75 4C4.75 3.58579 4.41421 3.25 4 3.25C3.58579 3.25 3.25 3.58579 3.25 4V18.5C3.25 19.7426 
+                        4.25736 20.75 5.5 20.75H20.0005C20.4147 20.75 20.7505 20.4142 20.7505 20C20.7505 19.5858 20.4147 19.25 
+                        20.0005 19.25H5.5C5.08579 19.25 4.75 18.9142 4.75 18.5V10.3913L8.66929 14.3108C8.80994 14.4514 9.00071 
+                        14.5304 9.19963 14.5304C9.39854 14.5304 9.58931 14.4514 9.72996 14.3108L13.1523 10.8884L16.9328 
+                        14.6689H15.2115C14.7973 14.6689 14.4615 15.0047 14.4615 15.4189C14.4615 15.8332 14.7973 16.1689 15.2115 
+                        16.1689H18.7473C18.9462 16.1689 19.137 16.0899 19.2777 15.9493C19.4183 15.8086 19.4973 15.6178 19.4973 
+                        15.4189L19.4971 11.8834C19.497 11.4691 19.1612 11.1334 18.747 11.1334C18.3328 11.1334 17.997 11.4692 
+                        17.9971 11.8835L17.9972 13.612L13.6826 9.29743C13.542 9.15678 13.3512 9.07776 13.1523 9.07776C12.9534 
+                        9.07776 12.7626 9.15678 12.622 9.29743L9.19964 12.7198L4.75 8.26994V4Z" fill="#ef4444"/>
+                    </svg>
+
+                    Top Losers
+                }
+            } @else {
+                <svg xmlns="http://www.w3.org/2000/svg" height="30px" viewBox="0 -960 960 960" width="30px" fill="#ffffff">
+                    <path d="M186.67-120q-27 0-46.84-19.83Q120-159.67 120-186.67v-586.66q0-27 19.83-46.84Q159.67-840
+                     186.67-840h454.66L840-641.33v454.66q0 27-19.83 46.84Q800.33-120 773.33-120H186.67Zm0-66.67h586.66v-419.04H606v-167.62H186.67v586.66Zm92.66-100.66h401.34V-354H279.33v66.67Zm0-318.67H480v-66.67H279.33V-606Zm0
+                      159.33h401.34v-66.66H279.33v66.66Zm-92.66-326.66v167.62-167.62V-186.67v-586.66Z"/></svg>
+
+                Market News
+            }
+        </h3>
+        <div class="tab-buttons">
+            <button 
+                type="button"
+                class="tab-button"
+                [class.active]="activeTab() === 'movers'"
+                (click)="setTab('movers')"
+                aria-label="Show top movers">
+                Movers
+            </button>
+            <button 
+                type="button"
+                class="tab-button"
+                [class.active]="activeTab() === 'news'"
+                (click)="setTab('news')"
+                aria-label="Show news articles">
+                News
+            </button>
+        </div>
+    </div>
+
+    <!-- Movers Tab -->
+    @if (activeTab() === 'movers') {
+        <div class="movers-list">
+            @for (mover of movers(); track mover.symbol) {
+                <div class="mover-item" [style.border-left-color]="getMoverColor(mover.changePercent)">
+                    <div class="mover-info">
+                        <span class="mover-symbol">{{ mover.symbol }}</span>
+                        <span class="mover-change" [style.color]="getMoverColor(mover.changePercent)">
+                            {{ getChangeDisplay(mover.changePercent) }}
+                        </span>
+                    </div>
+                    <div class="mover-sparkline">
+                        <app-sparkline 
+                            [data]="mover.sparklineData"
+                            [width]="60"
+                            [height]="24">
+                        </app-sparkline>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+
+    <!-- News Tab -->
+    @if (activeTab() === 'news') {
+        @if (newsError()) {
+            <div class="news-error">
+                <p>{{ newsError() }}</p>
+                <button type="button" class="retry-button" (click)="refreshNews()">Retry</button>
+            </div>
+        } @else if (newsLoading() && newsArticles().length === 0) {
+            <div class="news-loading">
+                <div class="skeleton-card"></div>
+                <div class="skeleton-card"></div>
+                <div class="skeleton-card"></div>
+            </div>
+        } @else if (newsArticles().length > 0) {
+            <div class="news-list">
+                @for (article of newsArticles(); track article.id) {
+                    <div class="news-item">
+                        <div class="news-content">
+                            <a [href]="article.url" target="_blank" class="news-title">{{ article.title }}</a>
+                            <p class="news-description">{{ article.description }}</p>
+                            <div class="news-meta">
+                                <span class="news-source">{{ article.source }}</span>
+                                <span class="news-date">{{ getNewsDate(article.published_at) }}</span>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        } @else {
+            <div class="empty-state">
+                <p>No news available</p>
+            </div>
+        }
+    }
+</section>
