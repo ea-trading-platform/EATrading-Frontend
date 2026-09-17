@@ -57,7 +57,6 @@ export class StockSearch {
     });
 
     open(): void {
-        console.log('[StockSearch] Modal opening', { isOpen: !this.isOpen() });
         this.isOpen.set(true);
         this.query.set('');
         this.selected.set(null);
