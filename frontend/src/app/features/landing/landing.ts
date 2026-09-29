@@ -54,12 +54,14 @@ export class Landing {
         this.submitting.set(false);
 
         if (error) {
-            this.error.set(error.message);
+            this.error.set((error as any)?.message || 'Authentication failed');
             return;
         }
 
         // Dynamically redirect based on admin status
-        const redirectPath = this.auth.isAdmin() ? '/admin-dashboard' : '/dashboard';
+        // const redirectPath = this.auth.isAdmin() ? '/admin-dashboard' : '/dashboard';
+        const redirectPath = this.auth.isAdmin() ? '/dashboard' : '/admin-dashboard';
+
         this.router.navigateByUrl(redirectPath);
     }
 }

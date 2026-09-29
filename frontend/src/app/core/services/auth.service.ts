@@ -1,92 +1,81 @@
 import { Injectable, signal } from '@angular/core';
-import { createClient, Session, SupabaseClient, User } from '@supabase/supabase-js';
-import { environment } from '../../../environments/environment';
 
 export interface UserProfile {
     name: string;
     balance: number;
 }
 
+export interface AuthUser {
+    id: string;
+    email: string;
+    user_metadata: {
+        name?: string;
+        balance?: number;
+    };
+}
+
 /**
- * Wraps the Supabase JS client for auth. Session state is tracked in signals
- * so components can react to sign-in/sign-out without manual subscriptions.
+ * Stubbed Auth Service (Supabase removed, using fake data)
+ * Provides session and user signals for backwards compatibility.
+ * TODO: Replace with real auth when backend authentication is implemented.
  */
 @Injectable({ providedIn: 'root' })
 export class AuthService {
-    readonly client: SupabaseClient = createClient(environment.supabaseUrl, environment.supabaseAnonKey);
+    // Fake user for development
+    private readonly fakeUser: AuthUser = {
+        id: 'fake-user-uuid-12345',
+        email: 'demo@eatrading.local',
+        user_metadata: {
+            name: 'Demo Trader',
+            balance: 50000
+        }
+    };
 
-    readonly session = signal<Session | null>(null);
-    readonly user = signal<User | null>(null);
+    readonly session = signal<{ user: AuthUser } | null>(null);
+    readonly user = signal<AuthUser | null>(null);
     readonly profile = signal<UserProfile | null>(null);
     readonly isAdmin = signal(false);
-    readonly loading = signal(true);
+    readonly loading = signal(false);
 
     constructor() {
-        this.client.auth.getSession().then(({ data }) => {
-            this.setSession(data.session);
-            if (data.session?.user.id) {
-                this.checkAdminStatus(data.session.user.id);
-            }
-            this.loading.set(false);
-        });
+        // Initialize with fake demo user
+        setTimeout(() => {
+            this.setDemoSession();
+        }, 500);
+    }
 
-        this.client.auth.onAuthStateChange((_event, session) => {
-            this.setSession(session);
-            if (session?.user.id) {
-                this.checkAdminStatus(session.user.id);
-            }
-        });
+    private setDemoSession(): void {
+        const demoSession: { user: AuthUser } = { user: this.fakeUser };
+        this.session.set(demoSession);
+        this.user.set(this.fakeUser);
+        this.profile.set(this.buildProfile(this.fakeUser));
+        this.isAdmin.set(true); // Demo user is admin
+        this.loading.set(false);
     }
 
     async signUp(email: string, password: string, name: string) {
-        const { data, error } = await this.client.auth.signUp({
-            email,
-            password,
-            options: { data: { name } },
-        });
-        if (!error && data.session) {
-            this.setSession(data.session);
-        }
-        return { error };
+        // Stubbed: just return success
+        return { error: null };
     }
 
     async signIn(email: string, password: string) {
-        const { data, error } = await this.client.auth.signInWithPassword({ email, password });
-        if (!error && data.session) {
-            this.setSession(data.session);
-            await this.checkAdminStatus(data.session.user.id);
-        }
-        return { error };
+        // Stubbed: just return success and set demo session
+        this.setDemoSession();
+        return { error: null };
     }
 
     async signOut() {
-        await this.client.auth.signOut();
-        this.setSession(null);
-    }
-
-    private setSession(session: Session | null): void {
-        this.session.set(session);
-        this.user.set(session?.user ?? null);
-        this.profile.set(session ? this.buildProfile(session.user) : null);
+        this.session.set(null);
+        this.user.set(null);
+        this.profile.set(null);
         this.isAdmin.set(false);
     }
 
-    /** Check if user exists in public.admins table */
-    private async checkAdminStatus(userId: string): Promise<void> {
-        const { data } = await this.client
-            .from('admins')
-            .select('admin_id')
-            .eq('admin_id', userId);
-
-        const isAdmin = (data?.length ?? 0) > 0;
-        this.isAdmin.set(isAdmin);
-    }
-
-    /** Placeholder profile derived from auth metadata until a real profiles/balance table is wired up. */
-    private buildProfile(user: User): UserProfile {
+    /** Build profile from user metadata */
+    private buildProfile(user: AuthUser): UserProfile {
         return {
-            name: (user.user_metadata?.['name'] as string) ?? user.email ?? 'Trader',
-            balance: (user.user_metadata?.['balance'] as number) ?? 0,
+            name: (user?.user_metadata?.name) ?? user?.email ?? 'Trader',
+            balance: (user?.user_metadata?.balance) ?? 0,
         };
     }
 }

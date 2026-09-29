@@ -60,14 +60,19 @@
                     <app-orders-table [rowData]="orderHistory()"></app-orders-table>
                 </section>
                 }
+
+                <!-- Market Data Viewer -->
+                <section class="tab-panel">
+                    <app-market-data-viewer></app-market-data-viewer>
+                </section>
                 <!-- } -->
 
             </div>
 
             <!-- Sidebar: Watchlist and Top Movers -->
             <div class="col-lg-4 col-md-12">
-                    <app-watchlist></app-watchlist>
-                    <app-top-movers></app-top-movers>
+                <app-watchlist></app-watchlist>
+                <app-top-movers></app-top-movers>
             </div>
 
         </div>

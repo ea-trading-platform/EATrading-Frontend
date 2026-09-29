@@ -1,0 +1,93 @@
+<div class="market-data-viewer">
+    <div class="search-section">
+        <h2>Market Data Review</h2>
+        <div class="search-controls">
+            <input type="text" [(ngModel)]="symbol" (keyup.enter)="searchSymbol()"
+                placeholder="Enter stock symbol (e.g., AAPL)" class="symbol-input" />
+            <button (click)="searchSymbol()" [disabled]="isLoading()" class="search-btn">
+                {{ isLoading() ? 'Loading...' : 'Search' }}
+            </button>
+        </div>
+    </div>
+
+    <!-- Error Message -->
+    <div *ngIf="error()" class="error-message">
+        <span>{{ error() }}</span>
+        <button (click)="clearError()" class="close-btn">×</button>
+    </div>
+
+    <!-- Quote Data -->
+    <div *ngIf="quote() && !isLoading()" class="quote-section">
+        <h3>{{ quote()?.symbol }} - Quote Data</h3>
+        <div class="quote-grid">
+            <div class="quote-item">
+                <label>Price</label>
+                <span class="quote-value">${{ quote()?.price?.toFixed(2) }}</span>
+            </div>
+            <div class="quote-item">
+                <label>Change</label>
+                <span [class.positive]="(quote()?.change || 0) > 0" [class.negative]="(quote()?.change || 0) < 0">
+                    {{ quote()?.change?.toFixed(2) }} ({{ quote()?.changePercent?.toFixed(2) }}%)
+                </span>
+            </div>
+            <div class="quote-item">
+                <label>Bid/Ask</label>
+                <span>${{ quote()?.bid?.toFixed(2) }} / ${{ quote()?.ask?.toFixed(2) }}</span>
+            </div>
+            <div class="quote-item">
+                <label>Spread (bps)</label>
+                <span>{{ quote()?.spreadBps }}</span>
+            </div>
+            <div class="quote-item">
+                <label>Market State</label>
+                <span>{{ quote()?.marketState }}</span>
+            </div>
+            <div class="quote-item">
+                <label>Previous Close</label>
+                <span>${{ quote()?.previousClose?.toFixed(2) }}</span>
+            </div>
+            <div class="quote-item">
+                <label>Currency</label>
+                <span>{{ quote()?.currency }}</span>
+            </div>
+            <div class="quote-item">
+                <label>As Of</label>
+                <span>{{ quote()?.asOf | date: 'short' }}</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Candles/Historical Data -->
+    <div *ngIf="candles() && candles().length > 0 && !isLoading()" class="candles-section">
+        <h3>30-Day Price History</h3>
+        <div class="candles-table">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Date/Time</th>
+                        <th>Open</th>
+                        <th>High</th>
+                        <th>Low</th>
+                        <th>Close</th>
+                        <th>Volume</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr *ngFor="let candle of candles(); trackBy: (_, i) => i">
+                        <td>{{ candle.timestamp | date: 'short' }}</td>
+                        <td>${{ candle.open?.toFixed(2) }}</td>
+                        <td>${{ candle.high?.toFixed(2) }}</td>
+                        <td>${{ candle.low?.toFixed(2) }}</td>
+                        <td>${{ candle.close?.toFixed(2) }}</td>
+                        <td>{{ (candle.volume || 0) | number: '1.0-0' }}</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Loading State -->
+    <div *ngIf="isLoading()" class="loading">
+        <p>Loading market data...</p>
+    </div>
+</div>
