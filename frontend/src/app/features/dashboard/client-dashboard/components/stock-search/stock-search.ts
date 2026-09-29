@@ -38,7 +38,7 @@ export class StockSearch implements OnInit {
 
     // Watchlist management
     protected readonly watchlist = signal<StockQuote[]>([]);
-    protected readonly watchlistSymbols = computed(() => 
+    protected readonly watchlistSymbols = computed(() =>
         new Set(this.watchlist().map(s => s.symbol))
     );
 

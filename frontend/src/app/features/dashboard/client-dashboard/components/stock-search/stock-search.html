@@ -1,7 +1,7 @@
-<button type="button" class="ea-action" (click)="open()"> 
+<button type="button" class="ea-action" (click)="open()">
     <svg width="30" height="30" viewBox="0 0 25 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <circle cx="10" cy="10" r="6" stroke="currentColor" stroke-width="2" fill="none"/>
-        <path d="m14 14 4 4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        <circle cx="10" cy="10" r="6" stroke="currentColor" stroke-width="2" fill="none" />
+        <path d="m14 14 4 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
     </svg>
     Search
 </button>
@@ -17,20 +17,9 @@
 
     <div class="modal-body">
         <div class="search-input-group">
-            <input
-                type="text"
-                class="search-input"
-                [ngModel]="query()"
-                (ngModelChange)="query.set($event)"
-                (keyup.enter)="searchStock(query())"
-                placeholder="Enter symbol (AAPL, GOOGL, etc.)"
-            />
-            <button 
-                type="button" 
-                class="search-btn" 
-                (click)="searchStock(query())"
-                [disabled]="isLoading()"
-            >
+            <input type="text" class="search-input" [ngModel]="query()" (ngModelChange)="query.set($event)"
+                (keyup.enter)="searchStock(query())" placeholder="Enter symbol (AAPL, GOOGL, etc.)" />
+            <button type="button" class="search-btn" (click)="searchStock(query())" [disabled]="isLoading()">
                 {{ isLoading() ? '...' : '→' }}
             </button>
         </div>
@@ -45,12 +34,7 @@
             <p class="label">Suggested:</p>
             <div class="symbol-pills">
                 @for (symbol of filteredSymbols(); track symbol) {
-                <button
-                    type="button"
-                    class="symbol-pill"
-                    (click)="searchStock(symbol)"
-                    [disabled]="isLoading()"
-                >
+                <button type="button" class="symbol-pill" (click)="searchStock(symbol)" [disabled]="isLoading()">
                     {{ symbol }}
                 </button>
                 }
@@ -69,27 +53,16 @@
                     <div class="watchlist-stock-info">
                         <strong>{{ stock.symbol }}</strong>
                         <span class="price">${{ stock.price?.toFixed(2) }}</span>
-                        <span 
-                            class="change"
-                            [class.positive]="(stock.change || 0) > 0"
-                            [class.negative]="(stock.change || 0) < 0"
-                        >
+                        <span class="change" [class.positive]="(stock.change || 0) > 0"
+                            [class.negative]="(stock.change || 0) < 0">
                             {{ stock.change?.toFixed(2) }}%
                         </span>
                     </div>
                     <div class="watchlist-actions">
-                        <button
-                            type="button"
-                            class="view-btn"
-                            (click)="searchStock(stock.symbol)"
-                        >
+                        <button type="button" class="view-btn" (click)="searchStock(stock.symbol)">
                             View
                         </button>
-                        <button
-                            type="button"
-                            class="remove-btn"
-                            (click)="removeFromWatchlist(stock.symbol)"
-                        >
+                        <button type="button" class="remove-btn" (click)="removeFromWatchlist(stock.symbol)">
                             Remove
                         </button>
                     </div>
@@ -116,12 +89,10 @@
         <div class="quote-details">
             <div class="price-section">
                 <span class="current-price">${{ selectedStock()!.quote.price?.toFixed(2) }}</span>
-                <span 
-                    class="change"
-                    [class.positive]="(selectedStock()!.quote.change || 0) > 0"
-                    [class.negative]="(selectedStock()!.quote.change || 0) < 0"
-                >
-                    {{ selectedStock()!.quote.change?.toFixed(2) }} ({{ selectedStock()!.quote.changePercent?.toFixed(2) }}%)
+                <span class="change" [class.positive]="(selectedStock()!.quote.change || 0) > 0"
+                    [class.negative]="(selectedStock()!.quote.change || 0) < 0">
+                    {{ selectedStock()!.quote.change?.toFixed(2) }} ({{ selectedStock()!.quote.changePercent?.toFixed(2)
+                    }}%)
                 </span>
             </div>
 
@@ -185,11 +156,7 @@
                 Sell {{ selectedStock()!.quote.symbol }}
             </button>
             @if (!watchlistSymbols().has(selectedStock()!.quote.symbol)) {
-            <button 
-                type="button" 
-                class="btn btn-outline"
-                (click)="addToWatchlist(selectedStock()!.quote)"
-            >
+            <button type="button" class="btn btn-outline" (click)="addToWatchlist(selectedStock()!.quote)">
                 + Add to Watchlist
             </button>
             } @else {
