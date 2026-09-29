@@ -1,7 +1,8 @@
-import { Component, OnInit, inject, signal, computed, HostListener, ViewChild, ElementRef } from '@angular/core';
+import { Component, OnInit, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MarketDataService } from '../../../../../core/services/market-data.service';
+import { WatchlistService } from '../../../../../core/services/watchlist.service';
 import { StockQuote, Candle } from '../../../../../core/models/trading.models';
 
 interface StockDetail {
@@ -19,6 +20,7 @@ interface StockDetail {
 })
 export class StockSearch implements OnInit {
     private readonly marketDataService = inject(MarketDataService);
+    protected readonly watchlistService = inject(WatchlistService);
 
     // Search and modal state
     protected readonly isOpen = signal(false);
@@ -36,14 +38,12 @@ export class StockSearch implements OnInit {
         return this.suggestedSymbols.filter(s => s.includes(term));
     });
 
-    // Watchlist management
-    protected readonly watchlist = signal<StockQuote[]>([]);
-    protected readonly watchlistSymbols = computed(() =>
-        new Set(this.watchlist().map(s => s.symbol))
-    );
+    // Expose watchlist from service
+    protected readonly watchlist = computed(() => this.watchlistService.watchlist());
+    protected readonly watchlistSymbols = computed(() => this.watchlistService.symbols());
 
     ngOnInit(): void {
-        this.loadWatchlist();
+        // Watchlist is automatically loaded by WatchlistService
     }
 
     open(): void {
@@ -98,32 +98,11 @@ export class StockSearch implements OnInit {
     }
 
     addToWatchlist(quote: StockQuote): void {
-        const exists = this.watchlist().some(s => s.symbol === quote.symbol);
-        if (!exists) {
-            this.watchlist.set([...this.watchlist(), quote]);
-            this.saveWatchlist();
-        }
+        this.watchlistService.add(quote);
     }
 
     removeFromWatchlist(symbol: string): void {
-        this.watchlist.set(this.watchlist().filter(s => s.symbol !== symbol));
-        this.saveWatchlist();
-    }
-
-    private saveWatchlist(): void {
-        localStorage.setItem('watchlist', JSON.stringify(this.watchlist().map(s => s.symbol)));
-    }
-
-    private loadWatchlist(): void {
-        const saved = localStorage.getItem('watchlist');
-        if (saved) {
-            try {
-                const symbols: string[] = JSON.parse(saved);
-                symbols.forEach(sym => this.searchStock(sym));
-            } catch (e) {
-                console.error('Failed to load watchlist', e);
-            }
-        }
+        this.watchlistService.remove(symbol);
     }
 
     closeDetailModal(): void {

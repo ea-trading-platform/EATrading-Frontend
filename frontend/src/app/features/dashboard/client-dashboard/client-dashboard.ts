@@ -15,7 +15,6 @@ import { StockTicker } from '../components/stock-ticker/stock-ticker';
 import { StockTickerData } from '../interfaces/stock-ticker.interface';
 import { WatchlistComponent } from '../components/watchlist/watchlist';
 import { TopMoversComponent } from '../components/top-movers/top-movers';
-import { MarketDataViewerComponent } from '../components/market-data-viewer/market-data-viewer';
 type ClientDashboardTab = 'portfolio' | 'orders';
 
 const MOCK_TICKER: StockTickerData[] = [
@@ -114,8 +113,7 @@ const MOCK_ORDERS: OrdersTable[] = [
         BalanceGraph,
         StockTicker,
         WatchlistComponent,
-        TopMoversComponent,
-        MarketDataViewerComponent
+        TopMoversComponent
     ],
     selector: 'app-client-dashboard',
     standalone: true,
