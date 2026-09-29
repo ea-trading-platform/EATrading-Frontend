@@ -47,6 +47,13 @@
     }
 }
 
+.watchlist-items {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    margin-bottom: 1rem;
+}
+
 .watchlist-empty {
     text-align: center;
     padding: 2rem 1rem;

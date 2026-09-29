@@ -5,7 +5,7 @@ import { WatchlistService } from '../../../../core/services/watchlist.service';
 @Component({
     selector: 'app-watchlist',
     standalone: true,
-    imports: [CommonModule],
+    imports: [CommonModule, StockCardComponent, StockSearch],
     templateUrl: './watchlist.html',
     styleUrls: ['./watchlist.css'],
 })
