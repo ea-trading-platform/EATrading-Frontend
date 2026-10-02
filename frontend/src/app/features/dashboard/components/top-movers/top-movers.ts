@@ -27,7 +27,7 @@ type TabType = 'movers' | 'news';
 @Component({
     selector: 'app-top-movers',
     standalone: true,
-    imports: [CommonModule, SparklineChart, StockCardComponent],
+    imports: [CommonModule, StockCardComponent],
     templateUrl: './top-movers.html',
     styleUrls: ['./top-movers.css'],
 })

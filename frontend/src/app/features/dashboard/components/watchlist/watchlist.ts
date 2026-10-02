@@ -7,7 +7,7 @@ import { StockSearch } from '../../client-dashboard/components/stock-search/stoc
 @Component({
     selector: 'app-watchlist',
     standalone: true,
-    imports: [CommonModule, StockCardComponent, StockSearch],
+    imports: [CommonModule],
     templateUrl: './watchlist.html',
     styleUrls: ['./watchlist.css'],
 })

@@ -24,10 +24,6 @@
   }
 }
 
-.ticker-track:hover {
-  animation-play-state: paused;
-}
-
 .ticker-item {
   display: flex;
   align-items: center;
