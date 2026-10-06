@@ -15,7 +15,11 @@ import { StockTicker } from '../components/stock-ticker/stock-ticker';
 import { StockTickerData } from '../interfaces/stock-ticker.interface';
 import { WatchlistComponent } from '../components/watchlist/watchlist';
 import { TopMoversComponent } from '../components/top-movers/top-movers';
+import { forkJoin } from 'rxjs';
 type ClientDashboardTab = 'portfolio' | 'orders';
+
+// Popular stock symbols to display in the ticker
+const TICKER_SYMBOLS = ['AAPL', 'GOOGL', 'MSFT', 'AMZN', 'TSLA', 'NVDA', 'META', 'NFLX', 'UBER', 'PYPL'];
 
 const MOCK_TICKER: StockTickerData[] = [
     {
@@ -139,11 +143,13 @@ export class ClientDashboard implements OnInit {
     );
     protected readonly balanceData = [...MOCK_BALANCES];
 
-    protected readonly stocksSignal = signal<StockTickerData[]>(MOCK_TICKER);
+    protected readonly stocksSignal = signal<StockTickerData[]>([]);
+    protected readonly loadingTickers = signal(false);
 
     ngOnInit(): void {
         this.fetchAccount();
         this.fetchOrders();
+        this.fetchTickerData();
     }
 
     setTab(tab: ClientDashboardTab): void {
@@ -189,6 +195,52 @@ export class ClientDashboard implements OnInit {
                 // Keep mock data on error
                 this.loadingOrders.set(false);
             },
+        });
+    }
+
+    private fetchTickerData(): void {
+        this.loadingTickers.set(true);
+
+        // Fetch quotes and candles for all symbols in parallel
+        const quoteRequests = TICKER_SYMBOLS.map((symbol) =>
+            this.api.getQuote(symbol)
+        );
+        const candleRequests = TICKER_SYMBOLS.map((symbol) =>
+            this.api.getCandles(symbol)
+        );
+
+        forkJoin({
+            quotes: forkJoin(quoteRequests),
+            candles: forkJoin(candleRequests)
+        }).subscribe({
+            next: ({ quotes, candles }) => {
+                const tickerData: StockTickerData[] = TICKER_SYMBOLS.map((symbol, index) => {
+                    const quote = quotes[index];
+                    const candleResponse = candles[index];
+
+                    // Extract price history from candles (closing prices)
+                    // Note: API response wraps candles in a 'data' object
+                    const candlesList = (candleResponse as any)?.data?.candles || (candleResponse as any)?.candles || [];
+                    const priceHistory = candlesList
+                        .map((candle: any) => candle.close)
+                        .slice(-8); // Last 8 candles for the sparkline
+
+                    return {
+                        symbol,
+                        percentChange: quote?.changePercent ?? 0,
+                        priceHistory: priceHistory.length > 0 ? priceHistory : [quote?.price ?? 0]
+                    };
+                });
+
+                this.stocksSignal.set(tickerData);
+                this.loadingTickers.set(false);
+            },
+            error: (err) => {
+                console.error('Error fetching ticker data:', err);
+                // Fallback to empty array instead of mock data
+                this.stocksSignal.set([]);
+                this.loadingTickers.set(false);
+            }
         });
     }
 
