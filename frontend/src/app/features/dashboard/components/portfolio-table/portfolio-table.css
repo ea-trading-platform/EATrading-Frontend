@@ -4,3 +4,41 @@
   /* cushion roughly one extra row so the last data row doesn't feel clipped */
   padding-bottom: 2.75rem;
 }
+
+:host ::ng-deep .allocation-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  height: 100%;
+  width: 100%;
+}
+
+:host ::ng-deep .allocation-header-label {
+  color: var(--text-muted);
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 0.85rem;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+}
+
+:host ::ng-deep .allocation-header-label:hover {
+  color: var(--text-light);
+}
+
+:host ::ng-deep .allocation-header-button {
+  border: 1px solid var(--border-light);
+  border-radius: 999px;
+  padding: 0.25rem 0.65rem;
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text-light);
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+:host ::ng-deep .allocation-header-button:hover {
+  border-color: var(--accent);
+  background: rgba(255, 255, 255, 0.08);
+}

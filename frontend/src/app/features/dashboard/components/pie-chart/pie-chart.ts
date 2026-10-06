@@ -36,6 +36,7 @@ export class PieChartComponent {
       }
     }
   };
+
   @Input()
   public set data(value: any[] | undefined) {
     if (!value) return;

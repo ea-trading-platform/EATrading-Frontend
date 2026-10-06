@@ -53,6 +53,57 @@
     border-radius: 1rem;
 }
 
+.allocation-chart-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 1200;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1.5rem;
+    background: rgba(6, 12, 20, 0.72);
+    backdrop-filter: blur(6px);
+}
+
+.allocation-chart-modal {
+    width: min(760px, 100%);
+    padding: 1.25rem;
+    border: 1px solid var(--border-light);
+    border-radius: 1rem;
+    background: linear-gradient(180deg, rgba(19, 28, 38, 0.98) 0%, rgba(13, 20, 30, 0.98) 100%);
+    box-shadow: 0 28px 70px rgba(0, 0, 0, 0.4);
+}
+
+.allocation-chart-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 0.75rem;
+}
+
+.allocation-chart-header h3 {
+    margin: 0;
+    color: var(--text-light);
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
+.allocation-chart-close {
+    border: 1px solid var(--border-light);
+    border-radius: 999px;
+    padding: 0.45rem 0.9rem;
+    background: rgba(255, 255, 255, 0.04);
+    color: var(--text-light);
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.allocation-chart-close:hover {
+    border-color: var(--accent);
+    background: rgba(255, 255, 255, 0.08);
+}
+
 .greeting {
     display: flex;
     flex-direction: column;
@@ -199,6 +250,19 @@
 
     .client-dashboard .row {
         padding: 0 0.5rem;
+    }
+
+    .allocation-chart-overlay {
+        padding: 1rem;
+    }
+
+    .allocation-chart-modal {
+        padding: 1rem;
+    }
+
+    .allocation-chart-header {
+        align-items: flex-start;
+        flex-direction: column;
     }
 }
 

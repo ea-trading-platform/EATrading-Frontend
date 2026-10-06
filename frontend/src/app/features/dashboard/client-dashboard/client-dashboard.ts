@@ -15,6 +15,7 @@ import { StockTicker } from '../components/stock-ticker/stock-ticker';
 import { StockTickerData } from '../interfaces/stock-ticker.interface';
 import { WatchlistComponent } from '../components/watchlist/watchlist';
 import { TopMoversComponent } from '../components/top-movers/top-movers';
+import { PieChartComponent } from '../components/pie-chart/pie-chart';
 type ClientDashboardTab = 'portfolio' | 'orders';
 
 const MOCK_TICKER: StockTickerData[] = [
@@ -113,7 +114,8 @@ const MOCK_ORDERS: OrdersTable[] = [
         BalanceGraph,
         StockTicker,
         WatchlistComponent,
-        TopMoversComponent
+        TopMoversComponent,
+        PieChartComponent,
     ],
     selector: 'app-client-dashboard',
     standalone: true,
@@ -131,8 +133,15 @@ export class ClientDashboard implements OnInit {
     protected readonly loadingOrders = signal(false);
 
     protected readonly activeTab = signal<ClientDashboardTab>('portfolio');
+    protected readonly showAllocationChart = signal(false);
     protected readonly portfolioHoldings = computed(() =>
         [...MOCK_PORTFOLIO].sort((a, b) => a.symbol.localeCompare(b.symbol)),
+    );
+    protected readonly allocationChartData = computed(() =>
+        this.portfolioHoldings().map((holding) => ({
+            label: holding.symbol,
+            value: holding.allocation,
+        })),
     );
     protected readonly orderHistory = computed(() =>
         [...this.orders()].sort((a, b) => b.transactionDate.getTime() - a.transactionDate.getTime()),
@@ -148,6 +157,10 @@ export class ClientDashboard implements OnInit {
 
     setTab(tab: ClientDashboardTab): void {
         this.activeTab.set(tab);
+    }
+
+    showPortfolioAllocationChart(): void {
+        this.showAllocationChart.update((isVisible) => !isVisible);
     }
 
     private fetchAccount(): void {

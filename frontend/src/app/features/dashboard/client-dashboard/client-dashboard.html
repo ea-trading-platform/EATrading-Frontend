@@ -53,7 +53,23 @@
 
                 @if (activeTab() === 'portfolio') {
                 <section class="tab-panel">
-                    <app-portfolio-table [rowData]="portfolioHoldings()"></app-portfolio-table>
+                    @if (showAllocationChart()) {
+                    <div class="allocation-chart-overlay" (click)="showPortfolioAllocationChart()">
+                        <div class="allocation-chart-modal" (click)="$event.stopPropagation()">
+                            <div class="allocation-chart-header">
+                                <h3>Portfolio Allocation</h3>
+                                <button type="button" class="allocation-chart-close"
+                                    (click)="showPortfolioAllocationChart()" aria-label="Close allocation chart">
+                                    Close
+                                </button>
+                            </div>
+                            <app-pie-chart [data]="allocationChartData()"></app-pie-chart>
+                        </div>
+                    </div>
+                    }
+
+                    <app-portfolio-table [rowData]="portfolioHoldings()"
+                        (allocationChartRequested)="showPortfolioAllocationChart()"></app-portfolio-table>
                 </section>
                 } @else if (activeTab() === 'orders') {
                 <section class="tab-panel">
