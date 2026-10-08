@@ -43,8 +43,46 @@ export class AuthService {
     readonly loading = signal(false);
 
     constructor() {
+        // Initialize with fake token for development if no token exists
+        if (!this.getAccessToken()) {
+            this.initializeFakeAuth();
+        }
         // Try to restore session from localStorage on init
         this.restoreSession();
+    }
+
+    /**
+     * Initialize fake authentication for development
+     * Creates a demo user with JWT token for testing Spring Security
+     */
+    private initializeFakeAuth(): void {
+        const fakeToken = this.generateFakeJWT();
+        const fakeUser: AuthUser = {
+            id: 'fake-user-uuid-12345',
+            clientId: 'fake-client-id',
+            email: 'demo@eatrading.local',
+            user_metadata: {
+                name: 'Demo User',
+                balance: 50000
+            }
+        };
+
+        this.storeTokens(fakeToken, fakeToken);
+        localStorage.setItem('user', JSON.stringify(fakeUser));
+    }
+
+    /**
+     * Generate a fake JWT token for development/testing
+     */
+    private generateFakeJWT(): string {
+        const header = btoa(JSON.stringify({ alg: 'HS256', typ: 'JWT' }));
+        const payload = btoa(JSON.stringify({
+            sub: 'fake-user-uuid-12345',
+            email: 'demo@eatrading.local',
+            iat: Math.floor(Date.now() / 1000),
+            exp: Math.floor(Date.now() / 1000) + 86400 // 24 hours
+        }));
+        return `${header}.${payload}.fakesignature`;
     }
 
     /**
