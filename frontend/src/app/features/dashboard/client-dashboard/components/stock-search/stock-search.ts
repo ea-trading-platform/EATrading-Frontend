@@ -1,148 +1,111 @@
-import { Component, HostListener, computed, signal, ViewChild, ElementRef } from '@angular/core';
-import { DecimalPipe } from '@angular/common';
+import { Component, OnInit, inject, signal, computed } from '@angular/core';
+import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { MarketDataService } from '../../../../../core/services/market-data.service';
+import { WatchlistService } from '../../../../../core/services/watchlist.service';
+import { StockQuote, Candle } from '../../../../../core/models/trading.models';
 
-interface MockStock {
-    symbol: string;
-    name: string;
-    price: number;
-    history: number[];
+interface StockDetail {
+    quote: StockQuote;
+    candles: Candle[];
 }
-
-const MOCK_STOCKS: MockStock[] = [
-    { symbol: 'AAPL', name: 'Apple Inc.', price: 189.32, history: [172, 178, 175, 182, 188, 185, 189.32] },
-    { symbol: 'AMZN', name: 'Amazon.com Inc.', price: 178.21, history: [162, 165, 170, 168, 174, 176, 178.21] },
-    { symbol: 'GOOGL', name: 'Alphabet Inc.', price: 164.75, history: [150, 154, 158, 155, 160, 163, 164.75] },
-    { symbol: 'MSFT', name: 'Microsoft Corp.', price: 415.6, history: [390, 398, 402, 405, 410, 408, 415.6] },
-    { symbol: 'NVDA', name: 'NVIDIA Corp.', price: 121.4, history: [98, 105, 110, 115, 118, 119, 121.4] },
-    { symbol: 'TSLA', name: 'Tesla Inc.', price: 238.9, history: [255, 248, 240, 245, 236, 233, 238.9] },
-];
 
 @Component({
     selector: 'app-stock-search',
     standalone: true,
-    imports: [DecimalPipe, FormsModule],
+    imports: [CommonModule, FormsModule],
     templateUrl: './stock-search.html',
     styleUrls: ['./stock-search.css', '../../../styles/dashboard.css'],
     styles: [`:host { display: block; }`],
 })
-export class StockSearch {
+export class StockSearch implements OnInit {
+    private readonly marketDataService = inject(MarketDataService);
+    protected readonly watchlistService = inject(WatchlistService);
+
+    // Search and modal state
     protected readonly isOpen = signal(false);
     protected readonly query = signal('');
-    protected readonly selected = signal<MockStock | null>(null);
-    protected readonly actionMessage = signal<string | null>(null);
+    protected readonly selectedStock = signal<StockDetail | null>(null);
+    protected readonly showDetailModal = signal(false);
+    protected readonly isLoading = signal(false);
+    protected readonly error = signal<string | null>(null);
 
-    // Drag tracking
-    protected readonly modalX = signal(0);
-    protected readonly modalY = signal(0);
-    private isDragging = false;
-    private dragOffsetX = 0;
-    private dragOffsetY = 0;
-
-    protected readonly filteredStocks = computed(() => {
-        const term = this.query().trim().toLowerCase();
-        const stocks = [...MOCK_STOCKS].sort((a, b) => a.symbol.localeCompare(b.symbol));
-        if (!term) {
-            return stocks;
-        }
-        return stocks.filter(
-            (stock) => stock.symbol.toLowerCase().includes(term) || stock.name.toLowerCase().includes(term),
-        );
+    // Suggested symbols
+    private readonly suggestedSymbols = ['AAPL', 'GOOGL', 'MSFT', 'AMZN', 'TSLA', 'NVDA'];
+    protected readonly filteredSymbols = computed(() => {
+        const term = this.query().trim().toUpperCase();
+        if (!term) return this.suggestedSymbols;
+        return this.suggestedSymbols.filter(s => s.includes(term));
     });
 
-    open(): void {
-        console.log('[StockSearch] Modal opening', { isOpen: !this.isOpen() });
-        this.isOpen.set(true);
-        this.query.set('');
-        this.selected.set(null);
-        this.actionMessage.set(null);
-        // Center modal on screen
-        this.centerModal();
-        console.log('[StockSearch] Modal opened', { isOpen: this.isOpen() });
+    // Expose watchlist from service
+    protected readonly watchlist = computed(() => this.watchlistService.watchlist());
+    protected readonly watchlistSymbols = computed(() => this.watchlistService.symbols());
+
+    ngOnInit(): void {
+        // Watchlist is automatically loaded by WatchlistService
     }
 
-    /**
-     * Center modal on the viewport
-     */
-    private centerModal(): void {
-        const modalWidth = Math.min(416, window.innerWidth - 32); // 26rem (416px) or less on mobile
-        const modalHeight = Math.min(window.innerHeight * 0.75, 600);
-
-        const x = Math.max(16, (window.innerWidth - modalWidth) / 2);
-        const y = Math.max(16, (window.innerHeight - modalHeight) / 2);
-
-        this.modalX.set(x);
-        this.modalY.set(y);
+    open(): void {
+        this.isOpen.set(true);
+        this.query.set('');
+        this.selectedStock.set(null);
+        this.showDetailModal.set(false);
+        this.error.set(null);
     }
 
     close(): void {
-        console.log('[StockSearch] Modal closing');
         this.isOpen.set(false);
+        this.showDetailModal.set(false);
     }
 
-    selectStock(stock: MockStock): void {
-        this.selected.set(stock);
-        this.actionMessage.set(null);
+    async searchStock(symbol: string): Promise<void> {
+        const sym = symbol.trim().toUpperCase();
+        if (!sym) return;
+
+        this.isLoading.set(true);
+        this.error.set(null);
+
+        this.marketDataService.loadQuote(sym).subscribe({
+            next: () => {
+                const quote = this.marketDataService.currentQuote();
+                if (!quote) {
+                    this.error.set('Stock not found');
+                    this.isLoading.set(false);
+                    return;
+                }
+
+                this.marketDataService.loadCandles(sym, {}).subscribe({
+                    next: () => {
+                        const candleResp = this.marketDataService.currentCandles();
+                        const candles = candleResp?.candles || [];
+                        this.selectedStock.set({ quote, candles });
+                        this.showDetailModal.set(true);
+                        this.isLoading.set(false);
+                    },
+                    error: () => {
+                        this.selectedStock.set({ quote, candles: [] });
+                        this.showDetailModal.set(true);
+                        this.isLoading.set(false);
+                    }
+                });
+            },
+            error: () => {
+                this.error.set(`Stock "${sym}" not found`);
+                this.isLoading.set(false);
+            }
+        });
     }
 
-    backToResults(): void {
-        this.selected.set(null);
+    addToWatchlist(quote: StockQuote): void {
+        this.watchlistService.add(quote);
     }
 
-    placeOrder(side: 'buy' | 'sell'): void {
-        const stock = this.selected();
-        if (!stock) {
-            return;
-        }
-        this.actionMessage.set(`${side === 'buy' ? 'Buy' : 'Sell'} order for ${stock.symbol} coming soon.`);
+    removeFromWatchlist(symbol: string): void {
+        this.watchlistService.remove(symbol);
     }
 
-    @HostListener('document:keydown.escape')
-    onEscape(): void {
-        if (this.isOpen()) {
-            this.close();
-        }
-    }
-
-    /**
-     * Start dragging the modal from anywhere within it
-     */
-    onMouseDown(event: MouseEvent): void {
-        // Don't drag if clicking on interactive elements like buttons or inputs
-        const target = event.target as HTMLElement;
-        if (target.tagName === 'BUTTON' || target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') {
-            return;
-        }
-
-        this.isDragging = true;
-        this.dragOffsetX = event.clientX - (this.modalX() || 50);
-        this.dragOffsetY = event.clientY - (this.modalY() || 50);
-        console.log('[StockSearch] Drag started', { x: this.modalX(), y: this.modalY(), offsetX: this.dragOffsetX, offsetY: this.dragOffsetY });
-    }
-
-    /**
-     * Handle modal dragging
-     */
-    @HostListener('document:mousemove', ['$event'])
-    onMouseMove(event: MouseEvent): void {
-        if (!this.isDragging || !this.isOpen()) return;
-        event.preventDefault();
-
-        const newX = event.clientX - this.dragOffsetX;
-        const newY = event.clientY - this.dragOffsetY;
-
-        this.modalX.set(newX);
-        this.modalY.set(newY);
-    }
-
-    /**
-     * Stop dragging
-     */
-    @HostListener('document:mouseup')
-    onMouseUp(): void {
-        if (this.isDragging) {
-            console.log('[StockSearch] Drag ended', { x: this.modalX(), y: this.modalY() });
-        }
-        this.isDragging = false;
+    closeDetailModal(): void {
+        this.showDetailModal.set(false);
     }
 }

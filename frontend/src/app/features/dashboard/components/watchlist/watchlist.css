@@ -47,6 +47,13 @@
     }
 }
 
+.watchlist-items {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    margin-bottom: 1rem;
+}
+
 .watchlist-empty {
     text-align: center;
     padding: 2rem 1rem;
@@ -64,4 +71,120 @@
     font-size: 0.85rem;
     color: var(--text-muted);
     margin: 0;
+}
+
+.watchlist-error {
+    padding: 1rem;
+    background: #fee2e2;
+    color: #991b1b;
+    border-radius: 0.5rem;
+    border-left: 4px solid #ef4444;
+}
+
+.watchlist-error p {
+    margin: 0;
+    font-size: 0.9rem;
+}
+
+.watchlist-items {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.watchlist-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem;
+    background: rgba(244, 246, 251, 0.03);
+    border: 1px solid rgba(244, 246, 251, 0.1);
+    border-radius: 0.6rem;
+    transition: all 0.2s;
+}
+
+.watchlist-item:hover {
+    background: rgba(244, 246, 251, 0.06);
+    border-color: rgba(244, 246, 251, 0.2);
+}
+
+.stock-info {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex: 1;
+}
+
+.stock-symbol {
+    font-weight: 700;
+    font-size: 0.95rem;
+    color: #f4f6fb;
+    min-width: 60px;
+}
+
+.stock-details {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.stock-price {
+    font-weight: 600;
+    color: #f4f6fb;
+    font-size: 0.9rem;
+}
+
+.stock-change {
+    font-weight: 500;
+    font-size: 0.9rem;
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.3rem;
+}
+
+.stock-change.positive {
+    color: #10b981;
+    background: rgba(16, 185, 129, 0.1);
+}
+
+.stock-change.negative {
+    color: #ef4444;
+    background: rgba(239, 68, 68, 0.1);
+}
+
+.remove-btn {
+    background: transparent;
+    border: 1px solid rgba(244, 246, 251, 0.2);
+    color: #f4f6fb;
+    width: 2rem;
+    height: 2rem;
+    border-radius: 0.4rem;
+    cursor: pointer;
+    font-size: 1rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+}
+
+.remove-btn:hover {
+    background: #ef4444;
+    border-color: #ef4444;
+    color: white;
+}
+
+@media (max-width: 768px) {
+    .watchlist-container {
+        padding: 1rem;
+    }
+
+    .stock-info {
+        gap: 0.5rem;
+    }
+
+    .remove-btn {
+        width: 1.75rem;
+        height: 1.75rem;
+        font-size: 0.9rem;
+    }
 }

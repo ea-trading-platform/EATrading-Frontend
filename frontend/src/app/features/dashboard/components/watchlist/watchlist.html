@@ -1,22 +1,57 @@
 <section class="watchlist-container">
     <div class="watchlist-header">
         <h3 class="watchlist-title">
-            <svg xmlns="http://www.w3.org/2000/svg" height="30px" viewBox="0 -960 960 960" width="30px" fill="#ffffff">
-                <path d="M286.67-613.33V-680H840v66.67H286.67Zm0 166.66v-66.66H840v66.66H286.67Zm0 
-                166.67v-66.67H840V-280H286.67ZM153.33-613.33q-13.66 0-23.5-9.84Q120-633 120-647q0-14
-                 9.83-23.5 9.84-9.5 23.84-9.5t23.5 9.58q9.5 9.59 9.5 23.75 0 13.67-9.59 23.5-9.58
-                  9.84-23.75 9.84Zm0 166.66q-13.66 0-23.5-9.83-9.83-9.83-9.83-23.83 0-14 9.83-23.5
-                   9.84-9.5 23.84-9.5t23.5 9.58q9.5 9.58 9.5 23.75 0 13.67-9.59 23.5-9.58 9.83-23.75
-                    9.83Zm0 166.67q-13.66 0-23.5-9.83-9.83-9.84-9.83-23.84t9.83-23.5q9.84-9.5 23.84-9.5t23.5
-                     9.59q9.5 9.58 9.5 23.75 0 13.66-9.59 23.5-9.58 9.83-23.75 9.83Z"/></svg> 
+            <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#ffffff">
+                <path
+                    d="M286.67-613.33V-680H840v66.67H286.67Zm0 166.66v-66.66H840v66.66H286.67Zm0 166.67v-66.67H840V-280H286.67ZM153.33-613.33q-13.66 0-23.5-9.84Q120-633 120-647q0-14 9.83-23.5 9.84-9.5 23.84-9.5t23.5 9.58q9.5 9.59 9.5 23.75 0 13.67-9.59 23.5-9.58 9.84-23.75 9.84Zm0 166.66q-13.66 0-23.5-9.83-9.83-9.83-9.83-23.83 0-14 9.83-23.5 9.84-9.5 23.84-9.5t23.5 9.58q9.5 9.58 9.5 23.75 0 13.67-9.59 23.5-9.58 9.83-23.75 9.83Zm0 166.67q-13.66 0-23.5-9.83-9.83-9.84-9.83-23.84t9.83-23.5q9.84-9.5 23.84-9.5t23.5 9.59q9.5 9.58 9.5 23.75 0 13.66-9.59 23.5-9.58 9.83-23.75 9.83Z" />
+            </svg>
             Watchlist
         </h3>
-        <button type="button" class="add-button" title="Add to watchlist" aria-label="Add to watchlist">
-            +
-        </button>
     </div>
+
+    <!-- Loading State -->
+    @if (isLoading()) {
+    <div class="watchlist-empty">
+        <p class="empty-text">Loading watchlist...</p>
+    </div>
+    }
+
+    <!-- Error State -->
+    @if (error()) {
+    <div class="watchlist-error">
+        <p>{{ error() }}</p>
+    </div>
+    }
+
+    <!-- Empty State -->
+    @if (!isLoading() && watchlist().length === 0 && !error()) {
     <div class="watchlist-empty">
         <p class="empty-text">No items in watchlist</p>
-        <p class="empty-hint">Click the + button to add stocks</p>
+        <p class="empty-hint">Use the search to add stocks</p>
     </div>
+    }
+
+    <!-- Watchlist Items -->
+    @if (watchlist().length > 0) {
+    <div class="watchlist-items">
+        @for (stock of watchlist(); track stock.symbol) {
+        <div class="watchlist-item">
+            <div class="stock-info">
+                <div class="stock-symbol">{{ stock.symbol }}</div>
+                <div class="stock-details">
+                    <span class="stock-price">${{ stock.price?.toFixed(2) }}</span>
+                    <span class="stock-change" [class.positive]="(stock.change || 0) > 0"
+                        [class.negative]="(stock.change || 0) < 0">
+                        {{ stock.change?.toFixed(2) }}%
+                    </span>
+                </div>
+            </div>
+            <button type="button" class="remove-btn" (click)="removeFromWatchlist(stock.symbol)"
+                title="Remove from watchlist" aria-label="Remove {{ stock.symbol }} from watchlist">
+                ✕
+            </button>
+        </div>
+        }
+    </div>
+    }
 </section>
