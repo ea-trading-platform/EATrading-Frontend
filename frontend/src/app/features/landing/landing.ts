@@ -58,9 +58,8 @@ export class Landing {
             return;
         }
 
-        // Dynamically redirect based on admin status
-        // const redirectPath = this.auth.isAdmin() ? '/admin-dashboard' : '/dashboard';
-        const redirectPath = this.auth.isAdmin() ? '/dashboard' : '/admin-dashboard';
+        // Dynamically redirect based on admin status.
+        const redirectPath = this.auth.isAdmin() ? '/admin-dashboard' : '/dashboard';
 
         this.router.navigateByUrl(redirectPath);
     }
