@@ -6,8 +6,8 @@
         <span class="ticker-chart">
           <app-sparkline [data]="stock.priceHistory" [width]="50" [height]="20"></app-sparkline>
         </span>
-        <span class="ticker-change" [class.positive]="stock.percentChange >= 0" [class.negative]="stock.percentChange < 0">
-          {{ stock.percentChange >= 0 ? '+' : '' }}{{ stock.percentChange.toFixed(2) }}%
+        <span class="ticker-change" [class.positive]="isPositiveFromOpen(stock)" [class.negative]="!isPositiveFromOpen(stock)">
+          {{ isPositiveFromOpen(stock) ? '+' : '' }}{{ getOpenToCurrentPercent(stock).toFixed(2) }}%
         </span>
       </div>
     }

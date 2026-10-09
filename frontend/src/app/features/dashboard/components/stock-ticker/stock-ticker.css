@@ -10,7 +10,7 @@
 .ticker-track {
   display: flex;
   gap: 40px;
-  animation: scroll-left 40s linear infinite;
+  animation: scroll-left 70s linear infinite;
   padding: 0 20px;
   min-width: max-content;
 }

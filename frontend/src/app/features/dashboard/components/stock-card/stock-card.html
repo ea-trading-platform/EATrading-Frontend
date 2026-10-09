@@ -1,6 +1,6 @@
 <div class="stock-card">
     <!-- Unified Compact Card View -->
-    <div class="compact-card" [style.border-left-color]="getChangeColor(stock.changePercent)">
+    <div class="compact-card" [style.border-left-color]="getChangeColor(stock)">
         <div class="card-top">
             <div class="stock-info">
                 <div class="stock-header">
@@ -14,9 +14,9 @@
                 }
             </div>
             <div class="card-actions">
-                @if (stock.changePercent !== undefined) {
-                    <span class="change" [style.color]="getChangeColor(stock.changePercent)">
-                        {{ getChangeDisplay(stock.changePercent) }}
+                @if (getOpenToCurrentPercent(stock) !== undefined) {
+                    <span class="change" [style.color]="getChangeColor(stock)">
+                        {{ getChangeDisplay(stock) }}
                     </span>
                 }
             </div>
