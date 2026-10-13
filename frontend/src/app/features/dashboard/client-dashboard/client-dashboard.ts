@@ -2,6 +2,7 @@ import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
 import { ApiService } from '../../../core/services/api.service';
+import { TradingService } from '../../../core/services/trading.service';
 import { Client } from '../../../core/models/trading.models';
 import { StockSearch } from './components/stock-search/stock-search';
 import { PortfolioTableComponent } from '../components/portfolio-table/portfolio-table';
@@ -128,6 +129,7 @@ export class ClientDashboard implements OnInit {
     protected readonly auth = inject(AuthService);
     private readonly router = inject(Router);
     private readonly api = inject(ApiService);
+    private readonly trading = inject(TradingService);
 
     protected readonly account = signal<Client | null>(null);
     protected readonly loadingAccount = signal(false);
@@ -163,7 +165,7 @@ export class ClientDashboard implements OnInit {
         }
 
         this.loadingAccount.set(true);
-        this.api.getClient(clientId).subscribe({
+        this.trading.loadClient(clientId).subscribe({
             next: (account) => {
                 this.account.set(account ?? null);
                 this.loadingAccount.set(false);
@@ -182,7 +184,7 @@ export class ClientDashboard implements OnInit {
         }
 
         this.loadingOrders.set(true);
-        this.api.getOrders(clientId).subscribe({
+        this.trading.loadOrders(clientId).subscribe({
             next: (orders: unknown) => {
                 // Map API response to OrdersTable interface
                 if (Array.isArray(orders)) {

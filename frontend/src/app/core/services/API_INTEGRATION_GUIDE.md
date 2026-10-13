@@ -375,7 +375,7 @@ All data is fully typed. Examples:
 ## Important Notes
 
 ✅ **API Base URL:** Already configured to `http://10.23.137.152:8099`
-✅ **No Authentication Required** - All endpoints are publicly accessible
+✅ **JWT Authentication** - Protected endpoints receive a Bearer token
 ✅ **CORS Enabled** - Backend allows cross-origin requests
 ✅ **Real Market Data** - Uses Fauxnance API for market data
 🔄 **Quote Caching** - Server caches quotes; use `clearCache()` to refresh
