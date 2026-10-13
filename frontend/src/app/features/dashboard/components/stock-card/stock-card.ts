@@ -38,12 +38,29 @@ export class StockCardComponent {
         this.select.emit(this.stock);
     }
 
-    getChangeColor(changePercent?: number): string {
+    private getSeries(stock: StockCardData): number[] {
+        return stock.sparklineData || stock.history || [];
+    }
+
+    getOpenToCurrentPercent(stock: StockCardData): number | undefined {
+        const values = this.getSeries(stock);
+        if (values.length >= 2 && values[0] !== 0) {
+            const open = values[0];
+            const current = values[values.length - 1];
+            return ((current - open) / open) * 100;
+        }
+
+        return stock.changePercent;
+    }
+
+    getChangeColor(stock: StockCardData): string {
+        const changePercent = this.getOpenToCurrentPercent(stock);
         if (changePercent === undefined || changePercent === 0) return '#888888';
         return changePercent > 0 ? '#22c55e' : '#ef4444';
     }
 
-    getChangeDisplay(changePercent?: number): string {
+    getChangeDisplay(stock: StockCardData): string {
+        const changePercent = this.getOpenToCurrentPercent(stock);
         if (changePercent === undefined) return '';
         const sign = changePercent >= 0 ? '+' : '';
         return `${sign}${changePercent.toFixed(2)}%`;

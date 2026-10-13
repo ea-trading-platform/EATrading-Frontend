@@ -1,5 +1,5 @@
 import { Injectable, inject, signal } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
 
 export interface UserProfile {
@@ -10,7 +10,8 @@ export interface UserProfile {
 export interface AuthUser {
     id: string;
     clientId?: string;
-    email?: string;
+    email: string;
+    roles?: string[];
     user_metadata?: {
         name?: string;
         balance?: number;
@@ -21,8 +22,8 @@ export interface AuthResponse {
     accessToken: string;
     refreshToken: string;
     clientId: string;
-    email: string;
-    name?: string;
+    expiresIn?: number;
+    tokenType?: string;
 }
 
 /**
@@ -67,7 +68,23 @@ export class AuthService {
             this.setSession(response);
             return { error: null };
         } catch (error: any) {
-            const errorMsg = error?.error?.error || error?.error?.message || error?.message || 'Registration failed';
+            const httpError = error as HttpErrorResponse;
+            const backendFieldErrors = httpError?.error?.fieldErrors as Record<string, string> | undefined;
+            const fieldErrorMessage = backendFieldErrors
+                ? Object.entries(backendFieldErrors)
+                    .map(([field, message]) => `${field}: ${message}`)
+                    .join(', ')
+                : null;
+
+            const errorMsg =
+                fieldErrorMessage ||
+                httpError?.error?.error ||
+                httpError?.error?.message ||
+                (httpError?.status === 400
+                    ? 'Registration failed. This email may already be registered.'
+                    : null) ||
+                error?.message ||
+                'Registration failed';
             console.error('Registration error:', error);
             console.error('Error details:', error?.error);
             this.loading.set(false);
@@ -120,6 +137,7 @@ export class AuthService {
             }
 
             this.storeTokens(response.accessToken, response.refreshToken);
+            this.isAdmin.set(this.resolveAdminAccess(this.user(), response.accessToken));
             return response.accessToken;
         } catch (error: any) {
             // Refresh failed - logout user
@@ -195,7 +213,8 @@ export class AuthService {
      * Check if user is authenticated
      */
     isAuthenticated(): boolean {
-        return !!this.getAccessToken();
+        const token = this.getAccessToken();
+        return !!token && !this.isTokenExpired(token);
     }
 
     /**
@@ -210,28 +229,30 @@ export class AuthService {
             return;
         }
 
+        if (!token) {
+            return;
+        }
+
+        if (this.isTokenExpired(token)) {
+            this.signOut();
+            return;
+        }
+
         try {
-            const id = parsedUser.id ?? parsedUser.clientId ?? '';
-            if (!id) {
-                throw new Error('Invalid persisted user session: missing id');
-            }
-
-            const user: AuthUser = {
-                id,
-                clientId: parsedUser.clientId ?? id,
-                email: parsedUser.email,
-                user_metadata: parsedUser.user_metadata,
-            };
-
-            const session: { user: AuthUser } = { user };
+            const restoredUser = userStr ? JSON.parse(userStr) as AuthUser : this.buildUserFromToken(token);
+            const session: { user: AuthUser } = { user: restoredUser };
             this.session.set(session);
-            this.user.set(user);
-            this.profile.set(this.buildProfile(user));
+            this.user.set(restoredUser);
+            this.profile.set(this.buildProfile(restoredUser));
+            this.isAdmin.set(this.resolveAdminAccess(restoredUser, token));
+
+            // Ensure a usable user shape exists for subsequent app usage.
+            if (!userStr) {
+                localStorage.setItem('user', JSON.stringify(restoredUser));
+            }
         } catch (error) {
             console.error('Failed to restore session:', error);
-            void this.signOut();
-        } finally {
-            this.loading.set(false);
+            this.signOut();
         }
     }
 
@@ -241,12 +262,16 @@ export class AuthService {
     private setSession(response: AuthResponse): void {
         this.storeTokens(response.accessToken, response.refreshToken);
 
+        const tokenUser = this.buildUserFromToken(response.accessToken);
+        const resolvedClientId = response.clientId || tokenUser.clientId || tokenUser.id;
+
         const user: AuthUser = {
-            id: response.clientId,
-            clientId: response.clientId,
-            email: response.email,
+            id: resolvedClientId,
+            clientId: resolvedClientId,
+            email: tokenUser.email,
+            roles: tokenUser.roles,
             user_metadata: {
-                name: response.name || response.email,
+                name: tokenUser.user_metadata?.name || tokenUser.email,
             }
         };
 
@@ -254,7 +279,7 @@ export class AuthService {
         this.session.set(session);
         this.user.set(user);
         this.profile.set(this.buildProfile(user));
-        this.isAdmin.set(true);
+        this.isAdmin.set(this.resolveAdminAccess(user, response.accessToken));
         this.loading.set(false);
 
         // Store user in localStorage for session persistence
@@ -277,5 +302,98 @@ export class AuthService {
             name: user?.user_metadata?.name ?? user?.email ?? 'Trader',
             balance: user?.user_metadata?.balance ?? 0,
         };
+    }
+
+    /**
+     * Determine admin access from user/response roles and token claims.
+     */
+    private resolveAdminAccess(user: AuthUser | null, token: string): boolean {
+        const userRoles = user?.roles ?? [];
+        const tokenRoles = this.extractRolesFromToken(token);
+        const combinedRoles = [...userRoles, ...tokenRoles].map((role) => this.normalizeRoleName(role));
+        return combinedRoles.includes('ADMIN');
+    }
+
+    private extractRolesFromToken(token: string): string[] {
+        const payload = this.decodeJwtPayload(token);
+        if (!payload) {
+            return [];
+        }
+
+        const roleSources: unknown[] = [
+            payload['roles'],
+            payload['role'],
+            payload['authorities'],
+            payload['scope'],
+            payload['scp'],
+        ];
+
+        const roles: string[] = [];
+        for (const source of roleSources) {
+            if (Array.isArray(source)) {
+                for (const value of source) {
+                    if (typeof value === 'string') {
+                        roles.push(value);
+                    }
+                }
+                continue;
+            }
+
+            if (typeof source === 'string') {
+                roles.push(...source.split(/\s+/).filter(Boolean));
+            }
+        }
+
+        return Array.from(new Set(roles));
+    }
+
+    private buildUserFromToken(token: string): AuthUser {
+        const payload = this.decodeJwtPayload(token);
+        const id = typeof payload?.['sub'] === 'string' ? payload['sub'] : 'unknown-user';
+        const email = typeof payload?.['email'] === 'string'
+            ? payload['email']
+            : typeof payload?.['preferred_username'] === 'string'
+                ? payload['preferred_username']
+                : 'unknown@user.local';
+        const roles = this.extractRolesFromToken(token);
+
+        return {
+            id,
+            clientId: id,
+            email,
+            roles,
+            user_metadata: {
+                name: email,
+            },
+        };
+    }
+
+    private isTokenExpired(token: string): boolean {
+        const payload = this.decodeJwtPayload(token);
+        const exp = payload?.['exp'];
+        if (typeof exp !== 'number') {
+            return false;
+        }
+        return Date.now() >= exp * 1000;
+    }
+
+    private decodeJwtPayload(token: string): Record<string, any> | null {
+        const parts = token.split('.');
+        if (parts.length < 2) {
+            return null;
+        }
+
+        try {
+            const base64 = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+            const padded = base64.padEnd(Math.ceil(base64.length / 4) * 4, '=');
+            const json = atob(padded);
+            return JSON.parse(json);
+        } catch {
+            return null;
+        }
+    }
+
+    private normalizeRoleName(role: string): string {
+        return role.replace(/^ROLE_/i, '').toUpperCase();
     }
 }

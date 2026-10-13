@@ -26,4 +26,19 @@ export class StockTicker {
     }
     return duplicated;
   });
+
+  getOpenToCurrentPercent(stock: StockTickerData): number {
+    const prices = stock.priceHistory ?? [];
+    if (prices.length >= 2 && prices[0] !== 0) {
+      const open = prices[0];
+      const current = prices[prices.length - 1];
+      return ((current - open) / open) * 100;
+    }
+
+    return stock.percentChange;
+  }
+
+  isPositiveFromOpen(stock: StockTickerData): boolean {
+    return this.getOpenToCurrentPercent(stock) >= 0;
+  }
 }
