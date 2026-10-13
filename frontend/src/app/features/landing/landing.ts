@@ -1,5 +1,5 @@
 import { Component, inject, signal } from '@angular/core';
-import { FormsModule } from '@angular/forms';
+import { FormsModule, NgForm } from '@angular/forms';
 import { Router } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
 
@@ -23,6 +23,7 @@ export class Landing {
     protected readonly name = signal('');
     protected readonly email = signal('');
     protected readonly password = signal('');
+    protected readonly confirmPassword = signal('');
 
     openLogin(): void {
         this.error.set(null);
@@ -39,16 +40,22 @@ export class Landing {
         this.error.set(null);
     }
 
-    async submit(): Promise<void> {
+    async submit(form: NgForm): Promise<void> {
         if (this.submitting()) {
             return;
         }
+
+        form.control.markAllAsTouched();
+        if (form.invalid || (this.mode() === 'signup' && this.password() !== this.confirmPassword())) {
+            return;
+        }
+
         this.error.set(null);
         this.submitting.set(true);
 
         const { error } =
             this.mode() === 'signup'
-                ? await this.auth.signUp(this.email(), this.password(), this.name())
+                ? await this.auth.signUp(this.email(), this.password(), this.name(), this.confirmPassword())
                 : await this.auth.signIn(this.email(), this.password());
 
         this.submitting.set(false);

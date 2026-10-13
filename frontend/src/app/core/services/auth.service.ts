@@ -51,14 +51,14 @@ export class AuthService {
     /**
      * Register a new user
      */
-    async signUp(email: string, password: string, name: string) {
+    async signUp(email: string, password: string, name: string, confirmPassword: string) {
         try {
             this.loading.set(true);
             const response = await this.http.post<AuthResponse>(`${this.apiUrl}/api/v1/auth/register`, {
                 name,
                 email,
                 password,
-                confirmPassword: password, // Use password as confirmation
+                confirmPassword,
             }).toPromise();
 
             if (!response) {
