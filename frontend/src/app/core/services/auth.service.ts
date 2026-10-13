@@ -41,7 +41,7 @@ export class AuthService {
     readonly user = signal<AuthUser | null>(null);
     readonly profile = signal<UserProfile | null>(null);
     readonly isAdmin = signal(false);
-    readonly loading = signal(false);
+    readonly loading = signal(true);
 
     constructor() {
         // Try to restore session from localStorage on init
@@ -179,7 +179,34 @@ export class AuthService {
      */
     getCurrentUser(): AuthUser | null {
         const userStr = localStorage.getItem('user');
-        return userStr ? JSON.parse(userStr) : null;
+        if (!userStr) {
+            return null;
+        }
+
+        try {
+            return JSON.parse(userStr) as AuthUser;
+        } catch {
+            return null;
+        }
+    }
+
+    /**
+     * Resolve clientId from the in-memory session or persisted user.
+     */
+    getClientId(): string | null {
+        const runtimeUser = this.user();
+        if (runtimeUser?.clientId) {
+            return runtimeUser.clientId;
+        }
+        if (runtimeUser?.id) {
+            return runtimeUser.id;
+        }
+
+        const persistedUser = this.getCurrentUser();
+        if (persistedUser?.clientId) {
+            return persistedUser.clientId;
+        }
+        return persistedUser?.id ?? null;
     }
 
     /**
@@ -195,7 +222,12 @@ export class AuthService {
      */
     private restoreSession(): void {
         const token = this.getAccessToken();
-        const userStr = localStorage.getItem('user');
+        const parsedUser = this.getCurrentUser();
+
+        if (!token || !parsedUser) {
+            this.loading.set(false);
+            return;
+        }
 
         if (!token) {
             return;
