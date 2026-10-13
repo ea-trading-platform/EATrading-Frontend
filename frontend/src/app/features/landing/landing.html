@@ -21,26 +21,66 @@
 
             <h2>{{ mode() === 'signup' ? 'Create your account' : 'Welcome back' }}</h2>
 
-            <form (ngSubmit)="submit()">
+            <form #authForm="ngForm" (ngSubmit)="submit(authForm)" novalidate>
                 @if (mode() === 'signup') {
-                <label class="field">
+                <label class="field" [class.invalid]="nameField.invalid && (nameField.touched || authForm.submitted)">
                     <span>Name</span>
-                    <input type="text" name="name" [ngModel]="name()" (ngModelChange)="name.set($event)" required
-                        autocomplete="name" />
+                    <input #nameField="ngModel" type="text" name="name" [ngModel]="name()"
+                        (ngModelChange)="name.set($event)" required minlength="2" maxlength="100" autocomplete="name" />
+                    @if (nameField.invalid && (nameField.touched || authForm.submitted)) {
+                    <span class="field-error">
+                        @if (nameField.errors?.['required']) { Name is required }
+                        @else if (nameField.errors?.['minlength'] || nameField.errors?.['maxlength']) { Name must be
+                        between 2 and 100 characters }
+                    </span>
+                    }
                 </label>
                 }
 
-                <label class="field">
+                <label class="field" [class.invalid]="emailField.invalid && (emailField.touched || authForm.submitted)">
                     <span>Email</span>
-                    <input type="email" name="email" [ngModel]="email()" (ngModelChange)="email.set($event)" required
-                        autocomplete="email" />
+                    <input #emailField="ngModel" type="email" name="email" [ngModel]="email()"
+                        (ngModelChange)="email.set($event)" required autocomplete="email" />
+                    @if (emailField.invalid && (emailField.touched || authForm.submitted)) {
+                    <span class="field-error">
+                        @if (emailField.errors?.['required']) { Email is required }
+                        @else if (emailField.errors?.['email']) { Email should be valid }
+                    </span>
+                    }
                 </label>
 
-                <label class="field">
+                <label class="field"
+                    [class.invalid]="passwordField.invalid && (passwordField.touched || authForm.submitted)">
                     <span>Password</span>
-                    <input type="password" name="password" [ngModel]="password()" (ngModelChange)="password.set($event)"
-                        required minlength="6" autocomplete="current-password" />
+                    <input #passwordField="ngModel" type="password" name="password" [ngModel]="password()"
+                        (ngModelChange)="password.set($event)" required minlength="8" maxlength="128"
+                        autocomplete="current-password" />
+                    @if (passwordField.invalid && (passwordField.touched || authForm.submitted)) {
+                    <span class="field-error">
+                        @if (passwordField.errors?.['required']) { Password is required }
+                        @else if (passwordField.errors?.['minlength'] || passwordField.errors?.['maxlength']) { Password
+                        must be between 8 and 128 characters }
+                    </span>
+                    }
                 </label>
+
+                @if (mode() === 'signup') {
+                <label class="field"
+                    [class.invalid]="confirmPasswordField.invalid && (confirmPasswordField.touched || authForm.submitted) || (authForm.submitted && password() !== confirmPassword())">
+                    <span>Password confirmation</span>
+                    <input #confirmPasswordField="ngModel" type="password" name="confirmPassword"
+                        [ngModel]="confirmPassword()" (ngModelChange)="confirmPassword.set($event)" required
+                        autocomplete="new-password" />
+                    @if (confirmPasswordField.invalid && (confirmPasswordField.touched || authForm.submitted)) {
+                    <span class="field-error">
+                        @if (confirmPasswordField.errors?.['required']) { Password confirmation is required }
+                        @else if (password() !== confirmPassword()) { Passwords must match }
+                    </span>
+                    } @else if (authForm.submitted && password() !== confirmPassword()) {
+                    <span class="field-error">Passwords must match</span>
+                    }
+                </label>
+                }
 
                 @if (error()) {
                 <p class="error">{{ error() }}</p>
