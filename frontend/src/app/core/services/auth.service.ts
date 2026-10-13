@@ -26,6 +26,13 @@ export interface AuthResponse {
     tokenType?: string;
 }
 
+export interface ChangePasswordRequest {
+    email: string;
+    currentPassword: string;
+    newPassword: string;
+    confirmNewPassword: string;
+}
+
 /**
  * JWT-based Authentication Service
  * Integrates with backend auth endpoints for register/login/refresh
@@ -119,6 +126,31 @@ export class AuthService {
     }
 
     /**
+     * Change the password for the authenticated user.
+     */
+    async changePassword(payload: ChangePasswordRequest) {
+        try {
+            this.loading.set(true);
+            await this.http.post<void>(`${this.apiUrl}/api/v1/auth/change-password`, payload).toPromise();
+            return { error: null };
+        } catch (error: any) {
+            const status = error?.status;
+            const fieldErrors = error?.error?.fieldErrors as Record<string, string> | undefined;
+            const fieldErrorMessage = fieldErrors
+                ? Object.values(fieldErrors).join(', ')
+                : null;
+            const errorMsg = fieldErrorMessage || (status === 400
+                ? 'The current password is incorrect or the new passwords do not match.'
+                : status === 401
+                    ? 'The current password is incorrect or the password change was not accepted.'
+                    : 'Unable to change password. Please try again.');
+            console.error('Change password error:', error);
+            this.loading.set(false);
+            return { error: errorMsg };
+        }
+    }
+
+    /**
      * Refresh access token using refresh token
      */
     async refreshAccessToken(): Promise<string> {
@@ -152,6 +184,7 @@ export class AuthService {
     async signOut() {
         localStorage.removeItem('accessToken');
         localStorage.removeItem('refreshToken');
+        localStorage.removeItem('clientId');
         localStorage.removeItem('user');
         this.session.set(null);
         this.user.set(null);
