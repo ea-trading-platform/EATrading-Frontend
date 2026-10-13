@@ -20,6 +20,7 @@ export const authInterceptor: HttpInterceptorFn = (request, next) => {
 
     const isMarketEndpoint = request.url.includes('/api/v1/market');
     const isAuthEndpoint = request.url.includes('/api/v1/auth/');
+    const isChangePasswordEndpoint = request.url.includes('/api/v1/auth/change-password');
     const isRefreshAttempt = request.headers.get('x-refresh-attempt') === '1';
 
     let updatedRequest = request;
@@ -33,7 +34,7 @@ export const authInterceptor: HttpInterceptorFn = (request, next) => {
                 },
             });
         }
-    } else {
+    } else if (!isChangePasswordEndpoint) {
         // Other endpoints (Spring Security) use JWT Bearer token
         const token = authService.getAccessToken();
 
