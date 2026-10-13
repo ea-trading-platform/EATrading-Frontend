@@ -7,33 +7,30 @@
             <!-- Main content: welcome, graph, tables -->
             <div class="col-lg-8 col-md-12">
 
-                <!-- @if (loadingAccount()) {
-                <p class="loading-text">Loading account...</p>
-                } @else if (account(); as acc) { -->
-
                 <section class="welcome-card">
                     <div class="greeting">
                         <p class="stat-label">Welcome back,</p>
-                        <h1> LongName1234 </h1>
-                        <!-- {{ acc.name ?? auth.user()?.email }} -->
+                        <h1>{{ account()?.name ?? auth.user()?.email ?? 'Trader' }}</h1>
                     </div>
 
                     <div class="greeting">
                         <span class="stat-label">Account balance</span>
-                        <span class="stat-value">$1,200,000 USD (^12%)</span>
-                        <!-- {{ acc.totalBalance | number: '1.2-2' }} -->
+                        <span class="stat-value">
+                            ${{ (account()?.totalBalance ?? 0) | number: '1.2-2' }} USD
+                        </span>
                     </div>
 
                     <div class="stat">
-                        <span class="stat-label">Available to Trade</span>
-                        <span class="stat-value">$500 USD</span>
-                        <!-- {{ acc.totalBalance | number: '1.2-2' }} -->
+                        <span class="stat-label">Portfolio value</span>
+                        <span class="stat-value">
+                            ${{ portfolioValue() | number: '1.2-2' }} USD
+                        </span>
                     </div>
                 </section>
 
                 <!-- Balance graph component -->
                 <section class="graph-card">
-                    <app-balance-graph [graphData]="balanceData"></app-balance-graph>
+                    <app-balance-graph [graphData]="balanceData()"></app-balance-graph>
                 </section>
 
                 <div class="nav-with-action">
@@ -53,7 +50,13 @@
 
                 @if (activeTab() === 'portfolio') {
                 <section class="tab-panel">
+                    @if (loadingHoldings()) {
+                    <p class="loading-text">Loading holdings...</p>
+                    } @else if (portfolioHoldings().length > 0) {
                     <app-portfolio-table [rowData]="portfolioHoldings()"></app-portfolio-table>
+                    } @else {
+                    <p class="loading-text">No holdings available.</p>
+                    }
                 </section>
                 } @else if (activeTab() === 'orders') {
                 <section class="tab-panel">
