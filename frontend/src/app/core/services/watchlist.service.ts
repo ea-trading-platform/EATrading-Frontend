@@ -1,14 +1,17 @@
-import { Injectable, inject, signal } from '@angular/core';
-import { StockQuote } from '../models/trading.models';
-import { MarketDataService } from './market-data.service';
+import { Injectable, inject, signal, effect } from '@angular/core';
+import { StockQuote, WatchlistItemResponse } from '../models/trading.models';
+import { ApiService } from './api.service';
+import { AuthService } from './auth.service';
 
 /**
- * Shared service for managing the user's stock watchlist.
- * Provides reactive watchlist state and persistent storage via localStorage.
+ * Service for managing the user's stock watchlist.
+ * Fetches and syncs watchlist with the backend API based on authenticated user.
  */
 @Injectable({ providedIn: 'root' })
 export class WatchlistService {
-    private readonly marketDataService = inject(MarketDataService);
+    private readonly apiService = inject(ApiService);
+    private readonly authService = inject(AuthService);
+    private loadedClientId: string | null = null;
 
     /**
      * Current watchlist of stocks
@@ -31,32 +34,90 @@ export class WatchlistService {
     readonly error = signal<string | null>(null);
 
     constructor() {
-        this.loadWatchlist();
+        // Watch for user changes and reload watchlist when user logs in/out
+        effect(() => {
+            const clientId = this.authService.getClientId();
+            if (clientId) {
+                if (this.loadedClientId === clientId) {
+                    return;
+                }
+                this.loadWatchlistFromServer(clientId);
+            } else {
+                // User logged out, clear watchlist
+                this.watchlist.set([]);
+                this.updateSymbols();
+                this.loadedClientId = null;
+            }
+        });
     }
 
     /**
-     * Add a stock to the watchlist
+     * Add a stock to the user's watchlist
      */
     add(quote: StockQuote): void {
+        const clientId = this.authService.getClientId();
+        if (!clientId) {
+            this.error.set('User not authenticated');
+            return;
+        }
+
         const current = this.watchlist();
         const exists = current.some(s => s.symbol === quote.symbol);
 
         if (!exists) {
+            // Add to UI optimistically
             const updated = [...current, quote];
             this.watchlist.set(updated);
             this.updateSymbols();
-            this.save();
+
+            // Sync with backend
+            this.apiService.addToWatchlist(clientId, quote.symbol).subscribe({
+                next: (item) => {
+                    const serverQuote = this.mapWatchlistItemToQuote(item);
+                    this.watchlist.set(
+                        this.watchlist().map((stock) =>
+                            stock.symbol === serverQuote.symbol ? serverQuote : stock
+                        )
+                    );
+                },
+                error: (err) => {
+                    console.error('Failed to add to watchlist', err);
+                    this.error.set('Failed to add to watchlist');
+                    // Revert
+                    this.watchlist.set(current);
+                    this.updateSymbols();
+                }
+            });
         }
     }
 
     /**
-     * Remove a stock from the watchlist
+     * Remove a stock from the user's watchlist
      */
     remove(symbol: string): void {
-        const updated = this.watchlist().filter(s => s.symbol !== symbol);
+        const clientId = this.authService.getClientId();
+        if (!clientId) {
+            this.error.set('User not authenticated');
+            return;
+        }
+
+        const current = this.watchlist();
+        const updated = current.filter(s => s.symbol !== symbol);
+
+        // Remove from UI optimistically
         this.watchlist.set(updated);
         this.updateSymbols();
-        this.save();
+
+        // Sync with backend
+        this.apiService.removeFromWatchlist(clientId, symbol).subscribe({
+            error: (err) => {
+                console.error('Failed to remove from watchlist', err);
+                this.error.set('Failed to remove from watchlist');
+                // Revert
+                this.watchlist.set(current);
+                this.updateSymbols();
+            }
+        });
     }
 
     /**
@@ -67,61 +128,33 @@ export class WatchlistService {
     }
 
     /**
-     * Load watchlist from localStorage and refresh quotes
+     * Load watchlist from server for the authenticated user
      */
-    private loadWatchlist(): void {
-        this.isLoading.set(true);
-        const saved = localStorage.getItem('ea_watchlist');
+    private loadWatchlistFromServer(clientId: string): void {
+        if (!clientId || clientId.trim().length === 0) {
+            this.error.set('Missing client id for watchlist request');
+            this.watchlist.set([]);
+            this.updateSymbols();
+            this.isLoading.set(false);
+            return;
+        }
 
-        if (saved) {
-            try {
-                const symbols: string[] = JSON.parse(saved);
-                if (symbols.length > 0) {
-                    this.loadSymbols(symbols);
-                } else {
-                    this.isLoading.set(false);
-                }
-            } catch (e) {
-                console.error('Failed to load watchlist', e);
+        this.isLoading.set(true);
+        this.error.set(null);
+
+        this.apiService.getWatchlist(clientId).subscribe({
+            next: (items) => {
+                const quotes = items.map((item) => this.mapWatchlistItemToQuote(item));
+                this.watchlist.set(quotes);
+                this.updateSymbols();
+                this.loadedClientId = clientId;
+                this.isLoading.set(false);
+            },
+            error: (err) => {
+                console.error('Failed to load watchlist', err);
                 this.error.set('Failed to load watchlist');
                 this.isLoading.set(false);
             }
-        } else {
-            this.isLoading.set(false);
-        }
-    }
-
-    /**
-     * Load quotes for multiple symbols
-     */
-    private loadSymbols(symbols: string[]): void {
-        const quotes: StockQuote[] = [];
-        let loaded = 0;
-
-        symbols.forEach(symbol => {
-            this.marketDataService.loadQuote(symbol).subscribe({
-                next: () => {
-                    const quote = this.marketDataService.currentQuote();
-                    if (quote) {
-                        quotes.push(quote);
-                    }
-                    loaded++;
-                    if (loaded === symbols.length) {
-                        this.watchlist.set(quotes);
-                        this.updateSymbols();
-                        this.isLoading.set(false);
-                    }
-                },
-                error: (err) => {
-                    console.error(`Failed to load quote for ${symbol}`, err);
-                    loaded++;
-                    if (loaded === symbols.length) {
-                        this.watchlist.set(quotes);
-                        this.updateSymbols();
-                        this.isLoading.set(false);
-                    }
-                }
-            });
         });
     }
 
@@ -132,11 +165,19 @@ export class WatchlistService {
         this.symbols.set(new Set(this.watchlist().map(s => s.symbol)));
     }
 
-    /**
-     * Save watchlist symbols to localStorage
-     */
-    private save(): void {
-        const symbols = this.watchlist().map(s => s.symbol);
-        localStorage.setItem('ea_watchlist', JSON.stringify(symbols));
+    private mapWatchlistItemToQuote(item: WatchlistItemResponse): StockQuote {
+        return {
+            symbol: item.symbol,
+            price: item.currentPrice,
+            bid: item.currentPrice,
+            ask: item.currentPrice,
+            asOf: item.timestamp,
+            change: item.priceChange,
+            changePercent: item.percentChange,
+            currency: 'USD',
+            marketState: 'REGULAR',
+            previousClose: item.currentPrice - item.priceChange,
+            spreadBps: 0,
+        };
     }
 }

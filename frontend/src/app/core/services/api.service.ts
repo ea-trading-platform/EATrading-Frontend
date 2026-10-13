@@ -16,7 +16,8 @@ import {
     Order,
     OrderRequest,
     OrderResponse,
-    CandleQuery
+    CandleQuery,
+    WatchlistItemResponse
 } from '../models/trading.models';
 
 /**
@@ -52,8 +53,8 @@ export class ApiService {
         return this.http.put<T>(this.buildUrl(path), body, { params: this.buildParams(params) });
     }
 
-    delete<T>(path: string): Observable<T> {
-        return this.http.delete<T>(this.buildUrl(path));
+    delete<T>(path: string, params?: Record<string, string | number | boolean>): Observable<T> {
+        return this.http.delete<T>(this.buildUrl(path), { params: this.buildParams(params) });
     }
 
     /**
@@ -207,6 +208,42 @@ export class ApiService {
      */
     createOrder(request: OrderRequest): Observable<OrderResponse> {
         return this.post<OrderResponse>(`/api/orders/transact`, request);
+    }
+
+    // ========================================================================
+    // WATCHLIST ENDPOINTS
+    // ========================================================================
+
+    /**
+     * Get client's watchlist
+     * GET /api/clients/watchlist?client_id={clientId}
+     */
+    getWatchlist(clientId: string): Observable<WatchlistItemResponse[]> {
+        return this.get<WatchlistItemResponse[]>(`/api/clients/watchlist`, {
+            client_id: clientId,
+        });
+    }
+
+    /**
+     * Add stock to client's watchlist
+     * POST /api/clients/watchlist
+     */
+    addToWatchlist(clientId: string, symbol: string): Observable<WatchlistItemResponse> {
+        return this.post<WatchlistItemResponse>(`/api/clients/watchlist`, {
+            client_id: clientId,
+            symbol: symbol.toUpperCase(),
+        });
+    }
+
+    /**
+     * Remove stock from client's watchlist
+     * DELETE /api/clients/watchlist?client_id={clientId}&symbol={symbol}
+     */
+    removeFromWatchlist(clientId: string, symbol: string): Observable<SuccessResponse> {
+        return this.delete<SuccessResponse>(`/api/clients/watchlist`, {
+            client_id: clientId,
+            symbol: symbol.toUpperCase(),
+        });
     }
 
     private buildUrl(path: string): string {

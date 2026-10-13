@@ -10,7 +10,7 @@ export interface UserProfile {
 export interface AuthUser {
     id: string;
     clientId?: string;
-    email: string;
+    email?: string;
     user_metadata?: {
         name?: string;
         balance?: number;
@@ -40,49 +40,11 @@ export class AuthService {
     readonly user = signal<AuthUser | null>(null);
     readonly profile = signal<UserProfile | null>(null);
     readonly isAdmin = signal(false);
-    readonly loading = signal(false);
+    readonly loading = signal(true);
 
     constructor() {
-        // Initialize with fake token for development if no token exists
-        if (!this.getAccessToken()) {
-            this.initializeFakeAuth();
-        }
         // Try to restore session from localStorage on init
         this.restoreSession();
-    }
-
-    /**
-     * Initialize fake authentication for development
-     * Creates a demo user with JWT token for testing Spring Security
-     */
-    private initializeFakeAuth(): void {
-        const fakeToken = this.generateFakeJWT();
-        const fakeUser: AuthUser = {
-            id: 'fake-user-uuid-12345',
-            clientId: 'fake-client-id',
-            email: 'demo@eatrading.local',
-            user_metadata: {
-                name: 'Demo User',
-                balance: 50000
-            }
-        };
-
-        this.storeTokens(fakeToken, fakeToken);
-        localStorage.setItem('user', JSON.stringify(fakeUser));
-    }
-
-    /**
-     * Generate a fake JWT token for development/testing
-     */
-    private generateFakeJWT(): string {
-        const header = btoa(JSON.stringify({ alg: 'HS256', typ: 'JWT' }));
-        const payload = btoa(JSON.stringify({
-            sub: 'fake-user-uuid-12345',
-            email: 'demo@eatrading.local',
-            iat: Math.floor(Date.now() / 1000),
-            exp: Math.floor(Date.now() / 1000) + 86400 // 24 hours
-        }));
-        return `${header}.${payload}.fakesignature`;
     }
 
     /**
@@ -199,7 +161,34 @@ export class AuthService {
      */
     getCurrentUser(): AuthUser | null {
         const userStr = localStorage.getItem('user');
-        return userStr ? JSON.parse(userStr) : null;
+        if (!userStr) {
+            return null;
+        }
+
+        try {
+            return JSON.parse(userStr) as AuthUser;
+        } catch {
+            return null;
+        }
+    }
+
+    /**
+     * Resolve clientId from the in-memory session or persisted user.
+     */
+    getClientId(): string | null {
+        const runtimeUser = this.user();
+        if (runtimeUser?.clientId) {
+            return runtimeUser.clientId;
+        }
+        if (runtimeUser?.id) {
+            return runtimeUser.id;
+        }
+
+        const persistedUser = this.getCurrentUser();
+        if (persistedUser?.clientId) {
+            return persistedUser.clientId;
+        }
+        return persistedUser?.id ?? null;
     }
 
     /**
@@ -214,19 +203,35 @@ export class AuthService {
      */
     private restoreSession(): void {
         const token = this.getAccessToken();
-        const userStr = localStorage.getItem('user');
+        const parsedUser = this.getCurrentUser();
 
-        if (token && userStr) {
-            try {
-                const user = JSON.parse(userStr);
-                const session: { user: AuthUser } = { user };
-                this.session.set(session);
-                this.user.set(user);
-                this.profile.set(this.buildProfile(user));
-            } catch (error) {
-                console.error('Failed to restore session:', error);
-                this.signOut();
+        if (!token || !parsedUser) {
+            this.loading.set(false);
+            return;
+        }
+
+        try {
+            const id = parsedUser.id ?? parsedUser.clientId ?? '';
+            if (!id) {
+                throw new Error('Invalid persisted user session: missing id');
             }
+
+            const user: AuthUser = {
+                id,
+                clientId: parsedUser.clientId ?? id,
+                email: parsedUser.email,
+                user_metadata: parsedUser.user_metadata,
+            };
+
+            const session: { user: AuthUser } = { user };
+            this.session.set(session);
+            this.user.set(user);
+            this.profile.set(this.buildProfile(user));
+        } catch (error) {
+            console.error('Failed to restore session:', error);
+            void this.signOut();
+        } finally {
+            this.loading.set(false);
         }
     }
 
