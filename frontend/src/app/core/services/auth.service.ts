@@ -239,17 +239,12 @@ export class AuthService {
         }
 
         try {
-            const restoredUser = userStr ? JSON.parse(userStr) as AuthUser : this.buildUserFromToken(token);
+            const restoredUser = parsedUser;
             const session: { user: AuthUser } = { user: restoredUser };
             this.session.set(session);
             this.user.set(restoredUser);
             this.profile.set(this.buildProfile(restoredUser));
             this.isAdmin.set(this.resolveAdminAccess(restoredUser, token));
-
-            // Ensure a usable user shape exists for subsequent app usage.
-            if (!userStr) {
-                localStorage.setItem('user', JSON.stringify(restoredUser));
-            }
         } catch (error) {
             console.error('Failed to restore session:', error);
             this.signOut();
