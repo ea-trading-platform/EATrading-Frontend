@@ -4,3 +4,37 @@
     width: 100%;
     margin: 0 auto;
 }
+
+.client-tabs {
+    display: flex;
+    gap: 0.5rem;
+    margin: 1.25rem 0 0;
+    overflow-x: auto;
+    border-bottom: 1px solid var(--border-lighter);
+}
+
+.client-tab-button {
+    flex: 0 0 auto;
+    padding: 0.75rem 1rem;
+    background: var(--bg-subtle);
+    border: 1px solid var(--border-lighter);
+    border-bottom: 0;
+    border-radius: 0.4rem 0.4rem 0 0;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-weight: 600;
+}
+
+.client-tab-button:hover,
+.client-tab-button.active {
+    color: var(--text-light);
+}
+
+.client-tab-button.active {
+    background: var(--bg-hover);
+    border-color: var(--accent);
+}
+
+.client-tabs + .dashboard-tabs {
+    margin-top: 1rem;
+}

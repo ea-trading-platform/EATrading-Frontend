@@ -7,11 +7,21 @@
 		<strong>Selected account:</strong> {{ selectedAccount().name }} ({{ selectedAccount().id }})
 	</div>
 
-	<nav class="dashboard-tabs">
-		<button class="tab-button" (click)="setTab('portfolio')"
+	<nav class="client-tabs" aria-label="Clients">
+		@for (client of clients; track client.id) {
+			<button type="button" class="client-tab-button" (click)="setClient(client.id)"
+				[class.active]="selectedAccountId() === client.id">
+				{{ client.name }} ({{ client.id }})
+			</button>
+		}
+	</nav>
+
+	<nav class="dashboard-tabs" aria-label="Client dashboard sections">
+		<button type="button" class="tab-button" (click)="setTab('portfolio')"
 			[class.active]="activeTab() === 'portfolio'">Portfolio</button>
-		<button class="tab-button" (click)="setTab('orders')" [class.active]="activeTab() === 'orders'">Orders</button>
-		<button class="tab-button" (click)="setTab('analytics')"
+		<button type="button" class="tab-button" (click)="setTab('orders')"
+			[class.active]="activeTab() === 'orders'">Orders</button>
+		<button type="button" class="tab-button" (click)="setTab('analytics')"
 			[class.active]="activeTab() === 'analytics'">Analytics</button>
 	</nav>
 

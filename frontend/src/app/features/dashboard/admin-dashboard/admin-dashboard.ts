@@ -9,17 +9,32 @@ import { TopBar } from '../../components/top-bar/top-bar';
 import { PieChartComponent } from '../components/pie-chart/pie-chart';
 import { AuthService } from '../../../core/services/auth.service';
 type AdminDashboardTab = 'portfolio' | 'orders' | 'analytics';
+interface AdminClient {
+    id: string;
+    name: string;
+    email: string;
+}
 
-const MOCK_PORTFOLIO: PortfolioTable[] = [
-    { symbol: 'AAPL', name: 'Apple Inc.', shares: 12, value: 2271.84, allocation: 30, dayChange: 3.42, overallReturn: 0 },
-    { symbol: 'AMZN', name: 'Amazon.com Inc.', shares: 5, value: 891.05, allocation: 15, dayChange: 7.32, overallReturn: 0 },
-    { symbol: 'MSFT', name: 'Microsoft Corp.', shares: 3, value: 1246.8, allocation: 20, dayChange: -1.23, overallReturn: 0 },
-    { symbol: 'NVDA', name: 'NVIDIA Corp.', shares: 8, value: 971.2, allocation: 20, dayChange: 23.4, overallReturn: 0 },
-    { symbol: 'TSLA', name: 'Tesla Inc.', shares: 4, value: 955.6, allocation: 15, dayChange: -2.30, overallReturn: 0 },
+type AdminPortfolioHolding = PortfolioTable & { clientId: string };
+type AdminOrder = OrdersTable & { clientId: string };
+
+const MOCK_CLIENTS: AdminClient[] = [
+    { id: 'client-xxxx', name: 'Alex Morgan', email: 'alex.morgan@example.com' },
+    { id: 'client-yyyy', name: 'Jordan Lee', email: 'jordan.lee@example.com' },
+    { id: 'client-zzzz', name: 'Taylor Smith', email: 'taylor.smith@example.com' },
 ];
 
-const MOCK_ORDERS: OrdersTable[] = [
+const MOCK_PORTFOLIO: AdminPortfolioHolding[] = [
+    { clientId: 'client-xxxx', symbol: 'AAPL', name: 'Apple Inc.', shares: 12, value: 2271.84, allocation: 30, dayChange: 3.42, overallReturn: 0 },
+    { clientId: 'client-xxxx', symbol: 'MSFT', name: 'Microsoft Corp.', shares: 3, value: 1246.8, allocation: 20, dayChange: -1.23, overallReturn: 0 },
+    { clientId: 'client-yyyy', symbol: 'AMZN', name: 'Amazon.com Inc.', shares: 5, value: 891.05, allocation: 15, dayChange: 7.32, overallReturn: 0 },
+    { clientId: 'client-yyyy', symbol: 'NVDA', name: 'NVIDIA Corp.', shares: 8, value: 971.2, allocation: 20, dayChange: 23.4, overallReturn: 0 },
+    { clientId: 'client-zzzz', symbol: 'TSLA', name: 'Tesla Inc.', shares: 4, value: 955.6, allocation: 15, dayChange: -2.30, overallReturn: 0 },
+];
+
+const MOCK_ORDERS: AdminOrder[] = [
     {
+        clientId: 'client-xxxx',
         action: 'BUY',
         symbol: 'AAPL',
         name: 'Apple Inc.',
@@ -30,6 +45,7 @@ const MOCK_ORDERS: OrdersTable[] = [
         status: 'PENDING',
     },
     {
+        clientId: 'client-xxxx',
         action: 'SELL',
         symbol: 'TSLA',
         name: 'Tesla Inc.',
@@ -40,6 +56,7 @@ const MOCK_ORDERS: OrdersTable[] = [
         status: 'PENDING',
     },
     {
+        clientId: 'client-yyyy',
         action: 'BUY',
         symbol: 'AMZN',
         name: 'Amazon.com Inc.',
@@ -50,6 +67,7 @@ const MOCK_ORDERS: OrdersTable[] = [
         status: 'PENDING',
     },
     {
+        clientId: 'client-zzzz',
         action: 'SELL',
         symbol: 'MSFT',
         name: 'Microsoft Corp.',
@@ -79,27 +97,34 @@ export class AdminDashboard {
         private readonly auth = inject(AuthService);
         private readonly router = inject(Router);
 
-        // Simulate a selected account (single mock account for now)
-        protected readonly selectedAccountId = signal('mock-account-id');
+        readonly selectedAccountId = signal(MOCK_CLIENTS[0].id);
 
-        protected readonly selectedAccount = computed(() => ({
-                id: this.selectedAccountId(),
-                name: 'Mock Account',
-                email: 'mock@example.com',
-        }));
+        protected readonly clients = MOCK_CLIENTS;
 
-        protected readonly activeTab = signal<AdminDashboardTab>('portfolio');
-
-        protected readonly portfolioHoldings = computed(() =>
-                [...MOCK_PORTFOLIO].sort((a, b) => a.symbol.localeCompare(b.symbol)),
+        readonly selectedAccount = computed(() =>
+                this.clients.find(client => client.id === this.selectedAccountId()) ?? this.clients[0],
         );
 
-        protected readonly orderHistory = computed(() =>
-                [...MOCK_ORDERS].sort((a, b) => b.transactionDate.getTime() - a.transactionDate.getTime()),
+        readonly activeTab = signal<AdminDashboardTab>('portfolio');
+
+        readonly portfolioHoldings = computed(() =>
+                MOCK_PORTFOLIO
+                        .filter(holding => holding.clientId === this.selectedAccountId())
+                        .sort((a, b) => a.symbol.localeCompare(b.symbol)),
+        );
+
+        readonly orderHistory = computed(() =>
+                MOCK_ORDERS
+                        .filter(order => order.clientId === this.selectedAccountId())
+                        .sort((a, b) => b.transactionDate.getTime() - a.transactionDate.getTime()),
         );
 
         setTab(tab: AdminDashboardTab): void {
                 this.activeTab.set(tab);
+        }
+
+        setClient(clientId: string): void {
+                this.selectedAccountId.set(clientId);
         }
 
         protected readonly analyticsData = computed(() =>
