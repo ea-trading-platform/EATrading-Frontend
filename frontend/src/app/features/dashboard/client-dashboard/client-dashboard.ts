@@ -10,7 +10,7 @@ import { OrdersTable } from '../interfaces/orders-table.interface';
 import { OrdersTableComponent } from '../components/orders-table/orders-table';
 import { BalanceGraphInterface } from '../interfaces/balances-graph.interface';
 import { BalanceGraph } from '../components/balance-graph/balance-graph';
-import { TopBar } from '../../components/top-bar/top-bar';
+import { TopBar, TopBarNavItem } from '../../components/top-bar/top-bar';
 import { StockTicker } from '../components/stock-ticker/stock-ticker';
 import { StockTickerData } from '../interfaces/stock-ticker.interface';
 import { WatchlistComponent } from '../components/watchlist/watchlist';
@@ -128,6 +128,11 @@ export class ClientDashboard implements OnInit {
     protected readonly auth = inject(AuthService);
     private readonly router = inject(Router);
     private readonly api = inject(ApiService);
+
+    protected readonly navItems: readonly TopBarNavItem[] = [
+        { label: 'Dashboard', route: '/dashboard' },
+        { label: 'Transact', route: '/transact' },
+    ];
 
     protected readonly account = signal<Client | null>(null);
     protected readonly loadingAccount = signal(false);
