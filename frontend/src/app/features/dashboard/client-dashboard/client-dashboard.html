@@ -10,37 +10,36 @@
 
         <div class="summary-stat">
             <span class="stat-label">Portfolio value</span>
-            <span class="stat-value">$1,200,000 USD</span>
-            <span class="summary-change change-positive">
-                <span aria-hidden="true">↑</span>
-                <span>12.00%</span>
-                <span class="visually-hidden">increase</span>
+            <span class="stat-value">
+                ${{ portfolioValue() | number: '1.2-2' }} USD
             </span>
+            <span class="summary-change summary-change-placeholder" aria-hidden="true"></span>
         </div>
 
         <div class="summary-stat">
             <span class="stat-label">Available to trade</span>
-            <span class="stat-value">$500 USD</span>
+            <span class="stat-value">
+                ${{ availableToTrade() | number: '1.2-2' }} USD
+            </span>
             <span class="summary-change summary-change-placeholder" aria-hidden="true"></span>
         </div>
 
         <div class="summary-stat">
             <span class="stat-label">Total gain/loss</span>
-            <span class="stat-value change-positive">+$12,000.00</span>
-            <span class="summary-change change-positive">
-                <span aria-hidden="true">↑</span>
-                <span>12.00%</span>
-                <span class="visually-hidden">increase</span>
+            <span class="stat-value" [class.change-positive]="totalGainLoss() >= 0"
+                [class.change-negative]="totalGainLoss() < 0">
+                {{ totalGainLoss() >= 0 ? '+' : '-' }}${{ absoluteValue(totalGainLoss()) | number: '1.2-2' }}
+            </span>
+            <span class="summary-change" [class.change-positive]="totalGainLoss() >= 0"
+                [class.change-negative]="totalGainLoss() < 0">
+                <span>{{ gainLossPercentage() | number: '1.2-2' }}%</span>
             </span>
         </div>
 
         <div class="summary-stat">
             <span class="stat-label">Day change</span>
-            <span class="stat-value change-positive">+$1,245.00</span>
-            <span class="summary-change change-positive">
-                <span aria-hidden="true">↑</span>
-                <span>0.10%</span>
-                <span class="visually-hidden">increase</span>
+            <span class="stat-value">N/A</span>
+            <span class="summary-change summary-change-placeholder" aria-hidden="true">
             </span>
         </div>
     </section>
@@ -50,27 +49,6 @@
 
             <!-- Main content: graph and tables -->
             <div class="col-lg-8 col-md-12">
-
-                <section class="welcome-card">
-                    <div class="greeting">
-                        <p class="stat-label">Welcome back,</p>
-                        <h1>{{ account()?.name ?? auth.user()?.email ?? 'Trader' }}</h1>
-                    </div>
-
-                    <div class="greeting">
-                        <span class="stat-label">Account balance</span>
-                        <span class="stat-value">
-                            ${{ (account()?.totalBalance ?? 0) | number: '1.2-2' }} USD
-                        </span>
-                    </div>
-
-                    <div class="stat">
-                        <span class="stat-label">Portfolio value</span>
-                        <span class="stat-value">
-                            ${{ portfolioValue() | number: '1.2-2' }} USD
-                        </span>
-                    </div>
-                </section>
 
                 <!-- Balance graph component -->
                 <section class="graph-card">

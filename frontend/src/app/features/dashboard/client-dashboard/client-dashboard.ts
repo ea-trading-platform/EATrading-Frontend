@@ -133,6 +133,24 @@ export class ClientDashboard implements OnInit {
     protected readonly portfolioValue = computed(() =>
         this.holdings().reduce((total, holding) => total + (Number(holding.currentValue) || 0), 0),
     );
+    protected readonly availableToTrade = computed(() => {
+        const accountBalance = Number(this.account()?.totalBalance);
+        return Number.isFinite(accountBalance) ? accountBalance : 0;
+    });
+    protected readonly totalGainLoss = computed(() =>
+        this.holdings().reduce((total, holding) => {
+            const currentValue = Number(holding.currentValue) || 0;
+            const costBasis = (Number(holding.quantity) || 0) * (Number(holding.avgBuyPrice) || 0);
+            return total + currentValue - costBasis;
+        }, 0),
+    );
+    protected readonly gainLossPercentage = computed(() => {
+        const costBasis = this.holdings().reduce(
+            (total, holding) => total + (Number(holding.quantity) || 0) * (Number(holding.avgBuyPrice) || 0),
+            0,
+        );
+        return costBasis > 0 ? (this.totalGainLoss() / costBasis) * 100 : 0;
+    });
     protected readonly orderHistory = computed(() =>
         [...this.orders()].sort((a, b) => b.transactionDate.getTime() - a.transactionDate.getTime()),
     );
@@ -145,6 +163,10 @@ export class ClientDashboard implements OnInit {
 
     protected readonly stocksSignal = signal<StockTickerData[]>([]);
     protected readonly loadingTickers = signal(false);
+
+    protected absoluteValue(value: number): number {
+        return Math.abs(value);
+    }
 
     ngOnInit(): void {
         this.fetchAccount();
