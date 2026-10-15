@@ -349,19 +349,13 @@ service.clearError();
 **Service:** `AuthService`  
 **Location:** `src/app/core/services/auth.service.ts`
 
-Currently stubbed with fake data (Supabase removed):
+JWT-backed authentication is provided by the backend:
 
 ```typescript
-// Demo user: fake-user-uuid-12345
-// Email: demo@eatrading.local
-// Name: Demo Trader
-// Balance: $50,000
-// isAdmin: true
-
-// Sign in (stubbed - returns success)
+// Sign in
 auth.signIn(email, password)
 
-// Sign up (stubbed - returns success)
+// Sign up
 auth.signUp(email, password, name)
 
 // Sign out
@@ -408,7 +402,7 @@ export class HeaderComponent {
 ✅ **Type-safe service methods**  
 ✅ **Reactive signals for state management**  
 ✅ **Built-in error handling and loading states**  
-✅ **No authentication required (all endpoints public)**  
+✅ **Protected endpoints use JWT Bearer authentication**  
 ✅ **CORS enabled on backend**  
 
 ### To Use in Components
