@@ -7,22 +7,36 @@
   padding: 8px 0;
 }
 
-.ticker-track {
-  display: flex;
-  gap: 40px;
-  animation: scroll-left 70s linear infinite;
-  padding: 0 20px;
-  min-width: max-content;
+.ticker-window {
+  min-width: 0;
+  overflow: hidden;
+  mask-image: linear-gradient(90deg, transparent, #000 4%, #000 96%, transparent);
 }
 
-@keyframes scroll-left {
-  0% {
-    transform: translateX(0);
-  }
-  100% {
-    transform: translateX(-75%);
+.ticker-track {
+  display: flex;
+  width: max-content;
+  animation: ticker-scroll 42s linear infinite;
+  transform: translate3d(0, 0, 0);
+  will-change: transform;
+}
+
+.ticker-group {
+  display: flex;
+  flex-shrink: 0;
+  gap: 40px;
+  padding: 0 20px;
+}
+
+@keyframes ticker-scroll {
+  to {
+    transform: translate3d(-50%, 0, 0);
   }
 }
+
+/* .ticker-container:hover .ticker-track {
+  animation-play-state: paused;
+} */
 
 .ticker-item {
   display: flex;

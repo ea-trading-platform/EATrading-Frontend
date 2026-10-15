@@ -1,15 +1,21 @@
 <div class="ticker-container">
-  <div class="ticker-track">
-    @for (stock of displayStocks(); track stock.symbol + '-' + stock._index) {
-      <div class="ticker-item">
-        <span class="ticker-symbol">{{ stock.symbol }}</span>
-        <span class="ticker-chart">
-          <app-sparkline [data]="stock.priceHistory" [width]="50" [height]="20"></app-sparkline>
-        </span>
-        <span class="ticker-change" [class.positive]="isPositiveFromOpen(stock)" [class.negative]="!isPositiveFromOpen(stock)">
-          {{ isPositiveFromOpen(stock) ? '+' : '' }}{{ getOpenToCurrentPercent(stock).toFixed(2) }}%
-        </span>
-      </div>
-    }
+  <div class="ticker-window">
+    <div class="ticker-track">
+      @for (group of [0, 1]; track group) {
+        <div class="ticker-group">
+          @for (stock of displayStocks(); track stock.symbol) {
+            <div class="ticker-item">
+              <span class="ticker-symbol">{{ stock.symbol }}</span>
+              <span class="ticker-chart">
+                <app-sparkline [data]="stock.priceHistory" [width]="50" [height]="20"></app-sparkline>
+              </span>
+              <span class="ticker-change" [class.positive]="isPositiveFromOpen(stock)" [class.negative]="!isPositiveFromOpen(stock)">
+                {{ isPositiveFromOpen(stock) ? '+' : '' }}{{ getOpenToCurrentPercent(stock).toFixed(2) }}%
+              </span>
+            </div>
+          }
+        </div>
+      }
+    </div>
   </div>
 </div>
