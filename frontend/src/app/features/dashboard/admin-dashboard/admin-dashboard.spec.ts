@@ -52,4 +52,13 @@ describe('AdminDashboard', () => {
 
     expect(component.orderHistory().map(order => order.symbol)).toEqual(['TSLA', 'AAPL']);
   });
+
+  it('adds a searched client to the tabs and selects it', () => {
+    component.searchQuery.set('client-yyyy');
+    component.searchClient();
+
+    expect(component.selectedAccountId()).toBe('client-yyyy');
+    expect(component.selectedAccount().email).toBe('jordan.lee@example.com');
+    expect(component.clients().map(client => client.id)).toEqual(['client-xxxx', 'client-yyyy']);
+  });
 });

@@ -1,5 +1,6 @@
 import { Component, signal, computed, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { PortfolioTableComponent } from '../components/portfolio-table/portfolio-table';
 import { PortfolioTable } from '../interfaces/portfolio-table.interface';
@@ -83,6 +84,7 @@ const MOCK_ORDERS: AdminOrder[] = [
 @Component({
     imports: [
         CommonModule,
+        FormsModule,
         PortfolioTableComponent,
         OrdersTableComponent,
         PieChartComponent,
@@ -98,11 +100,15 @@ export class AdminDashboard {
         private readonly router = inject(Router);
 
         readonly selectedAccountId = signal(MOCK_CLIENTS[0].id);
+        readonly searchQuery = signal('');
+        private readonly clientTabIds = signal<string[]>([MOCK_CLIENTS[0].id]);
 
-        protected readonly clients = MOCK_CLIENTS;
+        readonly clients = computed(() =>
+                MOCK_CLIENTS.filter(client => this.clientTabIds().includes(client.id)),
+        );
 
         readonly selectedAccount = computed(() =>
-                this.clients.find(client => client.id === this.selectedAccountId()) ?? this.clients[0],
+                MOCK_CLIENTS.find(client => client.id === this.selectedAccountId()) ?? MOCK_CLIENTS[0],
         );
 
         readonly activeTab = signal<AdminDashboardTab>('portfolio');
@@ -125,6 +131,27 @@ export class AdminDashboard {
 
         setClient(clientId: string): void {
                 this.selectedAccountId.set(clientId);
+        }
+
+        searchClient(): void {
+                const query = this.searchQuery().trim().toLowerCase();
+                if (!query) {
+                        return;
+                }
+
+                const client = MOCK_CLIENTS.find(candidate =>
+                        [candidate.id, candidate.name, candidate.email]
+                                .some(value => value.toLowerCase().includes(query)),
+                );
+
+                if (!client) {
+                        return;
+                }
+
+                this.clientTabIds.update(clientIds =>
+                        clientIds.includes(client.id) ? clientIds : [...clientIds, client.id],
+                );
+                this.selectedAccountId.set(client.id);
         }
 
         protected readonly analyticsData = computed(() =>
