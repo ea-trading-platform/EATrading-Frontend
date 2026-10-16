@@ -184,6 +184,22 @@ export interface OrderResponse {
 }
 
 // ============================================================================
+// WATCHLIST MODELS
+// ============================================================================
+
+/**
+ * Watchlist item response returned by backend endpoints.
+ */
+export interface WatchlistItemResponse {
+    symbol: string;
+    name: string;
+    currentPrice: number;
+    priceChange: number;
+    percentChange: number;
+    timestamp: string;
+}
+
+// ============================================================================
 // ERROR MODELS
 // ============================================================================
 

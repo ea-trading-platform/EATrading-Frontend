@@ -163,6 +163,11 @@ h1 {
     border-color: #6fd6a8;
 }
 
+.field-error {
+    color: #f73a3a;
+    font-size: 0.85rem;
+}
+
 .error {
     color: #ff8a8a;
     font-size: 0.85rem;
@@ -251,4 +256,13 @@ h1 {
 .user-id {
     font-size: 0.85rem;
     color: #7a8299;
+}
+
+.field.invalid input {
+    border-color: #f73a3a;
+}
+
+.field-error {
+    color: #f73a3a;
+    font-size: 0.78rem;
 }

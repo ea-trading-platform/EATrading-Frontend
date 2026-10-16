@@ -19,43 +19,151 @@
         <div class="auth-panel" (click)="$event.stopPropagation()">
             <button type="button" class="close-btn" (click)="closePanel()" aria-label="Close">×</button>
 
-            <h2>{{ mode() === 'signup' ? 'Create your account' : 'Welcome back' }}</h2>
+            <h2>{{ mode() === 'signup' ? 'Create your account' : mode() === 'change-password' ? 'Change your password' :
+                'Welcome back' }}</h2>
 
-            <form (ngSubmit)="submit()">
+            <form #authForm="ngForm" (ngSubmit)="submit(authForm)" novalidate>
                 @if (mode() === 'signup') {
-                <label class="field">
+                <label class="field" [class.invalid]="nameField.invalid && (nameField.touched || authForm.submitted)">
                     <span>Name</span>
-                    <input type="text" name="name" [ngModel]="name()" (ngModelChange)="name.set($event)" required
-                        autocomplete="name" />
+                    <input #nameField="ngModel" type="text" name="name" [ngModel]="name()"
+                        (ngModelChange)="name.set($event)" required minlength="2" maxlength="100" autocomplete="name" />
+                    @if (nameField.invalid && (nameField.touched || authForm.submitted)) {
+                    <span class="field-error">
+                        @if (nameField.errors?.['required']) { Name is required }
+                        @else if (nameField.errors?.['minlength'] || nameField.errors?.['maxlength']) { Name must be
+                        between 2 and 100 characters }
+                    </span>
+                    }
                 </label>
                 }
 
-                <label class="field">
+                @if (mode() === 'change-password') {
+                <label class="field" [class.invalid]="emailField.invalid && (emailField.touched || authForm.submitted)">
                     <span>Email</span>
-                    <input type="email" name="email" [ngModel]="email()" (ngModelChange)="email.set($event)" required
-                        autocomplete="email" />
+                    <input #emailField="ngModel" type="email" name="email" [ngModel]="email()"
+                        (ngModelChange)="email.set($event)" required autocomplete="email" />
+                    @if (emailField.invalid && (emailField.touched || authForm.submitted)) {
+                    <span class="field-error">
+                        @if (emailField.errors?.['required']) { Email is required }
+                        @else if (emailField.errors?.['email']) { Email should be valid }
+                    </span>
+                    }
+                </label>
+                }
+
+                @if (mode() !== 'change-password') {
+                <label class="field" [class.invalid]="emailField.invalid && (emailField.touched || authForm.submitted)">
+                    <span>Email</span>
+                    <input #emailField="ngModel" type="email" name="email" [ngModel]="email()"
+                        (ngModelChange)="email.set($event)" required autocomplete="email" />
+                    @if (emailField.invalid && (emailField.touched || authForm.submitted)) {
+                    <span class="field-error">
+                        @if (emailField.errors?.['required']) { Email is required }
+                        @else if (emailField.errors?.['email']) { Email should be valid }
+                    </span>
+                    }
+                </label>
+                }
+
+                @if (mode() !== 'change-password') {
+                <label class="field"
+                    [class.invalid]="passwordField.invalid && (passwordField.touched || authForm.submitted)">
+                    <span>Password</span>
+                    <input #passwordField="ngModel" type="password" name="password" [ngModel]="password()"
+                        (ngModelChange)="password.set($event)" required minlength="8" maxlength="128"
+                        autocomplete="current-password" />
+                    @if (passwordField.invalid && (passwordField.touched || authForm.submitted)) {
+                    <span class="field-error">
+                        @if (passwordField.errors?.['required']) { Password is required }
+                        @else if (passwordField.errors?.['minlength'] || passwordField.errors?.['maxlength']) { Password
+                        must be between 8 and 128 characters }
+                    </span>
+                    }
+                </label>
+                }
+
+                @if (mode() === 'change-password') {
+                <label class="field"
+                    [class.invalid]="passwordField.invalid && (passwordField.touched || authForm.submitted)">
+                    <span>Current password</span>
+                    <input #passwordField="ngModel" type="password" name="password" [ngModel]="password()"
+                        (ngModelChange)="password.set($event)" required autocomplete="current-password" />
+                    @if (passwordField.invalid && (passwordField.touched || authForm.submitted)) {
+                    <span class="field-error">Current password is required</span>
+                    }
                 </label>
 
-                <label class="field">
-                    <span>Password</span>
-                    <input type="password" name="password" [ngModel]="password()" (ngModelChange)="password.set($event)"
-                        required minlength="6" autocomplete="current-password" />
+                <label class="field"
+                    [class.invalid]="newPasswordField.invalid && (newPasswordField.touched || authForm.submitted)">
+                    <span>New password</span>
+                    <input #newPasswordField="ngModel" type="password" name="newPassword" [ngModel]="newPassword()"
+                        (ngModelChange)="newPassword.set($event)" required minlength="8" maxlength="128"
+                        autocomplete="new-password" />
+                    @if (newPasswordField.invalid && (newPasswordField.touched || authForm.submitted)) {
+                    <span class="field-error">
+                        @if (newPasswordField.errors?.['required']) { New password is required }
+                        @else { Password must be between 8 and 128 characters }
+                    </span>
+                    } @else if (authForm.submitted && newPassword() === password()) {
+                    <span class="field-error">New password must be different from the current password</span>
+                    }
                 </label>
+
+                <label class="field"
+                    [class.invalid]="confirmNewPasswordField.invalid && (confirmNewPasswordField.touched || authForm.submitted) || (authForm.submitted && newPassword() !== confirmNewPassword())">
+                    <span>Confirm new password</span>
+                    <input #confirmNewPasswordField="ngModel" type="password" name="confirmNewPassword"
+                        [ngModel]="confirmNewPassword()" (ngModelChange)="confirmNewPassword.set($event)" required
+                        autocomplete="new-password" />
+                    @if (confirmNewPasswordField.invalid && (confirmNewPasswordField.touched || authForm.submitted)) {
+                    <span class="field-error">
+                        @if (confirmNewPasswordField.errors?.['required']) { Password confirmation is required }
+                        @else if (newPassword() !== confirmNewPassword()) { Passwords must match }
+                    </span>
+                    } @else if (authForm.submitted && newPassword() !== confirmNewPassword()) {
+                    <span class="field-error">Passwords must match</span>
+                    }
+                </label>
+                }
+
+                @if (mode() === 'signup') {
+                <label class="field"
+                    [class.invalid]="confirmPasswordField.invalid && (confirmPasswordField.touched || authForm.submitted) || (authForm.submitted && password() !== confirmPassword())">
+                    <span>Password confirmation</span>
+                    <input #confirmPasswordField="ngModel" type="password" name="confirmPassword"
+                        [ngModel]="confirmPassword()" (ngModelChange)="confirmPassword.set($event)" required
+                        autocomplete="new-password" />
+                    @if (confirmPasswordField.invalid && (confirmPasswordField.touched || authForm.submitted)) {
+                    <span class="field-error">
+                        @if (confirmPasswordField.errors?.['required']) { Password confirmation is required }
+                        @else if (password() !== confirmPassword()) { Passwords must match }
+                    </span>
+                    } @else if (authForm.submitted && password() !== confirmPassword()) {
+                    <span class="field-error">Passwords must match</span>
+                    }
+                </label>
+                }
 
                 @if (error()) {
                 <p class="error">{{ error() }}</p>
                 }
 
                 <button type="submit" class="btn btn-primary btn-block" [disabled]="submitting()">
-                    {{ submitting() ? 'Please wait…' : mode() === 'signup' ? 'Sign up' : 'Log in' }}
+                    {{ submitting() ? 'Please wait…' : mode() === 'signup' ? 'Sign up' : mode() === 'change-password' ?
+                    'Change password' : 'Log in' }}
                 </button>
             </form>
 
             <p class="switch-mode">
                 @if (mode() === 'signup') {
                 Already have an account? <a href="javascript:void(0)" (click)="openLogin()">Log in</a>
+                } @else if (mode() === 'change-password') {
+                Back to login? <a href="javascript:void(0)" (click)="openLogin()">Log in</a>
                 } @else {
                 New here? <a href="javascript:void(0)" (click)="openSignup()">Sign up</a>
+                <br />
+                <a href="javascript:void(0)" (click)="openChangePassword()">Change password</a>
                 }
             </p>
         </div>
