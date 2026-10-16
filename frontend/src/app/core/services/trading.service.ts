@@ -1,5 +1,5 @@
 import { Injectable, inject, signal } from '@angular/core';
-import { Observable, catchError, tap } from 'rxjs';
+import { Observable, catchError, map, tap } from 'rxjs';
 import { ApiService } from './api.service';
 import {
     Client,
@@ -7,7 +7,8 @@ import {
     Holding,
     Order,
     OrderRequest,
-    OrderResponse
+    OrderResponse,
+    OrderStatus,
 } from '../models/trading.models';
 
 /**
@@ -174,6 +175,7 @@ export class TradingService {
         this.error.set(null);
 
         return this.apiService.getOrders(clientId).pipe(
+            map((orders) => orders.map((order) => this.normalizeOrder(order))),
             tap((orders) => {
                 this.orders.set(orders);
                 this.isLoading.set(false);
@@ -190,7 +192,7 @@ export class TradingService {
      * Fetch orders without caching
      */
     getOrders(clientId: string): Observable<Order[]> {
-        return this.apiService.getOrders(clientId);
+        return this.apiService.getOrders(clientId).pipe(map((orders) => orders.map((order) => this.normalizeOrder(order))));
     }
 
     /**
@@ -214,6 +216,28 @@ export class TradingService {
                 throw err;
             })
         );
+    }
+
+    private normalizeOrder(order: Order): Order {
+        const raw = order as Order & {
+            orderId?: string;
+            trackingId?: string;
+            buy?: boolean;
+            orderDate?: string;
+            currentStatus?: OrderStatus;
+            asset?: { symbol?: string; name?: string };
+        };
+
+        return {
+            ...order,
+            id: raw.id ?? raw.orderId ?? raw.trackingId ?? '',
+            trackingId: raw.trackingId,
+            symbol: raw.asset?.symbol ?? raw.symbol,
+            name: raw.asset?.name ?? raw.name,
+            orderType: raw.buy === undefined ? raw.orderType : raw.buy ? 'BUY' : 'SELL',
+            status: raw.currentStatus ?? raw.status,
+            executedAt: raw.executedAt ?? raw.orderDate,
+        };
     }
 
     /**

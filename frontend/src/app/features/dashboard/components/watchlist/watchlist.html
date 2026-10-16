@@ -35,7 +35,8 @@
     @if (watchlist().length > 0) {
     <div class="watchlist-items">
         @for (stock of watchlist(); track stock.symbol) {
-        <div class="watchlist-item">
+        <div class="watchlist-item" role="button" tabindex="0" (click)="selectSymbol(stock.symbol)"
+            (keydown.enter)="selectSymbol(stock.symbol)" (keydown.space)="selectSymbol(stock.symbol)">
             <div class="stock-info">
                 <div class="stock-symbol">{{ stock.symbol }}</div>
                 <div class="stock-details">
