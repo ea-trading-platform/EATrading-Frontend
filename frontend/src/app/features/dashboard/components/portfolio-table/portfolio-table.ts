@@ -1,5 +1,5 @@
 import { Component, input } from '@angular/core';
-import { ColDef } from 'ag-grid-community';
+import { ColDef, GridOptions } from 'ag-grid-community';
 import { DataGrid } from '../data-grid/data-grid';
 import { PortfolioTable } from '../../interfaces/portfolio-table.interface';
 
@@ -12,6 +12,10 @@ import { PortfolioTable } from '../../interfaces/portfolio-table.interface';
 })
 export class PortfolioTableComponent {
   rowData = input<PortfolioTable[] | null>(null);
+  gridOptions: GridOptions<PortfolioTable> = {
+    domLayout: 'autoHeight',
+    overlayNoRowsTemplate: 'No positions available.',
+  };
 
   columnDefs: ColDef<PortfolioTable>[] = [
     { field: 'symbol', headerName: 'Symbol', width: 100 },

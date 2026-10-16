@@ -1,4 +1,4 @@
-import { Component, computed, input } from '@angular/core';
+import { Component, computed, input, output, signal } from '@angular/core';
 import { AgCharts } from "ag-charts-angular";
 import {
   AgChartOptions,
@@ -29,7 +29,43 @@ ModuleRegistry.registerModules([
   templateUrl: './balance-graph.html',
 })
 export class BalanceGraph {
+  readonly startTrading = output<void>();
+  readonly ranges = ['1D', '1W', '1M', '3M', '1Y', 'ALL'] as const;
+  readonly selectedRange = signal<(typeof this.ranges)[number]>('ALL');
   graphData = input<BalanceGraphInterface[]>([]);
+  readonly hasGraphData = computed(() => this.graphData().length > 0);
+  readonly filteredGraphData = computed(() => {
+    const data = this.graphData();
+    const range = this.selectedRange();
+
+    if (range === 'ALL' || data.length === 0) {
+      return data;
+    }
+
+    const days = { '1D': 1, '1W': 7, '1M': 30, '3M': 90, '1Y': 365 }[range];
+    const cutoff = Date.now() - days * 24 * 60 * 60 * 1000;
+    return data.filter((point) => new Date(point.date).getTime() >= cutoff);
+  });
+  readonly isEmpty = computed(() => this.filteredGraphData().length === 0);
+  readonly placeholderPoints = [
+    { label: 'Mon', x: 8, y: 68 },
+    { label: 'Tue', x: 25, y: 53 },
+    { label: 'Wed', x: 42, y: 60 },
+    { label: 'Thu', x: 59, y: 35 },
+    { label: 'Fri', x: 76, y: 44 },
+    { label: 'Today', x: 94, y: 20 },
+  ];
+
+  selectRange(range: (typeof this.ranges)[number]): void {
+    this.selectedRange.set(range);
+  }
+
+  selectRangeFromEvent(event: Event): void {
+    const value = (event.target as HTMLSelectElement).value;
+    if (this.ranges.includes(value as (typeof this.ranges)[number])) {
+      this.selectRange(value as (typeof this.ranges)[number]);
+    }
+  }
 
   options = computed((): AgCartesianChartOptions => ({
     background: {
@@ -41,16 +77,10 @@ export class BalanceGraph {
       bottom: 0,
       left: 0,
     },
-    title: {
-      text: "Total Account Balance",
-      fontSize: 16,
-      fontWeight: 'bold',
-      color: 'rgba(255, 255, 255, 0.9)',
-    },
     series: [
       {
         type: "line",
-        data: this.graphData(),
+        data: this.filteredGraphData(),
         xKey: "date",
         yKey: "balance",
         yName: "Account Balance",

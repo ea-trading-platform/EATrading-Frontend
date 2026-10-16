@@ -180,6 +180,10 @@ export class ClientDashboard implements OnInit {
         this.activeTab.set(tab);
     }
 
+    startTrading(): void {
+        this.router.navigateByUrl('/transact');
+    }
+
     private fetchAccount(): void {
         const clientId = this.auth.getClientId();
         if (!clientId) {
