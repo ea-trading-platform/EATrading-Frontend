@@ -9,7 +9,7 @@ import { OrdersTable } from '../interfaces/orders-table.interface';
 import { TopBar } from '../../components/top-bar/top-bar';
 import { PieChartComponent } from '../components/pie-chart/pie-chart';
 import { AuthService } from '../../../core/services/auth.service';
-type AdminDashboardTab = 'portfolio' | 'orders' | 'analytics';
+type AdminDashboardTab = 'portfolio' | 'orders';
 interface AdminClient {
     id: string;
     name: string;
@@ -99,6 +99,10 @@ export class AdminDashboard {
         private readonly auth = inject(AuthService);
         private readonly router = inject(Router);
 
+        readonly adminName = computed(() =>
+                this.auth.profile()?.name ?? this.auth.user()?.email ?? 'Admin',
+        );
+
         readonly selectedAccountId = signal(MOCK_CLIENTS[0].id);
         readonly searchQuery = signal('');
         private readonly clientTabIds = signal<string[]>([MOCK_CLIENTS[0].id]);
@@ -155,7 +159,7 @@ export class AdminDashboard {
         }
 
         protected readonly analyticsData = computed(() =>
-            this.portfolioHoldings().map(h => ({ label: h.symbol, value: h.value })),
+            this.portfolioHoldings().map(h => ({ label: h.symbol, value: h.allocation })),
         );
 
         logout(): void {

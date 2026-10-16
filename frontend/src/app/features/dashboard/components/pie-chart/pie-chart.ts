@@ -13,9 +13,8 @@ ModuleRegistry.registerModules([LegendModule, PieSeriesModule]);
 export class PieChartComponent {
   public chartOptions: AgChartOptions = {
     title: {
-      text: 'Pie Chart Example',
-      fontSize: 18,
-      color: 'white',
+      text: 'Allocation %',
+      color: '#f4f6fb',
     },
     series: [
       ({
@@ -31,7 +30,7 @@ export class PieChartComponent {
     legend: {
       item: {
         label: {
-          color: 'white',
+          color: '#abb3bf',
         },
       }
     }
