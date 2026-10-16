@@ -2,7 +2,5 @@
 export const environment = {
     production: false,
     apiBaseUrl: '',
-    supabaseUrl: 'https://YOUR_PROJECT.supabase.co',
-    supabaseAnonKey: 'YOUR_SUPABASE_ANON_KEY',
-    marketauxApiKey: 'YOUR_MARKET_AUX_API_KEY
+    marketauxApiKey: 'YOUR_MARKETAUX_API_KEY',
 };

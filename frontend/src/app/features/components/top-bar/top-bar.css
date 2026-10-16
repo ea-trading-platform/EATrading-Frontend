@@ -13,6 +13,40 @@
 .navbar-left {
     display: flex;
     align-items: center;
+    gap: 2rem;
+}
+
+.navbar-links {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+}
+
+.navbar-links a {
+    position: relative;
+    color: var(--text-muted);
+    font-size: 0.95rem;
+    font-weight: 600;
+    text-decoration: none;
+    transition: color 0.2s ease;
+    padding: 0.75rem 0;
+}
+
+.navbar-links a:hover,
+.navbar-links a.active {
+    color: var(--text-light);
+}
+
+.navbar-links a.active::after {
+    content: '';
+    position: absolute;
+    right: 0;
+    bottom: -0.25rem;
+    left: 0;
+    height: 3px;
+    border-radius: 3px 3px 0 0;
+    background-color: var(--accent);
+    box-shadow: 0 0 8px var(--accent);
 }
 
 .navbar-right {
@@ -54,4 +88,23 @@
 
 .sign-out-btn:hover {
     color: var(--accent);
+}
+
+@media (max-width: 600px) {
+    .navbar-left {
+        gap: 1rem;
+    }
+
+    .navbar-links {
+        gap: 0.75rem;
+    }
+
+    .navbar-brand {
+        font-size: 1rem;
+    }
+
+    .navbar-brand img {
+        width: 40px;
+        height: 40px;
+    }
 }

@@ -1,8 +1,10 @@
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { DecimalPipe } from '@angular/common';
 import { Router } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
 import { ApiService } from '../../../core/services/api.service';
-import { Client } from '../../../core/models/trading.models';
+import { TradingService } from '../../../core/services/trading.service';
+import { Client, Holding } from '../../../core/models/trading.models';
 import { StockSearch } from './components/stock-search/stock-search';
 import { PortfolioTableComponent } from '../components/portfolio-table/portfolio-table';
 import { PortfolioTable } from '../interfaces/portfolio-table.interface';
@@ -10,7 +12,7 @@ import { OrdersTable } from '../interfaces/orders-table.interface';
 import { OrdersTableComponent } from '../components/orders-table/orders-table';
 import { BalanceGraphInterface } from '../interfaces/balances-graph.interface';
 import { BalanceGraph } from '../components/balance-graph/balance-graph';
-import { TopBar } from '../../components/top-bar/top-bar';
+import { TopBar, TopBarNavItem } from '../../components/top-bar/top-bar';
 import { StockTicker } from '../components/stock-ticker/stock-ticker';
 import { StockTickerData } from '../interfaces/stock-ticker.interface';
 import { WatchlistComponent } from '../components/watchlist/watchlist';
@@ -42,27 +44,6 @@ const MOCK_TICKER: StockTickerData[] = [
         percentChange: 2.5,
         priceHistory: [150, 152, 151, 153, 155, 154, 156, 158]
     },
-];
-
-const MOCK_BALANCES: BalanceGraphInterface[] = [
-    { date: '2024-01-01', balance: 50000 },
-    { date: '2024-01-02', balance: 51200 },
-    { date: '2024-01-03', balance: 50800 },
-    { date: '2024-01-04', balance: 52500 },
-    { date: '2024-01-05', balance: 53100 },
-    { date: '2024-01-08', balance: 52900 },
-    { date: '2024-01-09', balance: 54300 },
-    { date: '2024-01-10', balance: 55600 },
-    { date: '2024-01-11', balance: 56200 },
-    { date: '2024-01-12', balance: 57100 },
-];
-
-const MOCK_PORTFOLIO: PortfolioTable[] = [
-    { symbol: 'AAPL', name: 'Apple Inc.', shares: 12, value: 2271.84, allocation: 30, dayChange: 3.42, overallReturn: 0 },
-    { symbol: 'AMZN', name: 'Amazon.com Inc.', shares: 5, value: 891.05, allocation: 15, dayChange: 7.32, overallReturn: 0 },
-    { symbol: 'MSFT', name: 'Microsoft Corp.', shares: 3, value: 1246.8, allocation: 20, dayChange: -1.23, overallReturn: 0 },
-    { symbol: 'NVDA', name: 'NVIDIA Corp.', shares: 8, value: 971.2, allocation: 20, dayChange: 23.4, overallReturn: 0 },
-    { symbol: 'TSLA', name: 'Tesla Inc.', shares: 4, value: 955.6, allocation: 15, dayChange: -2.30, overallReturn: 0 },
 ];
 
 const MOCK_ORDERS: OrdersTable[] = [
@@ -110,6 +91,7 @@ const MOCK_ORDERS: OrdersTable[] = [
 
 @Component({
     imports: [
+        DecimalPipe,
         StockSearch,
         PortfolioTableComponent,
         OrdersTableComponent,
@@ -128,26 +110,67 @@ export class ClientDashboard implements OnInit {
     protected readonly auth = inject(AuthService);
     private readonly router = inject(Router);
     private readonly api = inject(ApiService);
+    private readonly trading = inject(TradingService);
+
+    protected readonly navItems: readonly TopBarNavItem[] = [
+        { label: 'Dashboard', route: '/dashboard' },
+        { label: 'Transact', route: '/transact' },
+    ];
 
     protected readonly account = signal<Client | null>(null);
     protected readonly loadingAccount = signal(false);
+    protected readonly holdings = signal<Holding[]>([]);
+    protected readonly loadingHoldings = signal(false);
     protected readonly orders = signal<OrdersTable[]>(MOCK_ORDERS);
     protected readonly loadingOrders = signal(false);
 
     protected readonly activeTab = signal<ClientDashboardTab>('portfolio');
     protected readonly portfolioHoldings = computed(() =>
-        [...MOCK_PORTFOLIO].sort((a, b) => a.symbol.localeCompare(b.symbol)),
+        this.holdings()
+            .map((holding) => this.toPortfolioRow(holding))
+            .sort((a, b) => a.symbol.localeCompare(b.symbol)),
     );
+    protected readonly portfolioValue = computed(() =>
+        this.holdings().reduce((total, holding) => total + (Number(holding.currentValue) || 0), 0),
+    );
+    protected readonly availableToTrade = computed(() => {
+        const accountBalance = Number(this.account()?.totalBalance);
+        return Number.isFinite(accountBalance) ? accountBalance : 0;
+    });
+    protected readonly totalGainLoss = computed(() =>
+        this.holdings().reduce((total, holding) => {
+            const currentValue = Number(holding.currentValue) || 0;
+            const costBasis = (Number(holding.quantity) || 0) * (Number(holding.avgBuyPrice) || 0);
+            return total + currentValue - costBasis;
+        }, 0),
+    );
+    protected readonly gainLossPercentage = computed(() => {
+        const costBasis = this.holdings().reduce(
+            (total, holding) => total + (Number(holding.quantity) || 0) * (Number(holding.avgBuyPrice) || 0),
+            0,
+        );
+        return costBasis > 0 ? (this.totalGainLoss() / costBasis) * 100 : 0;
+    });
     protected readonly orderHistory = computed(() =>
         [...this.orders()].sort((a, b) => b.transactionDate.getTime() - a.transactionDate.getTime()),
     );
-    protected readonly balanceData = [...MOCK_BALANCES];
+    protected readonly balanceData = computed<BalanceGraphInterface[]>(() => {
+        const balance = Number(this.account()?.totalBalance);
+        return Number.isFinite(balance)
+            ? [{ date: new Date().toISOString(), balance }]
+            : [];
+    });
 
     protected readonly stocksSignal = signal<StockTickerData[]>([]);
     protected readonly loadingTickers = signal(false);
 
+    protected absoluteValue(value: number): number {
+        return Math.abs(value);
+    }
+
     ngOnInit(): void {
         this.fetchAccount();
+        this.fetchHoldings();
         this.fetchOrders();
         this.fetchTickerData();
     }
@@ -157,13 +180,13 @@ export class ClientDashboard implements OnInit {
     }
 
     private fetchAccount(): void {
-        const clientId = this.auth.user()?.id;
+        const clientId = this.auth.getClientId();
         if (!clientId) {
             return;
         }
 
         this.loadingAccount.set(true);
-        this.api.getClient(clientId).subscribe({
+        this.trading.loadClient(clientId).subscribe({
             next: (account) => {
                 this.account.set(account ?? null);
                 this.loadingAccount.set(false);
@@ -176,13 +199,13 @@ export class ClientDashboard implements OnInit {
     }
 
     private fetchOrders(): void {
-        const clientId = this.auth.user()?.id;
+        const clientId = this.auth.getClientId();
         if (!clientId) {
             return;
         }
 
         this.loadingOrders.set(true);
-        this.api.getOrders(clientId).subscribe({
+        this.trading.loadOrders(clientId).subscribe({
             next: (orders: unknown) => {
                 // Map API response to OrdersTable interface
                 if (Array.isArray(orders)) {
@@ -196,6 +219,41 @@ export class ClientDashboard implements OnInit {
                 this.loadingOrders.set(false);
             },
         });
+    }
+
+    private fetchHoldings(): void {
+        const clientId = this.auth.getClientId();
+        if (!clientId) {
+            return;
+        }
+
+        this.loadingHoldings.set(true);
+        this.trading.loadHoldings(clientId).subscribe({
+            next: (holdings) => {
+                this.holdings.set(holdings);
+                this.loadingHoldings.set(false);
+            },
+            error: (err) => {
+                console.error('Error fetching holdings:', err);
+                this.holdings.set([]);
+                this.loadingHoldings.set(false);
+            },
+        });
+    }
+
+    private toPortfolioRow(holding: Holding): PortfolioTable {
+        const value = Number(holding.currentValue) || 0;
+        const totalBalance = this.portfolioValue();
+
+        return {
+            symbol: holding.symbol,
+            name: holding.symbol,
+            shares: Number(holding.quantity) || 0,
+            value,
+            allocation: totalBalance > 0 ? (value / totalBalance) * 100 : 0,
+            dayChange: undefined,
+            overallReturn: undefined,
+        };
     }
 
     private fetchTickerData(): void {

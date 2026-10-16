@@ -7,10 +7,13 @@ export interface UserProfile {
     balance: number;
 }
 
+export type UserRole = 'CLIENT' | 'ADMIN';
+
 export interface AuthUser {
     id: string;
     clientId?: string;
     email: string;
+    role: UserRole;
     roles?: string[];
     user_metadata?: {
         name?: string;
@@ -24,6 +27,14 @@ export interface AuthResponse {
     clientId: string;
     expiresIn?: number;
     tokenType?: string;
+    role: UserRole;
+}
+
+export interface ChangePasswordRequest {
+    email: string;
+    currentPassword: string;
+    newPassword: string;
+    confirmNewPassword: string;
 }
 
 /**
@@ -41,7 +52,7 @@ export class AuthService {
     readonly user = signal<AuthUser | null>(null);
     readonly profile = signal<UserProfile | null>(null);
     readonly isAdmin = signal(false);
-    readonly loading = signal(false);
+    readonly loading = signal(true);
 
     constructor() {
         // Try to restore session from localStorage on init
@@ -51,14 +62,14 @@ export class AuthService {
     /**
      * Register a new user
      */
-    async signUp(email: string, password: string, name: string) {
+    async signUp(email: string, password: string, name: string, confirmPassword: string) {
         try {
             this.loading.set(true);
             const response = await this.http.post<AuthResponse>(`${this.apiUrl}/api/v1/auth/register`, {
                 name,
                 email,
                 password,
-                confirmPassword: password, // Use password as confirmation
+                confirmPassword,
             }).toPromise();
 
             if (!response) {
@@ -119,6 +130,32 @@ export class AuthService {
     }
 
     /**
+     * Change the password for the authenticated user.
+     */
+    async changePassword(payload: ChangePasswordRequest) {
+        try {
+            this.loading.set(true);
+            await this.http.post<void>(`${this.apiUrl}/api/v1/auth/change-password`, payload).toPromise();
+            await this.signOut();
+            return { error: null };
+        } catch (error: any) {
+            const status = error?.status;
+            const fieldErrors = error?.error?.fieldErrors as Record<string, string> | undefined;
+            const fieldErrorMessage = fieldErrors
+                ? Object.values(fieldErrors).join(', ')
+                : null;
+            const errorMsg = fieldErrorMessage || (status === 400
+                ? 'The current password is incorrect or the new passwords do not match.'
+                : status === 401
+                    ? 'The current password is incorrect or the password change was not accepted.'
+                    : 'Unable to change password. Please try again.');
+            console.error('Change password error:', error);
+            this.loading.set(false);
+            return { error: errorMsg };
+        }
+    }
+
+    /**
      * Refresh access token using refresh token
      */
     async refreshAccessToken(): Promise<string> {
@@ -137,7 +174,7 @@ export class AuthService {
             }
 
             this.storeTokens(response.accessToken, response.refreshToken);
-            this.isAdmin.set(this.resolveAdminAccess(this.user(), response.accessToken));
+            this.updateUserFromToken(response.accessToken);
             return response.accessToken;
         } catch (error: any) {
             // Refresh failed - logout user
@@ -152,6 +189,7 @@ export class AuthService {
     async signOut() {
         localStorage.removeItem('accessToken');
         localStorage.removeItem('refreshToken');
+        localStorage.removeItem('clientId');
         localStorage.removeItem('user');
         this.session.set(null);
         this.user.set(null);
@@ -179,7 +217,34 @@ export class AuthService {
      */
     getCurrentUser(): AuthUser | null {
         const userStr = localStorage.getItem('user');
-        return userStr ? JSON.parse(userStr) : null;
+        if (!userStr) {
+            return null;
+        }
+
+        try {
+            return JSON.parse(userStr) as AuthUser;
+        } catch {
+            return null;
+        }
+    }
+
+    /**
+     * Resolve clientId from the in-memory session or persisted user.
+     */
+    getClientId(): string | null {
+        const runtimeUser = this.user();
+        if (runtimeUser?.clientId) {
+            return runtimeUser.clientId;
+        }
+        if (runtimeUser?.id) {
+            return runtimeUser.id;
+        }
+
+        const persistedUser = this.getCurrentUser();
+        if (persistedUser?.clientId) {
+            return persistedUser.clientId;
+        }
+        return persistedUser?.id ?? null;
     }
 
     /**
@@ -195,7 +260,12 @@ export class AuthService {
      */
     private restoreSession(): void {
         const token = this.getAccessToken();
-        const userStr = localStorage.getItem('user');
+        const parsedUser = this.getCurrentUser();
+
+        if (!token || !parsedUser) {
+            this.loading.set(false);
+            return;
+        }
 
         if (!token) {
             return;
@@ -207,17 +277,12 @@ export class AuthService {
         }
 
         try {
-            const restoredUser = userStr ? JSON.parse(userStr) as AuthUser : this.buildUserFromToken(token);
+            const restoredUser = parsedUser;
             const session: { user: AuthUser } = { user: restoredUser };
             this.session.set(session);
             this.user.set(restoredUser);
             this.profile.set(this.buildProfile(restoredUser));
             this.isAdmin.set(this.resolveAdminAccess(restoredUser, token));
-
-            // Ensure a usable user shape exists for subsequent app usage.
-            if (!userStr) {
-                localStorage.setItem('user', JSON.stringify(restoredUser));
-            }
         } catch (error) {
             console.error('Failed to restore session:', error);
             this.signOut();
@@ -237,6 +302,7 @@ export class AuthService {
             id: resolvedClientId,
             clientId: resolvedClientId,
             email: tokenUser.email,
+            role: response.role,
             roles: tokenUser.roles,
             user_metadata: {
                 name: tokenUser.user_metadata?.name || tokenUser.email,
@@ -247,7 +313,7 @@ export class AuthService {
         this.session.set(session);
         this.user.set(user);
         this.profile.set(this.buildProfile(user));
-        this.isAdmin.set(this.resolveAdminAccess(user, response.accessToken));
+        this.isAdmin.set(user.role === 'ADMIN');
         this.loading.set(false);
 
         // Store user in localStorage for session persistence
@@ -260,6 +326,20 @@ export class AuthService {
     private storeTokens(accessToken: string, refreshToken: string): void {
         localStorage.setItem('accessToken', accessToken);
         localStorage.setItem('refreshToken', refreshToken);
+    }
+
+    private updateUserFromToken(token: string): void {
+        const currentUser = this.user();
+        if (!currentUser) {
+            return;
+        }
+
+        const role = this.resolveRoleFromToken(token);
+        const updatedUser = { ...currentUser, role };
+        this.session.set({ user: updatedUser });
+        this.user.set(updatedUser);
+        this.isAdmin.set(role === 'ADMIN');
+        localStorage.setItem('user', JSON.stringify(updatedUser));
     }
 
     /**
@@ -329,6 +409,7 @@ export class AuthService {
             id,
             clientId: id,
             email,
+            role: this.resolveRoleFromToken(token),
             roles,
             user_metadata: {
                 name: email,
@@ -363,5 +444,13 @@ export class AuthService {
 
     private normalizeRoleName(role: string): string {
         return role.replace(/^ROLE_/i, '').toUpperCase();
+    }
+
+    private resolveRoleFromToken(token: string): UserRole {
+        return this.extractRolesFromToken(token)
+            .map((role) => this.normalizeRoleName(role))
+            .includes('ADMIN')
+            ? 'ADMIN'
+            : 'CLIENT';
     }
 }

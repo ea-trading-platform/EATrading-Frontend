@@ -42,7 +42,7 @@
                     <span class="stock-price">${{ stock.price?.toFixed(2) }}</span>
                     <span class="stock-change" [class.positive]="(stock.change || 0) > 0"
                         [class.negative]="(stock.change || 0) < 0">
-                        {{ stock.change?.toFixed(2) }}%
+                        {{ stock.changePercent?.toFixed(2) }}%
                     </span>
                 </div>
             </div>

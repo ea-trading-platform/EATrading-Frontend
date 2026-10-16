@@ -4,6 +4,16 @@
       <img src="/ea-logo.png" alt="Logo" width="50" height="50">
       EA Trading
     </div>
+    @if (navItems().length > 0) {
+    <nav class="navbar-links" aria-label="Primary navigation">
+      @for (item of navItems(); track item.route) {
+      <a [routerLink]="item.route" routerLinkActive="active"
+        [routerLinkActiveOptions]="{ exact: true }">
+        {{ item.label }}
+      </a>
+      }
+    </nav>
+    }
   </div>
   <div class="navbar-right">
     <button type="button" class="sign-out-btn" (click)="logout.emit()">

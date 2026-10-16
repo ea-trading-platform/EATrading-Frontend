@@ -1,9 +1,9 @@
 import { Component, inject, signal } from '@angular/core';
-import { FormsModule } from '@angular/forms';
+import { FormsModule, NgForm } from '@angular/forms';
 import { Router } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
 
-type AuthMode = 'none' | 'login' | 'signup';
+type AuthMode = 'none' | 'login' | 'signup' | 'change-password';
 
 @Component({
     selector: 'app-landing',
@@ -23,6 +23,9 @@ export class Landing {
     protected readonly name = signal('');
     protected readonly email = signal('');
     protected readonly password = signal('');
+    protected readonly confirmPassword = signal('');
+    protected readonly newPassword = signal('');
+    protected readonly confirmNewPassword = signal('');
 
     openLogin(): void {
         this.error.set(null);
@@ -34,27 +37,54 @@ export class Landing {
         this.mode.set('signup');
     }
 
+    openChangePassword(): void {
+        this.error.set(null);
+        this.mode.set('change-password');
+    }
+
     closePanel(): void {
         this.mode.set('none');
         this.error.set(null);
     }
 
-    async submit(): Promise<void> {
+    async submit(form: NgForm): Promise<void> {
         if (this.submitting()) {
             return;
         }
+
+        form.control.markAllAsTouched();
+        if (
+            form.invalid ||
+            (this.mode() === 'signup' && this.password() !== this.confirmPassword()) ||
+            (this.mode() === 'change-password' &&
+                (this.newPassword() !== this.confirmNewPassword() || this.password() === this.newPassword()))
+        ) {
+            return;
+        }
+
         this.error.set(null);
         this.submitting.set(true);
 
         const { error } =
             this.mode() === 'signup'
-                ? await this.auth.signUp(this.email(), this.password(), this.name())
-                : await this.auth.signIn(this.email(), this.password());
+                ? await this.auth.signUp(this.email(), this.password(), this.name(), this.confirmPassword())
+                : this.mode() === 'change-password'
+                    ? await this.changePassword()
+                    : await this.auth.signIn(this.email(), this.password());
 
         this.submitting.set(false);
 
         if (error) {
-            this.error.set((error as any)?.message || 'Authentication failed');
+            this.error.set(typeof error === 'string' ? error : error.message || 'Authentication failed');
+            return;
+        }
+
+        if (this.mode() === 'change-password') {
+            await this.auth.signOut();
+            this.password.set('');
+            this.newPassword.set('');
+            this.confirmNewPassword.set('');
+            this.mode.set('login');
             return;
         }
 
@@ -62,5 +92,14 @@ export class Landing {
         const redirectPath = this.auth.isAdmin() ? '/admin-dashboard' : '/dashboard';
 
         this.router.navigateByUrl(redirectPath);
+    }
+
+    private async changePassword(): Promise<{ error: string | null }> {
+        return this.auth.changePassword({
+            email: this.email(),
+            currentPassword: this.password(),
+            newPassword: this.newPassword(),
+            confirmNewPassword: this.confirmNewPassword(),
+        });
     }
 }

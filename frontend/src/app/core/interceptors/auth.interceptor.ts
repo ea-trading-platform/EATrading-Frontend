@@ -1,51 +1,74 @@
-import { Injectable, inject } from '@angular/core';
+import { inject } from '@angular/core';
 import {
-    HttpEvent,
-    HttpInterceptor,
-    HttpHandler,
-    HttpRequest,
+    HttpErrorResponse,
+    HttpInterceptorFn,
 } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { catchError, from, switchMap, throwError } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { AuthService } from '../services/auth.service';
 
 /**
- * HTTP Interceptor for Dual Authentication
+ * Functional HTTP Interceptor for Dual Authentication
  * 
  * Features:
  * - For market data endpoints (/api/v1/market/*): uses marketauxApiKey
  * - For other endpoints: uses JWT Bearer token from AuthService
  */
-@Injectable()
-export class AuthInterceptor implements HttpInterceptor {
-    private readonly apiKey = environment.marketauxApiKey;
-    private readonly authService = inject(AuthService);
+export const authInterceptor: HttpInterceptorFn = (request, next) => {
+    const authService = inject(AuthService);
+    const apiKey = environment.marketauxApiKey;
 
-    intercept(
-        request: HttpRequest<unknown>,
-        next: HttpHandler
-    ): Observable<HttpEvent<unknown>> {
-        // Market data endpoints use API key
-        if (request.url.includes('/api/v1/market')) {
-            if (this.apiKey) {
-                request = request.clone({
-                    setHeaders: {
-                        Authorization: this.apiKey,
-                    },
-                });
-            }
-        } else {
-            // Other endpoints (Spring Security) use JWT Bearer token
-            const token = this.authService.getAccessToken();
-            if (token) {
-                request = request.clone({
-                    setHeaders: {
-                        Authorization: `Bearer ${token}`,
-                    },
-                });
-            }
+    const isMarketEndpoint = request.url.includes('/api/v1/market');
+    const isAuthEndpoint = request.url.includes('/api/v1/auth/');
+    const isChangePasswordEndpoint = request.url.includes('/api/v1/auth/change-password');
+    const isRefreshAttempt = request.headers.get('x-refresh-attempt') === '1';
+
+    let updatedRequest = request;
+
+    // Market data endpoints use API key
+    if (isMarketEndpoint) {
+        if (apiKey) {
+            updatedRequest = request.clone({
+                setHeaders: {
+                    Authorization: apiKey,
+                },
+            });
         }
+    } else if (!isChangePasswordEndpoint) {
+        // Other endpoints (Spring Security) use JWT Bearer token
+        const token = authService.getAccessToken();
 
-        return next.handle(request);
+        if (token) {
+            updatedRequest = request.clone({
+                setHeaders: {
+                    Authorization: `Bearer ${token}`,
+                },
+            });
+        }
     }
-}
+
+    return next(updatedRequest).pipe(
+        catchError((error: HttpErrorResponse) => {
+            // Try refresh once on 401 for protected non-market, non-auth requests.
+            if (isMarketEndpoint || isAuthEndpoint || isRefreshAttempt || error.status !== 401) {
+                return throwError(() => error);
+            }
+
+            return from(authService.refreshAccessToken()).pipe(
+                switchMap((newAccessToken) => {
+                    const retryRequest = request.clone({
+                        setHeaders: {
+                            Authorization: `Bearer ${newAccessToken}`,
+                            'x-refresh-attempt': '1',
+                        },
+                    });
+                    return next(retryRequest);
+                }),
+                catchError((refreshError) => {
+                    void authService.signOut();
+                    return throwError(() => refreshError);
+                })
+            );
+        })
+    );
+};
