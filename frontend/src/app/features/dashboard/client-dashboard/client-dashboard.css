@@ -32,6 +32,11 @@
     gap: 0;
 }
 
+.client-dashboard .col-lg-8,
+.client-dashboard .col-lg-4 {
+    padding-left: 0;
+}
+
 .portfolio-summary {
     display: grid;
     grid-template-columns: minmax(12rem, 1.3fr) repeat(4, minmax(10rem, 1fr));
