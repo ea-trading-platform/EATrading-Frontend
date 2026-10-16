@@ -4,3 +4,97 @@
     width: 100%;
     margin: 0 auto;
 }
+
+.client-search {
+    max-width: 36rem;
+    margin-top: 1rem;
+}
+
+.client-search label {
+    display: block;
+    color: var(--text-light);
+    font-weight: 600;
+    margin-bottom: 0.4rem;
+}
+
+.client-search-controls {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.client-search input {
+    flex: 1;
+    min-width: 0;
+    padding: 0.65rem 0.75rem;
+    background: var(--bg-subtle);
+    border: 1px solid var(--border-lighter);
+    border-radius: 0.3rem;
+    color: var(--text-light);
+}
+
+.client-search button {
+    padding: 0.65rem 1rem;
+    background: var(--accent);
+    border: 0;
+    border-radius: 0.3rem;
+    color: var(--text-light);
+    cursor: pointer;
+    font-weight: 600;
+}
+
+.client-search button:hover {
+    background: var(--accent-secondary);
+}
+
+.client-tabs {
+    display: flex;
+    gap: 0.5rem;
+    margin: 1.25rem 0 0;
+    overflow-x: auto;
+    border-bottom: 1px solid var(--border-lighter);
+}
+
+.client-tab-button {
+    flex: 0 0 auto;
+    padding: 0.75rem 1rem;
+    background: var(--bg-subtle);
+    border: 1px solid var(--border-lighter);
+    border-bottom: 0;
+    border-radius: 0.4rem 0.4rem 0 0;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-weight: 600;
+}
+
+.client-tab-button:hover,
+.client-tab-button.active {
+    color: var(--text-light);
+}
+
+.client-tab-button.active {
+    background: var(--bg-hover);
+    border-color: var(--accent);
+}
+
+.client-tabs + .dashboard-tabs {
+    margin-top: 1rem;
+}
+
+.client-details {
+    padding: 1rem 0 0;
+}
+
+.client-details h3,
+.client-details p {
+    margin: 0;
+}
+
+.client-details h3 {
+    color: var(--text-light);
+    font-size: 1.1rem;
+}
+
+.client-details p {
+    color: var(--text-muted);
+    margin-top: 0.25rem;
+}
