@@ -386,6 +386,12 @@
     display: block;
 }
 
+.order-watchlist ::ng-deep .watchlist-items {
+    max-height: 12rem;
+    overflow-y: auto;
+    padding-right: 0.35rem;
+}
+
 .order-panel-header h2 {
     margin: 0;
     color: var(--text-light);
