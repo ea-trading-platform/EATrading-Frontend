@@ -205,10 +205,6 @@ export class TradingService {
         return this.apiService.createOrder(request).pipe(
             tap((response) => {
                 this.isLoading.set(false);
-                // Optionally reload orders after successful submission
-                if (request.clientId) {
-                    this.loadOrders(request.clientId).subscribe();
-                }
             }),
             catchError((err) => {
                 this.error.set(err?.message || 'Failed to submit order');

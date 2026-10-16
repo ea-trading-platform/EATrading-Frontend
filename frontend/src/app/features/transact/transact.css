@@ -18,7 +18,50 @@
 }
 
 .trade-header {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 1.5rem;
     padding: 4.5rem 1rem 2.5rem;
+}
+
+.refresh-page-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    border: 1px solid var(--border-light);
+    border-radius: 0.35rem;
+    padding: 0.65rem 0.85rem;
+    background: transparent;
+    color: var(--text-light);
+    cursor: pointer;
+    font-size: 0.8rem;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.refresh-page-button:hover:not(:disabled) {
+    border-color: var(--accent);
+    color: var(--accent-secondary);
+}
+
+.refresh-page-button:disabled {
+    cursor: wait;
+    opacity: 0.6;
+}
+
+.refresh-page-button span {
+    font-size: 1.15rem;
+}
+
+.refresh-page-button .refreshing {
+    animation: refresh-spin 0.9s linear infinite;
+}
+
+@keyframes refresh-spin {
+    to {
+        transform: rotate(360deg);
+    }
 }
 
 .eyebrow {
@@ -65,7 +108,7 @@
     border: 1px solid var(--border-light);
     border-radius: 0.65rem;
     padding: 0.9rem 1rem;
-    background: rgba(8, 19, 28, 0.28);
+    background: transparent;
 }
 
 .watchlist-near-search .symbol-search {
@@ -158,7 +201,7 @@
     border: 1px solid var(--border-light);
     border-radius: 0.35rem;
     padding: 0.85rem 1rem;
-    background: rgba(255, 255, 255, 0.05);
+    background: transparent;
     color: var(--text-light);
     outline: none;
 }
@@ -271,7 +314,7 @@
     display: grid;
     justify-items: center;
     padding: 1.5rem;
-    background: rgba(8, 19, 28, 0.78);
+    background: transparent;
 }
 
 .chart-mark {
@@ -302,7 +345,12 @@
     border: 1px solid var(--border-light);
     border-radius: 0.65rem;
     padding: 1.25rem;
-    background: rgba(8, 19, 28, 0.42);
+    background: transparent;
+}
+
+.order-watchlist {
+    border-top: 1px solid var(--border-lighter);
+    padding-top: 1.1rem;
 }
 
 .order-panel-header h2 {
@@ -361,7 +409,7 @@
     border: 1px solid var(--border-light);
     border-radius: 0.35rem;
     padding: 0.75rem;
-    background: rgba(255, 255, 255, 0.05);
+    background: transparent;
     color: var(--text-light);
 }
 
@@ -510,6 +558,8 @@
 
 @media (max-width: 600px) {
     .trade-header {
+        align-items: flex-start;
+        flex-direction: column;
         padding: 3rem 0.25rem 2rem;
     }
 

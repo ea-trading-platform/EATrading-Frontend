@@ -1,5 +1,6 @@
 <main class="transact-page">
     <app-top-bar [navItems]="navItems" (logout)="logout()"></app-top-bar>
+    <app-stock-ticker [stocks]="stocksSignal()"></app-stock-ticker>
 
     <section class="trade-header" aria-labelledby="trade-title">
         <div>
@@ -7,6 +8,11 @@
             <h1 id="trade-title">Global markets</h1>
             <p class="subtitle">Equities, crypto and forex</p>
         </div>
+        <button type="button" class="refresh-page-button" (click)="refreshData()" [disabled]="isRefreshing()"
+            aria-label="Refresh market and account data" title="Refresh data">
+            <span aria-hidden="true" [class.refreshing]="isRefreshing()">&#8635;</span>
+            {{ isRefreshing() ? 'Refreshing...' : 'Refresh data' }}
+        </button>
     </section>
 
     <section class="trade-layout" aria-label="Market search and order entry">
@@ -23,7 +29,6 @@
             </div>
 
             <div class="watchlist-near-search">
-                <app-watchlist (symbolSelected)="selectSymbol($event)"></app-watchlist>
                 <form class="symbol-search" (ngSubmit)="search()">
                     <label for="symbol">Search symbol</label>
                     <div class="search-row">
@@ -129,6 +134,10 @@
                 [disabled]="isSubmittingOrder() || !quote() || !quantity() || quantity()! <= 0" (click)="submitOrder()">
                 {{ isSubmittingOrder() ? 'Submitting...' : 'Submit order' }}
             </button>
+
+            <div class="order-watchlist">
+                <app-watchlist (symbolSelected)="selectSymbol($event)"></app-watchlist>
+            </div>
         </aside>
     </section>
 

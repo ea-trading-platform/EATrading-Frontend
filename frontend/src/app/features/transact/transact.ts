@@ -16,14 +16,18 @@ import { TradingService } from '../../core/services/trading.service';
 import { Candle, CandleResponse, Client, Holding, Order, OrderRequest, PortfolioSummary, StockQuote } from '../../core/models/trading.models';
 import { TopBar, TopBarNavItem } from '../components/top-bar/top-bar';
 import { WatchlistComponent } from '../dashboard/components/watchlist/watchlist';
+import { StockTicker } from '../dashboard/components/stock-ticker/stock-ticker';
+import { StockTickerData } from '../dashboard/interfaces/stock-ticker.interface';
 
 ModuleRegistry.registerModules([AllCommunityModule]);
 
 type Market = 'Equities' | 'Crypto' | 'Forex';
 type TradeDataTab = 'positions' | 'open-orders' | 'history';
 
+const TICKER_SYMBOLS = ['AAPL', 'GOOGL', 'MSFT', 'AMZN', 'TSLA', 'NVDA', 'META', 'NFLX', 'UBER', 'PYPL'];
+
 @Component({
-    imports: [CurrencyPipe, DecimalPipe, FormsModule, AgCharts, TopBar, WatchlistComponent],
+    imports: [CurrencyPipe, DecimalPipe, FormsModule, AgCharts, TopBar, WatchlistComponent, StockTicker],
     selector: 'app-transact',
     standalone: true,
     styleUrl: './transact.css',
@@ -54,17 +58,24 @@ export class Transact implements OnInit {
     protected readonly orderSide = signal<'BUY' | 'SELL'>('BUY');
     protected readonly quantity = signal<number | null>(null);
     protected readonly isSubmittingOrder = signal(false);
+    protected readonly isRefreshing = signal(false);
     protected readonly orderMessage = signal<string | null>(null);
     protected readonly orderError = signal<string | null>(null);
     protected readonly activeDataTab = signal<TradeDataTab>('positions');
     protected readonly holdings = signal<Holding[]>([]);
     protected readonly orders = signal<Order[]>([]);
-    protected readonly suggestedSymbols = ['AAPL', 'GOOGL', 'MSFT', 'AMZN', 'TSLA', 'NVDA'];
+    protected readonly stocksSignal = signal<StockTickerData[]>([]);
+    protected readonly suggestedSymbols: Record<Market, string[]> = {
+        Equities: ['AAPL', 'GOOGL', 'MSFT', 'AMZN', 'TSLA', 'NVDA'],
+        Crypto: ['BTC', 'ETH', 'SOL', 'XRP', 'ADA', 'DOGE'],
+        Forex: ['EURUSD', 'GBPUSD', 'USDJPY', 'AUDUSD', 'USDCAD', 'USDCHF'],
+    };
     protected readonly filteredSuggestions = computed(() => {
         const term = this.symbol().trim().toUpperCase();
+        const suggestions = this.suggestedSymbols[this.activeMarket()];
         return term
-            ? this.suggestedSymbols.filter((suggestion) => suggestion.includes(term))
-            : this.suggestedSymbols;
+            ? suggestions.filter((suggestion) => suggestion.includes(term))
+            : suggestions;
     });
     protected readonly positions = computed(() => this.holdings().map((holding) => ({
         symbol: holding.symbol,
@@ -88,6 +99,12 @@ export class Transact implements OnInit {
         const price = Number(this.quote()?.price) || 0;
         const shares = Number(this.quantity()) || 0;
         return price * shares;
+    });
+
+    protected readonly ownedQuantity = computed(() => {
+        const selectedSymbol = this.marketSymbol();
+        const holding = this.holdings().find((item) => this.marketSymbol(item.symbol) === selectedSymbol);
+        return Number(holding?.quantity) || 0;
     });
 
     protected readonly chartOptions = computed<AgCartesianChartOptions>(() => ({
@@ -117,23 +134,45 @@ export class Transact implements OnInit {
     }));
 
     ngOnInit(): void {
-        const clientId = this.auth.getClientId();
-        if (!clientId) {
+        this.refreshData();
+    }
+
+    refreshData(): void {
+        if (this.isRefreshing()) {
             return;
         }
 
-        this.trading.loadClient(clientId).subscribe({
+        this.isRefreshing.set(true);
+        const clientId = this.auth.getClientId();
+        const requests: Array<ReturnType<typeof this.trading.loadClient>> = [];
+
+        if (clientId) {
+            requests.push(this.trading.loadClient(clientId));
+            this.loadPortfolioSummary(clientId);
+            this.trading.loadHoldings(clientId).subscribe({
+                next: (holdings) => this.holdings.set(holdings),
+                error: (error) => console.error('Error refreshing holdings:', error),
+            });
+            this.trading.loadOrders(clientId).subscribe({
+                next: (orders) => this.orders.set(orders),
+                error: (error) => console.error('Error refreshing orders:', error),
+            });
+        }
+
+        this.fetchTickerData();
+        if (this.symbol()) {
+            this.search();
+        }
+
+        if (requests.length === 0) {
+            this.isRefreshing.set(false);
+            return;
+        }
+
+        requests[0].subscribe({
             next: (account) => this.account.set(account),
-            error: (error) => console.error('Error fetching account:', error),
-        });
-        this.loadPortfolioSummary(clientId);
-        this.trading.loadHoldings(clientId).subscribe({
-            next: (holdings) => this.holdings.set(holdings),
-            error: (error) => console.error('Error fetching holdings:', error),
-        });
-        this.trading.loadOrders(clientId).subscribe({
-            next: (orders) => this.orders.set(orders),
-            error: (error) => console.error('Error fetching orders:', error),
+            error: (error) => console.error('Error refreshing account:', error),
+            complete: () => this.isRefreshing.set(false),
         });
     }
 
@@ -149,7 +188,7 @@ export class Transact implements OnInit {
     }
 
     selectSymbol(symbol: string, name = symbol): void {
-        this.symbol.set(symbol.toUpperCase());
+        this.symbol.set(this.displaySymbol(symbol));
         this.instrumentName.set(name);
         this.search();
     }
@@ -161,11 +200,17 @@ export class Transact implements OnInit {
 
     submitOrder(): void {
         const clientId = this.auth.getClientId();
-        const requestedSymbol = this.symbol().trim().toUpperCase();
+        const requestedSymbol = this.marketSymbol();
         const requestedQuantity = Number(this.quantity());
 
         if (!clientId || !requestedSymbol || !Number.isFinite(requestedQuantity) || requestedQuantity <= 0) {
             this.orderError.set('Select a symbol and enter a valid quantity before submitting.');
+            this.orderMessage.set(null);
+            return;
+        }
+
+        if (this.orderSide() === 'SELL' && requestedQuantity > this.ownedQuantity()) {
+            this.orderError.set(`You own ${this.ownedQuantity()} shares of ${this.symbol()}. You cannot sell ${requestedQuantity}.`);
             this.orderMessage.set(null);
             return;
         }
@@ -187,7 +232,7 @@ export class Transact implements OnInit {
                 this.isSubmittingOrder.set(false);
                 this.orderMessage.set(`${this.orderSide()} order for ${requestedSymbol} submitted. Tracking ID: ${response.trackingId}`);
                 this.quantity.set(null);
-                this.refreshAccountData(clientId);
+                this.refreshData();
             },
             error: () => {
                 this.isSubmittingOrder.set(false);
@@ -196,20 +241,35 @@ export class Transact implements OnInit {
         });
     }
 
-    private refreshAccountData(clientId: string): void {
-        this.trading.loadClient(clientId).subscribe({
-            next: (account) => this.account.set(account),
-            error: (error) => console.error('Error refreshing account:', error),
-        });
-        this.loadPortfolioSummary(clientId);
-        this.trading.loadHoldings(clientId).subscribe({
-            next: (holdings) => this.holdings.set(holdings),
-            error: (error) => console.error('Error refreshing holdings:', error),
-        });
-        this.trading.loadOrders(clientId).subscribe({
-            next: (orders) => this.orders.set(orders),
-            error: (error) => console.error('Error refreshing orders:', error),
-        });
+    private marketSymbol(value = this.symbol()): string {
+        const input = value.trim().toUpperCase();
+        if (!input) {
+            return '';
+        }
+
+        if (this.activeMarket() === 'Crypto') {
+            const base = input.replace(/^X:/, '').replace(/-USD$/, '');
+            return `X:${base}-USD`;
+        }
+
+        if (this.activeMarket() === 'Forex') {
+            return `FX:${input.replace(/^FX:/, '')}`;
+        }
+
+        return input;
+    }
+
+    private displaySymbol(value: string): string {
+        const input = value.trim().toUpperCase();
+        if (this.activeMarket() === 'Crypto') {
+            return input.replace(/^X:/, '').replace(/-USD$/, '');
+        }
+
+        if (this.activeMarket() === 'Forex') {
+            return input.replace(/^FX:/, '');
+        }
+
+        return input;
     }
 
     private loadPortfolioSummary(clientId: string): void {
@@ -219,14 +279,42 @@ export class Transact implements OnInit {
         });
     }
 
+    private fetchTickerData(): void {
+        const quoteRequests = TICKER_SYMBOLS.map((symbol) => this.api.getQuote(symbol));
+        const candleRequests = TICKER_SYMBOLS.map((symbol) => this.api.getCandles(symbol));
+
+        forkJoin({
+            quotes: forkJoin(quoteRequests),
+            candles: forkJoin(candleRequests),
+        }).subscribe({
+            next: ({ quotes, candles }) => {
+                this.stocksSignal.set(TICKER_SYMBOLS.map((symbol, index) => {
+                    const quote = quotes[index];
+                    const response = candles[index] as CandleResponse;
+                    const candleList = response.data?.candles ?? response.candles ?? [];
+                    const priceHistory = candleList.map((candle) => candle.close).slice(-8);
+
+                    return {
+                        symbol,
+                        percentChange: quote?.changePercent ?? 0,
+                        priceHistory: priceHistory.length > 0 ? priceHistory : [quote?.price ?? 0],
+                    };
+                }));
+            },
+            error: (error) => {
+                console.error('Error fetching ticker data:', error);
+                this.stocksSignal.set([]);
+            },
+        });
+    }
+
     search(): void {
-        const requestedSymbol = this.symbol().trim().toUpperCase();
+        const requestedSymbol = this.marketSymbol();
         if (!requestedSymbol) {
             this.error.set('Enter a symbol to view market data.');
             return;
         }
 
-        this.symbol.set(requestedSymbol);
         this.isLoading.set(true);
         this.error.set(null);
         this.quote.set(null);
