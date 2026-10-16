@@ -91,11 +91,10 @@ const MOCK_ORDERS: OrdersTable[] = [
 ];
 
 const MOCK_PORTFOLIO_ALLOCATION = [
-    { label: 'Technology', value: 42 },
-    { label: 'Healthcare', value: 23 },
-    { label: 'Financials', value: 18 },
-    { label: 'Consumer', value: 12 },
-    { label: 'Other', value: 5 },
+    { label: 'Equities', value: 55 },
+    { label: 'Crypto', value: 15 },
+    { label: 'Forex', value: 20 },
+    { label: 'Cash', value: 10 },
 ];
 
 @Component({
