@@ -146,7 +146,9 @@
             </button>
 
             <div class="order-watchlist">
-                <app-watchlist (symbolSelected)="selectSymbol($event)"></app-watchlist>
+                <app-watchlist (symbolSelected)="selectSymbol($event)">
+                    <app-stock-search></app-stock-search>
+                </app-watchlist>
             </div>
         </aside>
     </section>

@@ -16,6 +16,7 @@ import { TradingService } from '../../core/services/trading.service';
 import { Candle, CandleResponse, Client, Holding, Order, OrderRequest, PortfolioSummary, StockQuote } from '../../core/models/trading.models';
 import { TopBar, TopBarNavItem } from '../components/top-bar/top-bar';
 import { WatchlistComponent } from '../dashboard/components/watchlist/watchlist';
+import { StockSearch } from '../dashboard/client-dashboard/components/stock-search/stock-search';
 import { StockTicker } from '../dashboard/components/stock-ticker/stock-ticker';
 import { StockTickerData } from '../dashboard/interfaces/stock-ticker.interface';
 import { TradeDataGrid, TransactOrderRow, TransactPositionRow } from './trade-data-grid';
@@ -28,7 +29,7 @@ type TradeDataTab = 'positions' | 'open-orders' | 'history';
 const TICKER_SYMBOLS = ['AAPL', 'GOOGL', 'MSFT', 'AMZN', 'TSLA', 'NVDA', 'META', 'NFLX', 'UBER', 'PYPL'];
 
 @Component({
-    imports: [CurrencyPipe, DecimalPipe, FormsModule, AgCharts, TopBar, WatchlistComponent, StockTicker, TradeDataGrid],
+    imports: [CurrencyPipe, DecimalPipe, FormsModule, AgCharts, TopBar, WatchlistComponent, StockSearch, StockTicker, TradeDataGrid],
     selector: 'app-transact',
     standalone: true,
     styleUrl: './transact.css',
