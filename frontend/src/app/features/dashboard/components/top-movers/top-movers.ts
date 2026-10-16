@@ -1,6 +1,4 @@
 import { Component, OnInit, OnDestroy, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { SparklineChart } from '../sparkline/sparkline';
 import { StockCardComponent } from '../stock-card/stock-card';
 
 export interface TopMover {
@@ -11,23 +9,10 @@ export interface TopMover {
     sparklineData: number[];
 }
 
-export interface NewsArticle {
-    id: string;
-    title: string;
-    description: string;
-    image_url: string | null;
-    url: string;
-    source: string;
-    published_at: string;
-    updated_at?: string;
-}
-
-type TabType = 'movers' | 'news';
-
 @Component({
     selector: 'app-top-movers',
     standalone: true,
-    imports: [CommonModule, StockCardComponent],
+    imports: [StockCardComponent],
     templateUrl: './top-movers.html',
     styleUrls: ['./top-movers.css'],
 })
@@ -110,65 +95,21 @@ export class TopMoversComponent implements OnInit, OnDestroy {
         },
     ];
 
-    // Mock news data
-    private mockNews: NewsArticle[] = [
-        {
-            id: '1',
-            title: 'Market Rally Continues Amid Strong Economic Data',
-            description: 'Stock markets surge as positive economic indicators fuel investor confidence. The S&P 500 reaches new highs.',
-            image_url: null,
-            url: '#',
-            source: 'MarketNews',
-            published_at: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-        },
-        {
-            id: '2',
-            title: 'Tech Sector Leads Gainers Today',
-            description: 'Technology stocks outperform as earnings season progresses. Major chip manufacturers report strong quarterly results.',
-            image_url: null,
-            url: '#',
-            source: 'FinanceToday',
-            published_at: new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString(),
-        },
-        {
-            id: '3',
-            title: 'Federal Reserve Holds Interest Rates Steady',
-            description: 'Central bank maintains current monetary policy amid stable inflation. Markets respond positively to the decision.',
-            image_url: null,
-            url: '#',
-            source: 'EconomicUpdate',
-            published_at: new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString(),
-        },
-    ];
-
-    // Tab state
-    activeTab = signal<TabType>('movers');
-
     // Movers state
     movers = signal<TopMover[]>(this.gainers);
     isShowingGainers = signal(true);
     private moverInterval: any;
 
-    // News state
-    newsArticles = signal<NewsArticle[]>([]);
-    newsLoading = signal<boolean>(false);
-    newsError = signal<string | null>(null);
-
     constructor() {}
 
     ngOnInit(): void {
         this.startMoverAnimation();
-        this.loadNews();
     }
 
     ngOnDestroy(): void {
         if (this.moverInterval) {
             clearInterval(this.moverInterval);
         }
-    }
-
-    setTab(tab: TabType): void {
-        this.activeTab.set(tab);
     }
 
     // Movers methods
@@ -193,25 +134,4 @@ export class TopMoversComponent implements OnInit, OnDestroy {
         return `${sign}${changePercent.toFixed(2)}%`;
     }
 
-    // News methods
-    private loadNews(): void {
-        this.newsLoading.set(true);
-        this.newsError.set(null);
-
-        // Simulate slight delay for loading state
-        setTimeout(() => {
-            this.newsArticles.set(this.mockNews);
-            this.newsLoading.set(false);
-        }, 300);
-    }
-
-    refreshNews(): void {
-        this.loadNews();
-    }
-
-    getNewsDate(publishedAt: string): string {
-        const date = new Date(publishedAt);
-        return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-    }
 }
-
