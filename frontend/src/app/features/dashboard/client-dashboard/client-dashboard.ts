@@ -115,6 +115,7 @@ export class ClientDashboard implements OnInit {
     protected readonly navItems: readonly TopBarNavItem[] = [
         { label: 'Dashboard', route: '/dashboard' },
         { label: 'Transact', route: '/transact' },
+        { label: 'News', route: '/news' },
     ];
 
     protected readonly account = signal<Client | null>(null);
@@ -177,10 +178,6 @@ export class ClientDashboard implements OnInit {
 
     setTab(tab: ClientDashboardTab): void {
         this.activeTab.set(tab);
-    }
-
-    startTrading(): void {
-        this.router.navigateByUrl('/transact');
     }
 
     private fetchAccount(): void {

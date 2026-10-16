@@ -1,4 +1,5 @@
-import { Component, computed, input, output, signal } from '@angular/core';
+import { Component, computed, input, signal } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import { AgCharts } from "ag-charts-angular";
 import {
   AgChartOptions,
@@ -24,12 +25,11 @@ ModuleRegistry.registerModules([
 @Component({
   selector: 'app-balance-graph',
   standalone: true,
-  imports: [AgCharts],
+  imports: [AgCharts, RouterLink],
   styleUrl: './balance-graph.css',
   templateUrl: './balance-graph.html',
 })
 export class BalanceGraph {
-  readonly startTrading = output<void>();
   readonly ranges = ['1D', '1W', '1M', '3M', '1Y', 'ALL'] as const;
   readonly selectedRange = signal<(typeof this.ranges)[number]>('ALL');
   graphData = input<BalanceGraphInterface[]>([]);
@@ -47,15 +47,6 @@ export class BalanceGraph {
     return data.filter((point) => new Date(point.date).getTime() >= cutoff);
   });
   readonly isEmpty = computed(() => this.filteredGraphData().length === 0);
-  readonly placeholderPoints = [
-    { label: 'Mon', x: 8, y: 68 },
-    { label: 'Tue', x: 25, y: 53 },
-    { label: 'Wed', x: 42, y: 60 },
-    { label: 'Thu', x: 59, y: 35 },
-    { label: 'Fri', x: 76, y: 44 },
-    { label: 'Today', x: 94, y: 20 },
-  ];
-
   selectRange(range: (typeof this.ranges)[number]): void {
     this.selectedRange.set(range);
   }

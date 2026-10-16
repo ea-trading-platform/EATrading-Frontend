@@ -20,18 +20,18 @@
             </select>
         </label>
     </div>
+    @if (!isEmpty()) {
     <ag-charts [options]="options()"></ag-charts>
-
-    @if (isEmpty()) {
-    <div class="empty-chart" aria-label="No portfolio history available">
+    } @else {
+    <div class="empty-chart">
         <div class="placeholder-plot" aria-hidden="true">
             <span class="placeholder-line"></span>
         </div>
         <div class="empty-chart-message">
             <span class="chart-mark" aria-hidden="true">↗</span>
-            <h2>Your portfolio will appear here</h2>
-            <p>Make your first trade to start tracking your progress.</p>
-            <button type="button" (click)="startTrading.emit()">Start trading</button>
+            <h2>Complete a transaction to see account history</h2>
+            <p>Navigate to the transact page or click the button below to get started.</p>
+            <a class="transact-link" routerLink="/transact">Start trading</a>
         </div>
     </div>
     }
