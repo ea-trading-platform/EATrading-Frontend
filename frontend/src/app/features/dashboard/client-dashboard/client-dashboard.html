@@ -66,18 +66,14 @@
                             Orders
                         </button>
                     </nav>
-
-                    <app-stock-search></app-stock-search>
                 </div>
 
                 @if (activeTab() === 'portfolio') {
                 <section class="tab-panel">
                     @if (loadingHoldings()) {
                     <p class="loading-text">Loading holdings...</p>
-                    } @else if (portfolioHoldings().length > 0) {
-                    <app-portfolio-table [rowData]="portfolioHoldings()"></app-portfolio-table>
                     } @else {
-                    <p class="loading-text">No holdings available.</p>
+                    <app-portfolio-table [rowData]="portfolioHoldings()"></app-portfolio-table>
                     }
                 </section>
                 } @else if (activeTab() === 'orders') {
@@ -90,7 +86,6 @@
 
             <!-- Sidebar: Watchlist and Top Movers -->
             <div class="col-lg-4 col-md-12">
-                <app-watchlist></app-watchlist>
                 <app-top-movers></app-top-movers>
             </div>
 

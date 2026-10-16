@@ -1,5 +1,5 @@
 import { Component, input } from '@angular/core';
-import { ColDef } from 'ag-grid-community';
+import { ColDef, GridOptions } from 'ag-grid-community';
 import { DataGrid } from '../data-grid/data-grid';
 import { OrdersTable, OrderAction, OrderStatus, InstrumentType } from '../../interfaces/orders-table.interface';
 
@@ -12,6 +12,10 @@ import { OrdersTable, OrderAction, OrderStatus, InstrumentType } from '../../int
 })
 export class OrdersTableComponent {
   rowData = input<OrdersTable[] | null>(null);
+  gridOptions: GridOptions<OrdersTable> = {
+    domLayout: 'autoHeight',
+    overlayNoRowsTemplate: 'No orders available.',
+  };
 
   columnDefs: ColDef<OrdersTable>[] = [
     { field: 'action', headerName: 'Action', width: 100 },
