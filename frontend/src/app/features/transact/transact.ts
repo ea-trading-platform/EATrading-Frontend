@@ -101,6 +101,12 @@ export class Transact implements OnInit {
         return price * shares;
     });
 
+    protected readonly ownedQuantity = computed(() => {
+        const selectedSymbol = this.marketSymbol();
+        const holding = this.holdings().find((item) => this.marketSymbol(item.symbol) === selectedSymbol);
+        return Number(holding?.quantity) || 0;
+    });
+
     protected readonly chartOptions = computed<AgCartesianChartOptions>(() => ({
         background: { fill: 'transparent' },
         padding: { top: 12, right: 20, bottom: 12, left: 12 },
@@ -182,7 +188,7 @@ export class Transact implements OnInit {
     }
 
     selectSymbol(symbol: string, name = symbol): void {
-        this.symbol.set(symbol.toUpperCase());
+        this.symbol.set(this.displaySymbol(symbol));
         this.instrumentName.set(name);
         this.search();
     }
@@ -194,11 +200,17 @@ export class Transact implements OnInit {
 
     submitOrder(): void {
         const clientId = this.auth.getClientId();
-        const requestedSymbol = this.symbol().trim().toUpperCase();
+        const requestedSymbol = this.marketSymbol();
         const requestedQuantity = Number(this.quantity());
 
         if (!clientId || !requestedSymbol || !Number.isFinite(requestedQuantity) || requestedQuantity <= 0) {
             this.orderError.set('Select a symbol and enter a valid quantity before submitting.');
+            this.orderMessage.set(null);
+            return;
+        }
+
+        if (this.orderSide() === 'SELL' && requestedQuantity > this.ownedQuantity()) {
+            this.orderError.set(`You own ${this.ownedQuantity()} shares of ${this.symbol()}. You cannot sell ${requestedQuantity}.`);
             this.orderMessage.set(null);
             return;
         }
@@ -220,7 +232,7 @@ export class Transact implements OnInit {
                 this.isSubmittingOrder.set(false);
                 this.orderMessage.set(`${this.orderSide()} order for ${requestedSymbol} submitted. Tracking ID: ${response.trackingId}`);
                 this.quantity.set(null);
-                this.refreshAccountData(clientId);
+                this.refreshData();
             },
             error: () => {
                 this.isSubmittingOrder.set(false);
@@ -229,20 +241,35 @@ export class Transact implements OnInit {
         });
     }
 
-    private refreshAccountData(clientId: string): void {
-        this.trading.loadClient(clientId).subscribe({
-            next: (account) => this.account.set(account),
-            error: (error) => console.error('Error refreshing account:', error),
-        });
-        this.loadPortfolioSummary(clientId);
-        this.trading.loadHoldings(clientId).subscribe({
-            next: (holdings) => this.holdings.set(holdings),
-            error: (error) => console.error('Error refreshing holdings:', error),
-        });
-        this.trading.loadOrders(clientId).subscribe({
-            next: (orders) => this.orders.set(orders),
-            error: (error) => console.error('Error refreshing orders:', error),
-        });
+    private marketSymbol(value = this.symbol()): string {
+        const input = value.trim().toUpperCase();
+        if (!input) {
+            return '';
+        }
+
+        if (this.activeMarket() === 'Crypto') {
+            const base = input.replace(/^X:/, '').replace(/-USD$/, '');
+            return `X:${base}-USD`;
+        }
+
+        if (this.activeMarket() === 'Forex') {
+            return `FX:${input.replace(/^FX:/, '')}`;
+        }
+
+        return input;
+    }
+
+    private displaySymbol(value: string): string {
+        const input = value.trim().toUpperCase();
+        if (this.activeMarket() === 'Crypto') {
+            return input.replace(/^X:/, '').replace(/-USD$/, '');
+        }
+
+        if (this.activeMarket() === 'Forex') {
+            return input.replace(/^FX:/, '');
+        }
+
+        return input;
     }
 
     private loadPortfolioSummary(clientId: string): void {
@@ -282,13 +309,12 @@ export class Transact implements OnInit {
     }
 
     search(): void {
-        const requestedSymbol = this.symbol().trim().toUpperCase();
+        const requestedSymbol = this.marketSymbol();
         if (!requestedSymbol) {
             this.error.set('Enter a symbol to view market data.');
             return;
         }
 
-        this.symbol.set(requestedSymbol);
         this.isLoading.set(true);
         this.error.set(null);
         this.quote.set(null);
