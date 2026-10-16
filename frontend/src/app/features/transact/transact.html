@@ -1,3 +1,218 @@
 <main class="transact-page">
     <app-top-bar [navItems]="navItems" (logout)="logout()"></app-top-bar>
+
+    <section class="trade-header" aria-labelledby="trade-title">
+        <div>
+            <p class="eyebrow">Trade</p>
+            <h1 id="trade-title">Global markets</h1>
+            <p class="subtitle">Equities, crypto and forex</p>
+        </div>
+    </section>
+
+    <section class="trade-layout" aria-label="Market search and order entry">
+        <div class="market-column">
+            <div class="nav-with-action">
+                <nav class="dashboard-tabs" aria-label="Market type">
+                    @for (market of markets; track market) {
+                    <button type="button" class="tab-button" [class.active]="activeMarket() === market"
+                        (click)="selectMarket(market)">
+                        {{ market }}
+                    </button>
+                    }
+                </nav>
+            </div>
+
+            <div class="watchlist-near-search">
+                <app-watchlist (symbolSelected)="selectSymbol($event)"></app-watchlist>
+                <form class="symbol-search" (ngSubmit)="search()">
+                    <label for="symbol">Search symbol</label>
+                    <div class="search-row">
+                        <input id="symbol" name="symbol" type="search" [ngModel]="symbol()"
+                            (ngModelChange)="symbol.set($event)"
+                            [placeholder]="'Search ' + activeMarket().toLowerCase()" autocomplete="off" />
+                        <button type="submit" [disabled]="isLoading()">
+                            {{ isLoading() ? 'Loading...' : 'View market' }}
+                        </button>
+                    </div>
+                </form>
+                <div class="symbol-recommendations">
+                    <span>Suggestions</span>
+                    @for (suggestion of filteredSuggestions(); track suggestion) {
+                    <button type="button" (click)="selectSymbol(suggestion)">{{ suggestion }}</button>
+                    }
+                </div>
+            </div>
+
+            @if (error()) {
+            <p class="trade-message error-message" role="alert">{{ error() }}</p>
+            }
+
+            <section class="chart-panel" aria-live="polite">
+                @if (quote()) {
+                <div class="quote-heading">
+                    <div>
+                        <span class="eyebrow">{{ activeMarket() }}</span>
+                        <h2>{{ quote()!.symbol }}</h2>
+                    </div>
+                    <div class="quote-price">
+                        <strong>{{ quote()!.price | currency: quote()!.currency }}</strong>
+                        <span [class.positive]="quote()!.change >= 0" [class.negative]="quote()!.change < 0">
+                            {{ quote()!.change >= 0 ? '+' : '' }}{{ quote()!.change | number: '1.2-2' }}
+                            ({{ quote()!.changePercent | number: '1.2-2' }}%)
+                        </span>
+                    </div>
+                </div>
+                }
+
+                @if (candles().length > 0) {
+                <div class="chart-wrap">
+                    <ag-charts [options]="chartOptions()"></ag-charts>
+                </div>
+                } @else if (!isLoading() && !error()) {
+                <div class="empty-chart">
+                    <div class="placeholder-plot" aria-hidden="true">
+                        <span class="placeholder-line"></span>
+                    </div>
+                    <div class="empty-chart-message">
+                        <span class="chart-mark" aria-hidden="true">↗</span>
+                        <h2>Search a symbol to see historical trends</h2>
+                        <p>Choose a recommendation or enter a symbol above.</p>
+                    </div>
+                </div>
+                }
+            </section>
+        </div>
+
+        <aside class="order-panel" aria-labelledby="order-title">
+            <div class="order-panel-header">
+                <p class="eyebrow">Order ticket</p>
+                <h2 id="order-title">Place a trade</h2>
+                <p class="order-symbol">{{ symbol() || 'Select a symbol to trade' }}</p>
+            </div>
+
+            <div class="side-toggle" aria-label="Transaction type">
+                <button type="button" [class.active]="orderSide() === 'BUY'" (click)="orderSide.set('BUY')">Buy</button>
+                <button type="button" [class.active]="orderSide() === 'SELL'"
+                    (click)="orderSide.set('SELL')">Sell</button>
+            </div>
+
+            <div class="order-field">
+                <label for="order-type">Order type</label>
+                <div id="order-type" class="fixed-order-type">Market</div>
+            </div>
+
+            <div class="order-field">
+                <label for="quantity">Quantity <span>(shares)</span></label>
+                <input id="quantity" type="number" min="0" step="1" placeholder="0" [ngModel]="quantity()"
+                    (ngModelChange)="quantity.set($event); orderError.set(null); orderMessage.set(null)" />
+            </div>
+
+            <div class="order-summary">
+                <div>
+                    <span>Estimated cost</span>
+                    <strong>{{ estimatedCost() | currency: (quote()?.currency ?? 'USD') }}</strong>
+                </div>
+                <div>
+                    <span>Available to trade</span>
+                    <strong>{{ availableToTrade() | currency: 'USD' }}</strong>
+                </div>
+            </div>
+
+            @if (orderMessage()) {
+            <p class="order-message order-success" role="status">{{ orderMessage() }}</p>
+            }
+            @if (orderError()) {
+            <p class="order-message order-failure" role="alert">{{ orderError() }}</p>
+            }
+
+            <button type="button" class="review-order-button"
+                [disabled]="isSubmittingOrder() || !quote() || !quantity() || quantity()! <= 0" (click)="submitOrder()">
+                {{ isSubmittingOrder() ? 'Submitting...' : 'Submit order' }}
+            </button>
+        </aside>
+    </section>
+
+    <section class="trade-data" aria-label="Trading activity">
+        <nav class="data-tabs" aria-label="Trading data">
+            <button type="button" [class.active]="activeDataTab() === 'positions'"
+                (click)="activeDataTab.set('positions')">Your positions</button>
+            <button type="button" [class.active]="activeDataTab() === 'open-orders'"
+                (click)="activeDataTab.set('open-orders')">Open Orders</button>
+            <button type="button" [class.active]="activeDataTab() === 'history'"
+                (click)="activeDataTab.set('history')">Order history</button>
+        </nav>
+
+        @if (activeDataTab() === 'positions') {
+        <div class="data-table-wrap">
+            <table class="trade-table">
+                <thead>
+                    <tr>
+                        <th>Symbol</th>
+                        <th>Name</th>
+                        <th>Quantity</th>
+                        <th>Average cost</th>
+                        <th>Current price</th>
+                        <th>Value</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @for (position of positions(); track position.symbol) {
+                    <tr>
+                        <td>{{ position.symbol }}</td>
+                        <td>{{ position.name }}</td>
+                        <td>{{ position.quantity | number: '1.0-4' }}</td>
+                        <td>{{ position.averageCost | currency: 'USD' }}</td>
+                        <td>{{ position.currentPrice | currency: 'USD' }}</td>
+                        <td>{{ position.value | currency: 'USD' }}</td>
+                        <td class="position-actions">
+                            <button type="button" class="trade-action buy-action"
+                                (click)="prepareTrade(position.symbol, 'BUY', position.name)">Buy</button>
+                            <button type="button" class="trade-action sell-action"
+                                (click)="prepareTrade(position.symbol, 'SELL', position.name)">Sell</button>
+                        </td>
+                    </tr>
+                    } @empty {
+                    <tr>
+                        <td colspan="7" class="table-empty">No positions available.</td>
+                    </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+        } @else {
+        <div class="data-table-wrap">
+            <table class="trade-table">
+                <thead>
+                    <tr>
+                        <th>Action</th>
+                        <th>Symbol</th>
+                        <th>Quantity</th>
+                        <th>Order type</th>
+                        <th>Status</th>
+                        <th>Date</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @for (order of (activeDataTab() === 'open-orders' ? openOrders() : orderHistory()); track order.id)
+                    {
+                    <tr>
+                        <td>{{ order.orderType }}</td>
+                        <td>{{ order.symbol }}</td>
+                        <td>{{ order.quantity | number: '1.0-4' }}</td>
+                        <td>Market</td>
+                        <td>{{ order.status }}</td>
+                        <td>{{ order.executedAt || 'Pending' }}</td>
+                    </tr>
+                    } @empty {
+                    <tr>
+                        <td colspan="6" class="table-empty">No orders available.</td>
+                    </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+        }
+    </section>
+
 </main>

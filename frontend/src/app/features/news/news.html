@@ -1,0 +1,13 @@
+<main class="news-page">
+    <app-top-bar [navItems]="navItems" (logout)="logout()"></app-top-bar>
+
+    <header class="news-header">
+        <p class="eyebrow">Stay informed</p>
+        <h1>Market news</h1>
+        <p>Stories and signals shaping global markets.</p>
+    </header>
+
+    <section class="news-content" aria-label="Market news feed">
+        <app-news-sidebar></app-news-sidebar>
+    </section>
+</main>

@@ -33,7 +33,10 @@ export interface Candle {
     low: number;
     close: number;
     volume: number;
-    timestamp: string; // ISO 8601 timestamp
+    timestamp?: string; // ISO 8601 timestamp
+    date?: string; // YYYY-MM-DD, used by the market candles endpoint
+    adjclose?: number;
+    synthetic?: boolean;
 }
 
 /**
@@ -42,6 +45,12 @@ export interface Candle {
 export interface CandleResponse {
     symbol: string;
     candles: Candle[];
+    data?: {
+        symbol: string;
+        interval: string;
+        currency: string;
+        candles: Candle[];
+    };
 }
 
 /**
@@ -109,6 +118,19 @@ export interface ClientRequest {
     email: string;
 }
 
+/** Current portfolio and available cash summary. */
+export interface PortfolioSummary {
+    clientId: string;
+    availableCashUsd: string | number;
+    portfolioValueUsd: string | number;
+    investedValueUsd?: string | number;
+    overallReturnUsd?: string | number;
+    overallReturnPercent?: string | number;
+    dailyChangeUsd?: string | number;
+    dailyChangePercent?: string | number;
+    asOf?: string;
+}
+
 // ============================================================================
 // HOLDINGS MODELS
 // ============================================================================
@@ -119,6 +141,7 @@ export interface ClientRequest {
 export interface Holding {
     clientId: string; // UUID
     symbol: string;
+    name?: string;
     quantity: string; // numeric string
     avgBuyPrice: string; // numeric string
     currentValue: string; // numeric string
@@ -140,7 +163,7 @@ export interface HoldingSummary extends Holding {
 /**
  * Order status enum
  */
-export type OrderStatus = 'FILLED' | 'PENDING' | 'CANCELLED' | 'REJECTED' | 'SUBMITTED';
+export type OrderStatus = 'FILLED' | 'PENDING' | 'SUBMITTED' | 'ACCEPTED' | 'CANCELLED' | 'CANCELED' | 'REJECTED';
 
 /**
  * Transaction type enum
@@ -152,12 +175,15 @@ export type TransactionType = 'BUY' | 'SELL';
  */
 export interface Order {
     id: string; // UUID
+    trackingId?: string;
     clientId: string; // UUID
     symbol: string;
+    name?: string;
     quantity: number;
     orderType: TransactionType;
     status: OrderStatus;
     executedAt?: string; // ISO 8601 timestamp
+    price?: number;
 }
 
 /**
@@ -166,6 +192,7 @@ export interface Order {
 export interface OrderRequest {
     clientId: string; // UUID
     symbol: string;
+    name: string;
     quantity: number;
     transactionType: TransactionType;
 }
@@ -174,13 +201,7 @@ export interface OrderRequest {
  * Order response after creation
  */
 export interface OrderResponse {
-    orderId: string; // UUID
-    clientId: string; // UUID
-    symbol: string;
-    quantity: string; // numeric string
-    transactionType: TransactionType;
-    status: OrderStatus;
-    createdAt: string; // ISO 8601 timestamp
+    trackingId: string;
 }
 
 // ============================================================================
