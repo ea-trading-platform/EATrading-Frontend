@@ -4,7 +4,7 @@ import { Router } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
 import { ApiService } from '../../../core/services/api.service';
 import { TradingService } from '../../../core/services/trading.service';
-import { Client, Holding } from '../../../core/models/trading.models';
+import { Client, Holding, PortfolioHistory, PortfolioSummary } from '../../../core/models/trading.models';
 import { StockSearch } from './components/stock-search/stock-search';
 import { PortfolioTableComponent } from '../components/portfolio-table/portfolio-table';
 import { PortfolioTable } from '../interfaces/portfolio-table.interface';
@@ -90,13 +90,6 @@ const MOCK_ORDERS: OrdersTable[] = [
     }
 ];
 
-const MOCK_PORTFOLIO_ALLOCATION = [
-    { label: 'Equities', value: 55 },
-    { label: 'Crypto', value: 15 },
-    { label: 'Forex', value: 20 },
-    { label: 'Cash', value: 10 },
-];
-
 @Component({
     imports: [
         DecimalPipe,
@@ -133,7 +126,8 @@ export class ClientDashboard implements OnInit {
     protected readonly loadingHoldings = signal(false);
     protected readonly orders = signal<OrdersTable[]>(MOCK_ORDERS);
     protected readonly loadingOrders = signal(false);
-    protected readonly portfolioAllocation = MOCK_PORTFOLIO_ALLOCATION;
+    protected readonly portfolioSummary = signal<PortfolioSummary | null>(null);
+    protected readonly portfolioHistory = signal<PortfolioHistory | null>(null);
 
     protected readonly activeTab = signal<ClientDashboardTab>('portfolio');
     protected readonly portfolioHoldings = computed(() =>
@@ -142,13 +136,19 @@ export class ClientDashboard implements OnInit {
             .sort((a, b) => a.symbol.localeCompare(b.symbol)),
     );
     protected readonly portfolioValue = computed(() =>
+        Number(this.portfolioSummary()?.portfolioValueUsd) ||
         this.holdings().reduce((total, holding) => total + (Number(holding.currentValue) || 0), 0),
     );
     protected readonly availableToTrade = computed(() => {
+        const availableCash = Number(this.portfolioSummary()?.availableCashUsd);
+        if (Number.isFinite(availableCash)) {
+            return availableCash;
+        }
         const accountBalance = Number(this.account()?.totalBalance);
         return Number.isFinite(accountBalance) ? accountBalance : 0;
     });
     protected readonly totalGainLoss = computed(() =>
+        Number(this.portfolioSummary()?.overallReturnUsd) ||
         this.holdings().reduce((total, holding) => {
             const currentValue = Number(holding.currentValue) || 0;
             const costBasis = (Number(holding.quantity) || 0) * (Number(holding.avgBuyPrice) || 0);
@@ -156,6 +156,10 @@ export class ClientDashboard implements OnInit {
         }, 0),
     );
     protected readonly gainLossPercentage = computed(() => {
+        const summaryPercentage = Number(this.portfolioSummary()?.overallReturnPercent);
+        if (Number.isFinite(summaryPercentage)) {
+            return summaryPercentage;
+        }
         const costBasis = this.holdings().reduce(
             (total, holding) => total + (Number(holding.quantity) || 0) * (Number(holding.avgBuyPrice) || 0),
             0,
@@ -166,10 +170,28 @@ export class ClientDashboard implements OnInit {
         [...this.orders()].sort((a, b) => b.transactionDate.getTime() - a.transactionDate.getTime()),
     );
     protected readonly balanceData = computed<BalanceGraphInterface[]>(() => {
-        const balance = Number(this.account()?.totalBalance);
-        return Number.isFinite(balance)
-            ? [{ date: new Date().toISOString(), balance }]
-            : [];
+        const points = this.portfolioHistory()?.points ?? [];
+        if (points.length > 0) {
+            return points.map((point) => ({
+                date: point.timestamp,
+                balance: Number(point.portfolioValueUsd) || 0,
+            }));
+        }
+        const balance = this.portfolioValue();
+        return balance > 0 ? [{ date: new Date().toISOString(), balance }] : [];
+    });
+    protected readonly portfolioAllocation = computed(() => {
+        const byInstrument = this.holdings().reduce<Record<string, number>>((totals, holding) => {
+            const instrument = (holding.instrument ?? 'EQUITY').toUpperCase();
+            totals[instrument] = (totals[instrument] ?? 0) + (Number(holding.currentValue) || 0);
+            return totals;
+        }, {});
+        return [
+            { label: 'Equities', value: byInstrument['EQUITY'] ?? 0 },
+            { label: 'Crypto', value: byInstrument['CRYPTO'] ?? 0 },
+            { label: 'Forex', value: byInstrument['FOREX'] ?? 0 },
+            { label: 'Cash', value: Number(this.portfolioSummary()?.availableCashUsd) || 0 },
+        ];
     });
 
     protected readonly stocksSignal = signal<StockTickerData[]>([]);
@@ -182,6 +204,7 @@ export class ClientDashboard implements OnInit {
     ngOnInit(): void {
         this.fetchAccount();
         this.fetchHoldings();
+        this.fetchPortfolioData();
         this.fetchOrders();
         this.fetchTickerData();
     }
@@ -249,6 +272,30 @@ export class ClientDashboard implements OnInit {
                 this.holdings.set([]);
                 this.loadingHoldings.set(false);
             },
+        });
+    }
+
+    private fetchPortfolioData(): void {
+        const clientId = this.auth.getClientId();
+        if (!clientId) {
+            return;
+        }
+
+        this.trading.getPortfolioSummary(clientId).subscribe({
+            next: (summary) => this.portfolioSummary.set(summary),
+            error: (err) => console.error('Error fetching portfolio summary:', err),
+        });
+
+        const to = new Date();
+        const from = new Date(to);
+        from.setFullYear(to.getFullYear() - 1);
+        this.trading.getPortfolioHistory(
+            clientId,
+            from.toISOString().slice(0, 10),
+            to.toISOString().slice(0, 10),
+        ).subscribe({
+            next: (history) => this.portfolioHistory.set(history),
+            error: (err) => console.error('Error fetching portfolio history:', err),
         });
     }
 

@@ -15,7 +15,7 @@ const PORTFOLIO_COLORS = ['#66bfe2', '#a287e6', '#e4a076', '#88a4b8'];
 })
 export class PieChartComponent {
   protected chartData: Array<{ label: string; value: number }> = [];
-  protected readonly totalValueAmount = '$100,000';
+  protected totalValueAmount = '$0.00';
 
   public chartOptions: AgChartOptions = {
     series: [
@@ -36,7 +36,7 @@ export class PieChartComponent {
     }
   };
 
-  protected get totalValue(): number {
+  public get totalValue(): number {
     return this.chartData.reduce((sum, item) => sum + item.value, 0);
   }
 
@@ -52,5 +52,12 @@ export class PieChartComponent {
       ...this.chartOptions,
       data: value,
     } as AgChartOptions;
+  }
+
+  @Input()
+  public set totalValue(value: number | undefined) {
+    if (value !== undefined && Number.isFinite(value)) {
+      this.totalValueAmount = `$${value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    }
   }
 }

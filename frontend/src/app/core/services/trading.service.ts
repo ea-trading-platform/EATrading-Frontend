@@ -5,6 +5,8 @@ import {
     Client,
     ClientRequest,
     Holding,
+    PortfolioHistory,
+    PortfolioSummary,
     Order,
     OrderRequest,
     OrderResponse,
@@ -77,6 +79,14 @@ export class TradingService {
      */
     getClient(clientId: string): Observable<Client> {
         return this.apiService.getClient(clientId);
+    }
+
+    getPortfolioSummary(clientId: string): Observable<PortfolioSummary> {
+        return this.apiService.getPortfolioSummary(clientId);
+    }
+
+    getPortfolioHistory(clientId: string, from: string, to: string): Observable<PortfolioHistory> {
+        return this.apiService.getPortfolioHistory(clientId, from, to);
     }
 
     /**

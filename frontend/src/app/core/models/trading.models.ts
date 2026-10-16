@@ -131,6 +131,22 @@ export interface PortfolioSummary {
     asOf?: string;
 }
 
+export interface PortfolioHistoryPoint {
+    timestamp: string;
+    portfolioValueUsd: string | number;
+    cashValueUsd: string | number;
+    investedValueUsd: string | number;
+    dailyChangeUsd: string | number;
+}
+
+export interface PortfolioHistory {
+    clientId: string;
+    from: string;
+    to: string;
+    interval: string;
+    points: PortfolioHistoryPoint[];
+}
+
 // ============================================================================
 // HOLDINGS MODELS
 // ============================================================================
@@ -142,6 +158,7 @@ export interface Holding {
     clientId: string; // UUID
     symbol: string;
     name?: string;
+    instrument?: 'CASH' | 'EQUITY' | 'CRYPTO' | string;
     quantity: string; // numeric string
     avgBuyPrice: string; // numeric string
     currentValue: string; // numeric string

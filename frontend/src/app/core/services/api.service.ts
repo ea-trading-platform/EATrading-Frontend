@@ -12,6 +12,7 @@ import {
     SuccessResponse,
     Client,
     ClientRequest,
+    PortfolioHistory,
     PortfolioSummary,
     Holding,
     Order,
@@ -182,6 +183,10 @@ export class ApiService {
     /** Get portfolio cash and valuation summary. */
     getPortfolioSummary(clientId: string): Observable<PortfolioSummary> {
         return this.get<PortfolioSummary>(`/api/portfolio`, { clientId });
+    }
+
+    getPortfolioHistory(clientId: string, from: string, to: string): Observable<PortfolioHistory> {
+        return this.get<PortfolioHistory>(`/api/portfolio/history`, { clientId, from, to });
     }
 
     // ========================================================================
