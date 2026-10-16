@@ -18,6 +18,7 @@ import { TopBar, TopBarNavItem } from '../components/top-bar/top-bar';
 import { WatchlistComponent } from '../dashboard/components/watchlist/watchlist';
 import { StockTicker } from '../dashboard/components/stock-ticker/stock-ticker';
 import { StockTickerData } from '../dashboard/interfaces/stock-ticker.interface';
+import { TradeDataGrid, TransactOrderRow, TransactPositionRow } from './trade-data-grid';
 
 ModuleRegistry.registerModules([AllCommunityModule]);
 
@@ -27,7 +28,7 @@ type TradeDataTab = 'positions' | 'open-orders' | 'history';
 const TICKER_SYMBOLS = ['AAPL', 'GOOGL', 'MSFT', 'AMZN', 'TSLA', 'NVDA', 'META', 'NFLX', 'UBER', 'PYPL'];
 
 @Component({
-    imports: [CurrencyPipe, DecimalPipe, FormsModule, AgCharts, TopBar, WatchlistComponent, StockTicker],
+    imports: [CurrencyPipe, DecimalPipe, FormsModule, AgCharts, TopBar, WatchlistComponent, StockTicker, TradeDataGrid],
     selector: 'app-transact',
     standalone: true,
     styleUrl: './transact.css',
@@ -87,6 +88,15 @@ export class Transact implements OnInit {
             : 0,
         value: Number(holding.currentValue) || 0,
     })));
+    protected readonly orderRows = computed<TransactOrderRow[]>(() => this.orders().map((order) => ({
+        id: order.id,
+        trackingId: order.trackingId,
+        orderType: order.orderType,
+        symbol: order.symbol,
+        quantity: order.quantity,
+        status: order.status,
+        executedAt: order.executedAt,
+    })));
     protected readonly openOrders = computed(() => this.orders().filter((order) =>
         order.status === 'PENDING' || order.status === 'SUBMITTED'));
     protected readonly orderHistory = computed(() => this.orders().filter((order) =>
@@ -105,6 +115,22 @@ export class Transact implements OnInit {
         const selectedSymbol = this.marketSymbol();
         const holding = this.holdings().find((item) => this.marketSymbol(item.symbol) === selectedSymbol);
         return Number(holding?.quantity) || 0;
+    });
+    protected readonly quantityValidationError = computed(() => {
+        const requestedQuantity = Number(this.quantity());
+        if (!Number.isFinite(requestedQuantity) || requestedQuantity <= 0) {
+            return null;
+        }
+
+        if (this.orderSide() === 'SELL' && requestedQuantity > this.ownedQuantity()) {
+            return `You can sell at most ${this.ownedQuantity()} shares of ${this.symbol()}.`;
+        }
+
+        if (this.orderSide() === 'BUY' && this.quote() && this.estimatedCost() > this.availableToTrade()) {
+            return `This order costs ${this.estimatedCost().toFixed(2)}, but only ${this.availableToTrade().toFixed(2)} is available to trade.`;
+        }
+
+        return null;
     });
 
     protected readonly chartOptions = computed<AgCartesianChartOptions>(() => ({
@@ -209,8 +235,8 @@ export class Transact implements OnInit {
             return;
         }
 
-        if (this.orderSide() === 'SELL' && requestedQuantity > this.ownedQuantity()) {
-            this.orderError.set(`You own ${this.ownedQuantity()} shares of ${this.symbol()}. You cannot sell ${requestedQuantity}.`);
+        if (this.quantityValidationError()) {
+            this.orderError.set(this.quantityValidationError());
             this.orderMessage.set(null);
             return;
         }
@@ -232,7 +258,7 @@ export class Transact implements OnInit {
                 this.isSubmittingOrder.set(false);
                 this.orderMessage.set(`${this.orderSide()} order for ${requestedSymbol} submitted. Tracking ID: ${response.trackingId}`);
                 this.quantity.set(null);
-                this.refreshData();
+                window.setTimeout(() => this.refreshData(), 1000);
             },
             error: () => {
                 this.isSubmittingOrder.set(false);
