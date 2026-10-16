@@ -9,3 +9,373 @@
     min-height: 100dvh;
     padding: 1.15rem;
 }
+
+.trade-header,
+.trade-layout,
+.market-resources {
+    width: min(100%, 76rem);
+    margin: 0 auto;
+}
+
+.trade-header {
+    padding: 4.5rem 1rem 2.5rem;
+}
+
+.eyebrow {
+    margin: 0 0 0.35rem;
+    color: var(--accent-secondary);
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+}
+
+.trade-header h1,
+.quote-heading h2,
+.empty-chart h2 {
+    margin: 0;
+    color: var(--text-light);
+}
+
+.trade-header h1 {
+    font-size: clamp(2.25rem, 5vw, 4rem);
+    font-weight: 600;
+    letter-spacing: -0.03em;
+}
+
+.subtitle {
+    margin: 0.65rem 0 0;
+    color: var(--text-muted);
+    font-size: 1.05rem;
+}
+
+.trade-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(17rem, 22rem);
+    gap: 1.5rem;
+    padding: 0 1rem 2rem;
+}
+
+.market-column {
+    min-width: 0;
+}
+
+.watchlist-near-search {
+    margin-top: 1.35rem;
+    border: 1px solid var(--border-light);
+    border-radius: 0.65rem;
+    padding: 0.9rem 1rem;
+    background: rgba(8, 19, 28, 0.28);
+}
+
+.nav-with-action {
+    border-bottom: 1px solid var(--border-lighter);
+}
+
+.dashboard-tabs {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.tab-button {
+    padding: 0.8rem 1rem;
+    border: 0;
+    border-bottom: 2px solid transparent;
+    background: transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+.tab-button:hover,
+.tab-button.active {
+    color: var(--text-light);
+}
+
+.tab-button.active {
+    border-bottom-color: var(--accent);
+}
+
+.symbol-search {
+    max-width: 42rem;
+    margin: 2.25rem 0 1.5rem;
+}
+
+.symbol-search label {
+    display: block;
+    margin-bottom: 0.55rem;
+    color: var(--text-muted);
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.search-row {
+    display: flex;
+    gap: 0.75rem;
+}
+
+.search-row input {
+    min-width: 0;
+    flex: 1;
+    border: 1px solid var(--border-light);
+    border-radius: 0.35rem;
+    padding: 0.85rem 1rem;
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--text-light);
+    outline: none;
+}
+
+.search-row input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(78, 204, 204, 0.12);
+}
+
+.search-row button {
+    border: 0;
+    border-radius: 0.35rem;
+    padding: 0.85rem 1.15rem;
+    background: var(--accent);
+    color: var(--dark-primary);
+    cursor: pointer;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.search-row button:disabled {
+    cursor: wait;
+    opacity: 0.65;
+}
+
+.trade-message {
+    margin: 0 0 1rem;
+    color: var(--neg-accent);
+}
+
+.chart-panel {
+    min-height: 29rem;
+    border-top: 1px solid var(--border-lighter);
+    padding-top: 1.5rem;
+}
+
+.quote-heading {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.quote-heading h2 {
+    font-size: 1.5rem;
+}
+
+.quote-price {
+    display: flex;
+    align-items: baseline;
+    gap: 0.75rem;
+}
+
+.quote-price strong {
+    color: var(--text-light);
+    font-size: 1.4rem;
+}
+
+.positive {
+    color: var(--accent-secondary);
+}
+
+.negative {
+    color: var(--neg-accent);
+}
+
+.chart-wrap {
+    height: 25rem;
+}
+
+.chart-wrap ag-charts {
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+
+.empty-chart {
+    display: grid;
+    min-height: 25rem;
+    place-content: center;
+    justify-items: center;
+    border: 1px dashed var(--border-light);
+    color: var(--text-muted);
+    text-align: center;
+}
+
+.chart-mark {
+    display: grid;
+    width: 3rem;
+    height: 3rem;
+    margin-bottom: 1rem;
+    place-items: center;
+    border: 1px solid var(--accent);
+    border-radius: 50%;
+    color: var(--accent-secondary);
+    font-size: 1.4rem;
+}
+
+.empty-chart h2 {
+    font-size: 1.15rem;
+}
+
+.empty-chart p {
+    margin: 0.5rem 0 0;
+}
+
+.order-panel {
+    display: flex;
+    min-height: 31rem;
+    flex-direction: column;
+    gap: 1.25rem;
+    border: 1px solid var(--border-light);
+    border-radius: 0.65rem;
+    padding: 1.25rem;
+    background: rgba(8, 19, 28, 0.42);
+}
+
+.order-panel-header h2 {
+    margin: 0;
+    color: var(--text-light);
+    font-size: 1.35rem;
+}
+
+.side-toggle {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    border-bottom: 1px solid var(--border-lighter);
+}
+
+.side-toggle button {
+    border: 0;
+    border-bottom: 2px solid transparent;
+    padding: 0.75rem;
+    background: transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-weight: 700;
+}
+
+.side-toggle button.active {
+    border-bottom-color: var(--accent);
+    color: var(--text-light);
+}
+
+.order-field {
+    display: grid;
+    gap: 0.5rem;
+}
+
+.order-field label,
+.order-summary span {
+    color: var(--text-muted);
+    font-size: 0.78rem;
+    font-weight: 600;
+}
+
+.order-field label span {
+    font-weight: 400;
+}
+
+.order-field input,
+.order-field select {
+    width: 100%;
+    border: 1px solid var(--border-light);
+    border-radius: 0.35rem;
+    padding: 0.75rem;
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--text-light);
+}
+
+.order-field option {
+    color: #12202b;
+}
+
+.order-summary {
+    display: grid;
+    gap: 1rem;
+    border-top: 1px solid var(--border-lighter);
+    padding-top: 1rem;
+}
+
+.order-summary div {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.75rem;
+}
+
+.order-summary strong {
+    color: var(--text-light);
+    font-size: 1rem;
+}
+
+.review-order-button {
+    width: 100%;
+    margin-top: auto;
+    border: 0;
+    border-radius: 0.35rem;
+    padding: 1rem;
+    background: var(--accent);
+    color: var(--dark-primary);
+    cursor: pointer;
+    font-weight: 800;
+}
+
+.review-order-button:disabled {
+    cursor: not-allowed;
+    opacity: 0.45;
+}
+
+@media (max-width: 600px) {
+    .trade-header {
+        padding: 3rem 0.25rem 2rem;
+    }
+
+    .trade-workspace {
+        padding: 0 0.25rem 2rem;
+    }
+
+    .trade-layout {
+        display: block;
+        padding-inline: 0.25rem;
+    }
+
+    .order-panel {
+        min-height: 0;
+        margin-top: 1.5rem;
+    }
+
+    .dashboard-tabs {
+        width: 100%;
+    }
+
+    .tab-button {
+        flex: 1;
+        padding-inline: 0.35rem;
+    }
+
+    .search-row {
+        flex-direction: column;
+    }
+
+    .search-row button {
+        width: 100%;
+    }
+
+    .quote-heading {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .chart-wrap {
+        height: 20rem;
+    }
+}

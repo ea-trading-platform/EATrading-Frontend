@@ -33,7 +33,10 @@ export interface Candle {
     low: number;
     close: number;
     volume: number;
-    timestamp: string; // ISO 8601 timestamp
+    timestamp?: string; // ISO 8601 timestamp
+    date?: string; // YYYY-MM-DD, used by the market candles endpoint
+    adjclose?: number;
+    synthetic?: boolean;
 }
 
 /**
@@ -42,6 +45,12 @@ export interface Candle {
 export interface CandleResponse {
     symbol: string;
     candles: Candle[];
+    data?: {
+        symbol: string;
+        interval: string;
+        currency: string;
+        candles: Candle[];
+    };
 }
 
 /**

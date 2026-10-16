@@ -1,3 +1,118 @@
 <main class="transact-page">
     <app-top-bar [navItems]="navItems" (logout)="logout()"></app-top-bar>
+
+    <section class="trade-header" aria-labelledby="trade-title">
+        <div>
+            <p class="eyebrow">Trade</p>
+            <h1 id="trade-title">Global markets</h1>
+            <p class="subtitle">Equities, crypto and forex</p>
+        </div>
+    </section>
+
+    <section class="trade-layout" aria-label="Market search and order entry">
+        <div class="market-column">
+            <div class="nav-with-action">
+                <nav class="dashboard-tabs" aria-label="Market type">
+                    @for (market of markets; track market) {
+                    <button type="button" class="tab-button" [class.active]="activeMarket() === market"
+                        (click)="selectMarket(market)">
+                        {{ market }}
+                    </button>
+                    }
+                </nav>
+            </div>
+
+            <div class="watchlist-near-search">
+                <app-watchlist></app-watchlist>
+            </div>
+
+            <form class="symbol-search" (ngSubmit)="search()">
+                <label for="symbol">Search symbol</label>
+                <div class="search-row">
+                    <input id="symbol" name="symbol" type="search" [ngModel]="symbol()"
+                        (ngModelChange)="symbol.set($event)" [placeholder]="'Search ' + activeMarket().toLowerCase()"
+                        autocomplete="off" />
+                    <button type="submit" [disabled]="isLoading()">
+                        {{ isLoading() ? 'Loading...' : 'View market' }}
+                    </button>
+                </div>
+            </form>
+
+            @if (error()) {
+            <p class="trade-message error-message" role="alert">{{ error() }}</p>
+            }
+
+            <section class="chart-panel" aria-live="polite">
+                @if (quote()) {
+                <div class="quote-heading">
+                    <div>
+                        <span class="eyebrow">{{ activeMarket() }}</span>
+                        <h2>{{ quote()!.symbol }}</h2>
+                    </div>
+                    <div class="quote-price">
+                        <strong>{{ quote()!.price | currency: quote()!.currency }}</strong>
+                        <span [class.positive]="quote()!.change >= 0" [class.negative]="quote()!.change < 0">
+                            {{ quote()!.change >= 0 ? '+' : '' }}{{ quote()!.change | number: '1.2-2' }}
+                            ({{ quote()!.changePercent | number: '1.2-2' }}%)
+                        </span>
+                    </div>
+                </div>
+                }
+
+                @if (candles().length > 0) {
+                <div class="chart-wrap">
+                    <ag-charts [options]="chartOptions()"></ag-charts>
+                </div>
+                } @else if (!isLoading() && !error()) {
+                <div class="empty-chart">
+                    <span class="chart-mark" aria-hidden="true">↗</span>
+                    <h2>Search a symbol to begin</h2>
+                    <p>Historical price performance will appear here.</p>
+                </div>
+                }
+            </section>
+        </div>
+
+        <aside class="order-panel" aria-labelledby="order-title">
+            <div class="order-panel-header">
+                <p class="eyebrow">Order ticket</p>
+                <h2 id="order-title">Place a trade</h2>
+            </div>
+
+            <div class="side-toggle" aria-label="Transaction type">
+                <button type="button" [class.active]="orderSide() === 'BUY'" (click)="orderSide.set('BUY')">Buy</button>
+                <button type="button" [class.active]="orderSide() === 'SELL'"
+                    (click)="orderSide.set('SELL')">Sell</button>
+            </div>
+
+            <div class="order-field">
+                <label for="order-type">Order type</label>
+                <select id="order-type" [ngModel]="orderType()" (ngModelChange)="orderType.set($event)">
+                    <option value="MARKET">Market</option>
+                </select>
+            </div>
+
+            <div class="order-field">
+                <label for="quantity">Quantity <span>(shares)</span></label>
+                <input id="quantity" type="number" min="0" step="1" placeholder="0" [ngModel]="quantity()"
+                    (ngModelChange)="quantity.set($event)" />
+            </div>
+
+            <div class="order-summary">
+                <div>
+                    <span>Estimated cost</span>
+                    <strong>{{ estimatedCost() | currency: (quote()?.currency ?? 'USD') }}</strong>
+                </div>
+                <div>
+                    <span>Available to trade</span>
+                    <strong>{{ availableToTrade() | currency: 'USD' }}</strong>
+                </div>
+            </div>
+
+            <button type="button" class="review-order-button" [disabled]="!quote() || !quantity() || quantity()! <= 0">
+                Review order
+            </button>
+        </aside>
+    </section>
+
 </main>
