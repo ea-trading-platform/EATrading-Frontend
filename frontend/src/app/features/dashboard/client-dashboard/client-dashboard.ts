@@ -17,6 +17,7 @@ import { StockTicker } from '../components/stock-ticker/stock-ticker';
 import { StockTickerData } from '../interfaces/stock-ticker.interface';
 import { WatchlistComponent } from '../components/watchlist/watchlist';
 import { TopMoversComponent } from '../components/top-movers/top-movers';
+import { PieChartComponent } from '../components/pie-chart/pie-chart';
 import { forkJoin } from 'rxjs';
 type ClientDashboardTab = 'portfolio' | 'orders';
 
@@ -89,6 +90,14 @@ const MOCK_ORDERS: OrdersTable[] = [
     }
 ];
 
+const MOCK_PORTFOLIO_ALLOCATION = [
+    { label: 'Technology', value: 42 },
+    { label: 'Healthcare', value: 23 },
+    { label: 'Financials', value: 18 },
+    { label: 'Consumer', value: 12 },
+    { label: 'Other', value: 5 },
+];
+
 @Component({
     imports: [
         DecimalPipe,
@@ -99,7 +108,8 @@ const MOCK_ORDERS: OrdersTable[] = [
         BalanceGraph,
         StockTicker,
         WatchlistComponent,
-        TopMoversComponent
+        TopMoversComponent,
+        PieChartComponent,
     ],
     selector: 'app-client-dashboard',
     standalone: true,
@@ -124,6 +134,7 @@ export class ClientDashboard implements OnInit {
     protected readonly loadingHoldings = signal(false);
     protected readonly orders = signal<OrdersTable[]>(MOCK_ORDERS);
     protected readonly loadingOrders = signal(false);
+    protected readonly portfolioAllocation = MOCK_PORTFOLIO_ALLOCATION;
 
     protected readonly activeTab = signal<ClientDashboardTab>('portfolio');
     protected readonly portfolioHoldings = computed(() =>

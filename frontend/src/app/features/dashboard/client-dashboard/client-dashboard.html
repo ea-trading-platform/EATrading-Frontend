@@ -86,7 +86,9 @@
 
             <!-- Sidebar: Watchlist and Top Movers -->
             <div class="col-lg-4 col-md-12">
-                <!-- <app-pie-chart></app-pie-chart> -->
+                <section class="pie-chart-card" aria-label="Portfolio allocation">
+                    <app-pie-chart [data]="portfolioAllocation"></app-pie-chart>
+                </section>
                 <app-top-movers></app-top-movers>
             </div>
 
