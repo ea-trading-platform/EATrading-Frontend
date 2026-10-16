@@ -61,13 +61,22 @@
                     </div>
                     <div class="quote-price">
                         <strong>{{ quote()!.price | currency: quote()!.currency }}</strong>
-                        <span [class.positive]="quote()!.change >= 0" [class.negative]="quote()!.change < 0">
-                            {{ quote()!.change >= 0 ? '+' : '' }}{{ quote()!.change | number: '1.2-2' }}
-                            ({{ quote()!.changePercent | number: '1.2-2' }}%)
+                        <span [class.positive]="quoteChange() >= 0" [class.negative]="quoteChange() < 0">
+                            {{ quoteChange() >= 0 ? '+' : '' }}{{ quoteChange() | number: '1.2-2' }}
+                            ({{ quoteChangePercent() | number: '1.2-2' }}%)
                         </span>
                     </div>
                 </div>
                 }
+
+                <div class="chart-range-controls" role="group" aria-label="Chart date range">
+                    @for (range of ranges; track range) {
+                    <button type="button" [class.active]="selectedRange() === range" [disabled]="isLoading()"
+                        [attr.aria-pressed]="selectedRange() === range" (click)="selectRange(range)">
+                        {{ range }}
+                    </button>
+                    }
+                </div>
 
                 @if (candles().length > 0) {
                 <div class="chart-wrap">
@@ -112,14 +121,23 @@
                     (ngModelChange)="quantity.set($event); orderError.set(null); orderMessage.set(null)" />
             </div>
 
+            @if (quantityValidationError()) {
+            <p class="order-message order-failure" role="alert">{{ quantityValidationError() }}</p>
+            }
+
             <div class="order-summary">
                 <div>
                     <span>Estimated cost</span>
                     <strong>{{ estimatedCost() | currency: (quote()?.currency ?? 'USD') }}</strong>
                 </div>
                 <div>
+                    @if (orderSide() === 'SELL') {
+                    <span>Shares owned</span>
+                    <strong>{{ ownedQuantity() | number: '1.0-4' }}</strong>
+                    } @else {
                     <span>Available to trade</span>
                     <strong>{{ availableToTrade() | currency: 'USD' }}</strong>
+                    }
                 </div>
             </div>
 
@@ -131,12 +149,15 @@
             }
 
             <button type="button" class="review-order-button"
-                [disabled]="isSubmittingOrder() || !quote() || !quantity() || quantity()! <= 0" (click)="submitOrder()">
+                [disabled]="isSubmittingOrder() || !!quantityValidationError() || !quote() || !quantity() || quantity()! <= 0"
+                (click)="submitOrder()">
                 {{ isSubmittingOrder() ? 'Submitting...' : 'Submit order' }}
             </button>
 
             <div class="order-watchlist">
-                <app-watchlist (symbolSelected)="selectSymbol($event)"></app-watchlist>
+                <app-watchlist (symbolSelected)="selectSymbol($event)">
+                    <app-stock-search></app-stock-search>
+                </app-watchlist>
             </div>
         </aside>
     </section>
@@ -151,77 +172,8 @@
                 (click)="activeDataTab.set('history')">Order history</button>
         </nav>
 
-        @if (activeDataTab() === 'positions') {
-        <div class="data-table-wrap">
-            <table class="trade-table">
-                <thead>
-                    <tr>
-                        <th>Symbol</th>
-                        <th>Name</th>
-                        <th>Quantity</th>
-                        <th>Average cost</th>
-                        <th>Current price</th>
-                        <th>Value</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @for (position of positions(); track position.symbol) {
-                    <tr>
-                        <td>{{ position.symbol }}</td>
-                        <td>{{ position.name }}</td>
-                        <td>{{ position.quantity | number: '1.0-4' }}</td>
-                        <td>{{ position.averageCost | currency: 'USD' }}</td>
-                        <td>{{ position.currentPrice | currency: 'USD' }}</td>
-                        <td>{{ position.value | currency: 'USD' }}</td>
-                        <td class="position-actions">
-                            <button type="button" class="trade-action buy-action"
-                                (click)="prepareTrade(position.symbol, 'BUY', position.name)">Buy</button>
-                            <button type="button" class="trade-action sell-action"
-                                (click)="prepareTrade(position.symbol, 'SELL', position.name)">Sell</button>
-                        </td>
-                    </tr>
-                    } @empty {
-                    <tr>
-                        <td colspan="7" class="table-empty">No positions available.</td>
-                    </tr>
-                    }
-                </tbody>
-            </table>
-        </div>
-        } @else {
-        <div class="data-table-wrap">
-            <table class="trade-table">
-                <thead>
-                    <tr>
-                        <th>Action</th>
-                        <th>Symbol</th>
-                        <th>Quantity</th>
-                        <th>Order type</th>
-                        <th>Status</th>
-                        <th>Date</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @for (order of (activeDataTab() === 'open-orders' ? openOrders() : orderHistory()); track order.id)
-                    {
-                    <tr>
-                        <td>{{ order.orderType }}</td>
-                        <td>{{ order.symbol }}</td>
-                        <td>{{ order.quantity | number: '1.0-4' }}</td>
-                        <td>Market</td>
-                        <td>{{ order.status }}</td>
-                        <td>{{ order.executedAt || 'Pending' }}</td>
-                    </tr>
-                    } @empty {
-                    <tr>
-                        <td colspan="6" class="table-empty">No orders available.</td>
-                    </tr>
-                    }
-                </tbody>
-            </table>
-        </div>
-        }
+        <app-data-grid [columnDefs]="gridColumns()" [rowData]="gridRows()"
+            [gridOptions]="gridOptions()"></app-data-grid>
     </section>
 
 </main>
