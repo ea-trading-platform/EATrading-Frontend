@@ -9,7 +9,9 @@ import {
     AgLineSeriesOptions,
     AllCommunityModule,
     ModuleRegistry,
+    UnitTimeAxisModule,
 } from 'ag-charts-community';
+import { ColDef, GridOptions } from 'ag-grid-community';
 import { AuthService } from '../../core/services/auth.service';
 import { ApiService } from '../../core/services/api.service';
 import { TradingService } from '../../core/services/trading.service';
@@ -19,17 +21,18 @@ import { WatchlistComponent } from '../dashboard/components/watchlist/watchlist'
 import { StockSearch } from '../dashboard/client-dashboard/components/stock-search/stock-search';
 import { StockTicker } from '../dashboard/components/stock-ticker/stock-ticker';
 import { StockTickerData } from '../dashboard/interfaces/stock-ticker.interface';
-import { TradeDataGrid, TransactOrderRow, TransactPositionRow } from './trade-data-grid';
+import { DataGrid } from '../dashboard/components/data-grid/data-grid';
 
-ModuleRegistry.registerModules([AllCommunityModule]);
+ModuleRegistry.registerModules([AllCommunityModule, UnitTimeAxisModule]);
 
 type Market = 'Equities' | 'Crypto' | 'Forex';
 type TradeDataTab = 'positions' | 'open-orders' | 'history';
+type ChartRange = '1D' | '1W' | '1M' | '3M' | '1Y' | 'ALL';
 
 const TICKER_SYMBOLS = ['AAPL', 'GOOGL', 'MSFT', 'AMZN', 'TSLA', 'NVDA', 'META', 'NFLX', 'UBER', 'PYPL'];
 
 @Component({
-    imports: [CurrencyPipe, DecimalPipe, FormsModule, AgCharts, TopBar, WatchlistComponent, StockSearch, StockTicker, TradeDataGrid],
+    imports: [CurrencyPipe, DecimalPipe, FormsModule, AgCharts, TopBar, WatchlistComponent, StockSearch, StockTicker, DataGrid],
     selector: 'app-transact',
     standalone: true,
     styleUrl: './transact.css',
@@ -49,6 +52,8 @@ export class Transact implements OnInit {
 
     protected readonly markets: readonly Market[] = ['Equities', 'Crypto', 'Forex'];
     protected readonly activeMarket = signal<Market>('Equities');
+    protected readonly ranges: readonly ChartRange[] = ['1D', '1W', '1M', '3M', '1Y', 'ALL'];
+    protected readonly selectedRange = signal<ChartRange>('1M');
     protected readonly symbol = signal('');
     protected readonly instrumentName = signal('');
     protected readonly quote = signal<StockQuote | null>(null);
@@ -89,7 +94,7 @@ export class Transact implements OnInit {
             : 0,
         value: Number(holding.currentValue) || 0,
     })));
-    protected readonly orderRows = computed<TransactOrderRow[]>(() => this.orders().map((order) => ({
+    protected readonly orderRows = computed(() => this.orders().map((order) => ({
         id: order.id,
         trackingId: order.trackingId,
         orderType: order.orderType,
@@ -98,6 +103,16 @@ export class Transact implements OnInit {
         status: order.status,
         executedAt: order.executedAt,
     })));
+    protected readonly gridRows = computed(() => this.activeDataTab() === 'positions'
+        ? this.positions()
+        : (this.activeDataTab() === 'open-orders' ? this.openOrders() : this.orderHistory()));
+    protected readonly gridOptions = computed<GridOptions<any>>(() => ({
+        domLayout: 'autoHeight',
+        suppressCellFocus: true,
+    }));
+    protected readonly gridColumns = computed<ColDef<any>[]>(() =>
+        this.activeDataTab() === 'positions' ? this.positionColumns() : this.orderColumns(),
+    );
     protected readonly openOrders = computed(() => this.orders().filter((order) =>
         order.status === 'PENDING' || order.status === 'SUBMITTED'));
     protected readonly orderHistory = computed(() => this.orders().filter((order) =>
@@ -110,6 +125,24 @@ export class Transact implements OnInit {
         const price = Number(this.quote()?.price) || 0;
         const shares = Number(this.quantity()) || 0;
         return price * shares;
+    });
+    protected readonly quoteChange = computed(() => {
+        const quote = this.quote();
+        if (!quote) {
+            return 0;
+        }
+
+        const change = Number(quote.price) - Number(quote.previousClose);
+        return Number.isFinite(change) ? change : Number(quote.change) || 0;
+    });
+    protected readonly quoteChangePercent = computed(() => {
+        const quote = this.quote();
+        const previousClose = Number(quote?.previousClose);
+        if (!quote || !Number.isFinite(previousClose) || previousClose === 0) {
+            return Number(quote?.changePercent) || 0;
+        }
+
+        return (this.quoteChange() / previousClose) * 100;
     });
 
     protected readonly ownedQuantity = computed(() => {
@@ -147,13 +180,24 @@ export class Transact implements OnInit {
             stroke: '#4ecccc',
             strokeWidth: 2.5,
             marker: { enabled: true, size: 4, fill: '#4ecccc' },
-            tooltip: { enabled: true },
+            tooltip: {
+                enabled: true,
+                renderer: (params: any) => {
+                    const date = new Date(params.datum.timestamp).toLocaleDateString('en-US', {
+                        year: 'numeric', month: 'short', day: 'numeric',
+                    });
+                    const close = new Intl.NumberFormat('en-US', {
+                        style: 'currency', currency: this.quote()?.currency ?? 'USD', maximumFractionDigits: 2,
+                    }).format(Number(params.datum.close) || 0);
+                    return `${date}<br/>Close: ${close}`;
+                },
+            },
         } as AgLineSeriesOptions],
         axes: {
-            x: { type: 'category', label: { color: 'rgba(255, 255, 255, 0.6)' } },
+            x: { type: 'unit-time', label: { color: 'rgba(255, 255, 255, 0.6)' } },
             y: {
                 type: 'number',
-                label: { color: 'rgba(255, 255, 255, 0.6)', format: '$#{0.2f}' },
+                label: { color: 'rgba(255, 255, 255, 0.6)', format: '$#,##0.00' },
                 gridLine: { style: [{ stroke: 'rgba(255, 255, 255, 0.1)', lineDash: [4, 2] }] },
             },
         },
@@ -203,6 +247,58 @@ export class Transact implements OnInit {
         });
     }
 
+    private positionColumns(): ColDef<any>[] {
+        const currencyFormatter = (params: { value: number }): string =>
+            new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(params.value ?? 0);
+
+        return [
+            { field: 'symbol', headerName: 'Symbol', minWidth: 110 },
+            { field: 'name', headerName: 'Name', minWidth: 170, flex: 1 },
+            { field: 'quantity', headerName: 'Quantity', minWidth: 110 },
+            { field: 'averageCost', headerName: 'Average cost', minWidth: 135, valueFormatter: currencyFormatter },
+            { field: 'currentPrice', headerName: 'Current price', minWidth: 135, valueFormatter: currencyFormatter },
+            { field: 'value', headerName: 'Value', minWidth: 125, valueFormatter: currencyFormatter },
+            {
+                colId: 'actions', headerName: 'Actions', minWidth: 155, sortable: false,
+                cellRenderer: (params: { data: { symbol: string; name: string } }) => {
+                    const container = document.createElement('div');
+                    container.style.display = 'flex';
+                    container.style.gap = '0.4rem';
+                    for (const side of ['BUY', 'SELL'] as const) {
+                        const button = document.createElement('button');
+                        button.type = 'button';
+                        button.textContent = side === 'BUY' ? 'Buy' : 'Sell';
+                        button.style.border = '0';
+                        button.style.borderRadius = '0.3rem';
+                        button.style.padding = '0.35rem 0.6rem';
+                        button.style.color = '#08131c';
+                        button.style.cursor = 'pointer';
+                        button.style.fontWeight = '800';
+                        button.style.background = side === 'BUY' ? '#65d6a0' : '#e06c75';
+                        button.addEventListener('click', (event) => {
+                            event.stopPropagation();
+                            this.prepareTrade(params.data.symbol, side, params.data.name);
+                        });
+                        container.appendChild(button);
+                    }
+                    return container;
+                },
+            },
+        ];
+    }
+
+    private orderColumns(): ColDef<any>[] {
+        return [
+            { field: 'trackingId', headerName: 'Tracking ID', minWidth: 220 },
+            { field: 'orderType', headerName: 'Action', minWidth: 100 },
+            { field: 'symbol', headerName: 'Symbol', minWidth: 115 },
+            { field: 'quantity', headerName: 'Quantity', minWidth: 110 },
+            { headerName: 'Order type', valueGetter: () => 'Market', minWidth: 120 },
+            { field: 'status', headerName: 'Status', minWidth: 125 },
+            { field: 'executedAt', headerName: 'Date', minWidth: 170, valueFormatter: (params) => params.value || 'Pending' },
+        ];
+    }
+
     selectMarket(market: Market): void {
         this.activeMarket.set(market);
         this.symbol.set('');
@@ -212,6 +308,20 @@ export class Transact implements OnInit {
         this.quantity.set(null);
         this.orderMessage.set(null);
         this.orderError.set(null);
+    }
+
+    selectRange(range: ChartRange): void {
+        this.selectedRange.set(range);
+        if (this.symbol()) {
+            this.search();
+        }
+    }
+
+    selectRangeFromEvent(event: Event): void {
+        const value = (event.target as HTMLSelectElement).value as ChartRange;
+        if (this.ranges.includes(value)) {
+            this.selectRange(value);
+        }
     }
 
     selectSymbol(symbol: string, name = symbol): void {
@@ -349,7 +459,7 @@ export class Transact implements OnInit {
 
         forkJoin({
             quote: this.api.getQuote(requestedSymbol),
-            candles: this.api.getCandles(requestedSymbol),
+            candles: this.api.getCandles(requestedSymbol, this.candleQuery()),
         }).subscribe({
             next: ({ quote, candles }) => {
                 const response = candles as CandleResponse;
@@ -367,6 +477,25 @@ export class Transact implements OnInit {
                 this.isLoading.set(false);
             },
         });
+    }
+
+    private candleQuery(): { from?: string; to?: string } {
+        const rangeDays: Record<Exclude<ChartRange, 'ALL'>, number> = {
+            '1D': 1, '1W': 7, '1M': 30, '3M': 90, '1Y': 365,
+        };
+        const range = this.selectedRange();
+        if (range === 'ALL') {
+            return {};
+        }
+
+        const to = new Date();
+        const from = new Date(to);
+        from.setDate(from.getDate() - rangeDays[range]);
+        return { from: this.toDateParam(from), to: this.toDateParam(to) };
+    }
+
+    private toDateParam(date: Date): string {
+        return date.toISOString().slice(0, 10);
     }
 
     async logout(): Promise<void> {

@@ -261,6 +261,35 @@
     font-size: 1.4rem;
 }
 
+.chart-range-controls {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.35rem;
+    margin-bottom: 0.75rem;
+}
+
+.chart-range-controls button {
+    border: 1px solid var(--border-light);
+    border-radius: 0.25rem;
+    padding: 0.35rem 0.55rem;
+    background: transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-size: 0.72rem;
+    font-weight: 700;
+}
+
+.chart-range-controls button:hover:not(:disabled),
+.chart-range-controls button.active {
+    border-color: var(--accent);
+    color: var(--text-light);
+}
+
+.chart-range-controls button:disabled {
+    cursor: wait;
+    opacity: 0.6;
+}
+
 .positive {
     color: var(--accent-secondary);
 }
@@ -609,5 +638,10 @@
 
     .chart-wrap {
         height: 20rem;
+    }
+
+    .chart-range-controls {
+        justify-content: flex-start;
+        overflow-x: auto;
     }
 }

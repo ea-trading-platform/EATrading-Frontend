@@ -61,13 +61,22 @@
                     </div>
                     <div class="quote-price">
                         <strong>{{ quote()!.price | currency: quote()!.currency }}</strong>
-                        <span [class.positive]="quote()!.change >= 0" [class.negative]="quote()!.change < 0">
-                            {{ quote()!.change >= 0 ? '+' : '' }}{{ quote()!.change | number: '1.2-2' }}
-                            ({{ quote()!.changePercent | number: '1.2-2' }}%)
+                        <span [class.positive]="quoteChange() >= 0" [class.negative]="quoteChange() < 0">
+                            {{ quoteChange() >= 0 ? '+' : '' }}{{ quoteChange() | number: '1.2-2' }}
+                            ({{ quoteChangePercent() | number: '1.2-2' }}%)
                         </span>
                     </div>
                 </div>
                 }
+
+                <div class="chart-range-controls" role="group" aria-label="Chart date range">
+                    @for (range of ranges; track range) {
+                    <button type="button" [class.active]="selectedRange() === range" [disabled]="isLoading()"
+                        [attr.aria-pressed]="selectedRange() === range" (click)="selectRange(range)">
+                        {{ range }}
+                    </button>
+                    }
+                </div>
 
                 @if (candles().length > 0) {
                 <div class="chart-wrap">
@@ -163,13 +172,8 @@
                 (click)="activeDataTab.set('history')">Order history</button>
         </nav>
 
-        @if (activeDataTab() === 'positions') {
-        <app-trade-data-grid mode="positions" [rowData]="positions()"
-            (tradeAction)="prepareTrade($event.symbol, $event.side, $event.name)"></app-trade-data-grid>
-        } @else {
-        <app-trade-data-grid mode="orders"
-            [rowData]="(activeDataTab() === 'open-orders' ? openOrders() : orderHistory())"></app-trade-data-grid>
-        }
+        <app-data-grid [columnDefs]="gridColumns()" [rowData]="gridRows()"
+            [gridOptions]="gridOptions()"></app-data-grid>
     </section>
 
 </main>
