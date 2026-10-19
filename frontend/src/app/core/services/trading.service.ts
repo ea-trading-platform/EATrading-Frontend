@@ -126,6 +126,7 @@ export class TradingService {
         this.error.set(null);
 
         return this.apiService.getHoldings(clientId).pipe(
+            map((holdings) => holdings.filter((holding) => !this.isUsdCashHolding(holding))),
             tap((holdings) => {
                 this.holdings.set(holdings);
                 this.isLoading.set(false);
@@ -142,7 +143,9 @@ export class TradingService {
      * Fetch holdings without caching
      */
     getHoldings(clientId: string): Observable<Holding[]> {
-        return this.apiService.getHoldings(clientId);
+        return this.apiService.getHoldings(clientId).pipe(
+            map((holdings) => holdings.filter((holding) => !this.isUsdCashHolding(holding))),
+        );
     }
 
     /**
@@ -185,7 +188,9 @@ export class TradingService {
         this.error.set(null);
 
         return this.apiService.getOrders(clientId).pipe(
-            map((orders) => orders.map((order) => this.normalizeOrder(order))),
+            map((orders) => orders
+                .map((order) => this.normalizeOrder(order))
+                .filter((order) => order.symbol.trim().toUpperCase() !== 'USD')),
             tap((orders) => {
                 this.orders.set(orders);
                 this.isLoading.set(false);
@@ -202,7 +207,11 @@ export class TradingService {
      * Fetch orders without caching
      */
     getOrders(clientId: string): Observable<Order[]> {
-        return this.apiService.getOrders(clientId).pipe(map((orders) => orders.map((order) => this.normalizeOrder(order))));
+        return this.apiService.getOrders(clientId).pipe(
+            map((orders) => orders
+                .map((order) => this.normalizeOrder(order))
+                .filter((order) => order.symbol.trim().toUpperCase() !== 'USD')),
+        );
     }
 
     /**
@@ -244,6 +253,10 @@ export class TradingService {
             status: raw.currentStatus ?? raw.status,
             executedAt: raw.executedAt ?? raw.orderDate,
         };
+    }
+
+    private isUsdCashHolding(holding: Holding): boolean {
+        return holding.symbol.trim().toUpperCase() === 'USD';
     }
 
     /**
