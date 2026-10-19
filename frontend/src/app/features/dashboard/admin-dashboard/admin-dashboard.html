@@ -1,17 +1,21 @@
 <main class="admin-dashboard">
 	<app-top-bar (logout)="logout()"></app-top-bar>
 
-	<h1>Hello {{ adminName() }}</h1>
-
-	<form class="client-search" (ngSubmit)="searchClient()">
-		<label for="client-search-input">Search clients</label>
-		<div class="client-search-controls">
-			<input id="client-search-input" name="clientSearch" type="search"
-			placeholder="Search by client ID"
-			[ngModel]="searchQuery()" (ngModelChange)="searchQuery.set($event)">
-			<button type="submit">Search</button>
+	<section class="admin-welcome">
+		<div class="admin-greeting">
+			<p>Welcome back,</p>
+			<h1>{{ adminName() }}</h1>
 		</div>
-	</form>
+		<form class="client-search" (ngSubmit)="searchClient()">
+			<label for="client-search-input">Search clients</label>
+			<div class="client-search-controls">
+				<input id="client-search-input" name="clientSearch" type="search"
+				placeholder="Search by client ID, name, or email"
+				[ngModel]="searchQuery()" (ngModelChange)="searchQuery.set($event)">
+				<button type="submit">Search</button>
+			</div>
+		</form>
+	</section>
 
 	<nav class="client-tabs" aria-label="Clients">
 		@for (client of clients(); track client.id) {
@@ -27,9 +31,39 @@
 		<p>{{ selectedAccount().email }}</p>
 	</section>
 
+	<section class="portfolio-summary" aria-label="Portfolio summary">
+		<div class="summary-stat">
+			<span class="stat-label">Portfolio value</span>
+			<span class="stat-value">${{ portfolioValue() | number: '1.2-2' }} USD</span>
+		</div>
+
+		<div class="summary-stat">
+			<span class="stat-label">Total gain/loss</span>
+			<span class="stat-value" [class.change-positive]="totalGainLoss() >= 0"
+				[class.change-negative]="totalGainLoss() < 0">
+				{{ totalGainLoss() >= 0 ? '+' : '-' }}${{ absoluteValue(totalGainLoss()) | number: '1.2-2' }}
+			</span>
+			<span class="summary-change" [class.change-positive]="totalGainLoss() >= 0"
+				[class.change-negative]="totalGainLoss() < 0">
+				{{ gainLossPercentage() | number: '1.2-2' }}%
+			</span>
+		</div>
+
+		<div class="summary-stat">
+			<span class="stat-label">Day change</span>
+			<span class="stat-value" [class.change-positive]="dayChange() >= 0"
+				[class.change-negative]="dayChange() < 0">
+				{{ dayChange() >= 0 ? '+' : '' }}{{ dayChange() | number: '1.2-2' }}%
+			</span>
+		</div>
+	</section>
+
 	<section class="analytics" aria-label="Portfolio analytics">
 		<h3>Analytics</h3>
-		<app-pie-chart [data]="analyticsData()"></app-pie-chart>
+		<div class="analytics-charts">
+			<app-pie-chart [data]="analyticsData()"></app-pie-chart>
+			<app-bar-chart></app-bar-chart>
+		</div>
 	</section>
 
 	<nav class="dashboard-tabs" aria-label="Client dashboard sections">
@@ -44,7 +78,7 @@
 			<app-portfolio-table [rowData]="portfolioHoldings()"></app-portfolio-table>
 		</div>
 		<div *ngIf="activeTab() === 'orders'">
-			<app-orders-table [rowData]="orderHistory()"></app-orders-table>
+			<app-admin-orders-table [rowData]="orderHistory()"></app-admin-orders-table>
 		</div>
 	</div>
 </main>
