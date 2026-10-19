@@ -83,7 +83,11 @@
                 </section>
                 } @else if (activeTab() === 'orders') {
                 <section class="tab-panel">
-                    <app-orders-table [rowData]="orderHistory()"></app-orders-table>
+                    @if (copyError()) {
+                    <p class="trade-message error-message" role="alert">{{ copyError() }}</p>
+                    }
+                    <app-data-grid [columnDefs]="orderColumns" [rowData]="orderHistory()"
+                        [gridOptions]="orderGridOptions"></app-data-grid>
                 </section>
                 }
 

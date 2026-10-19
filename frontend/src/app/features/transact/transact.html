@@ -168,12 +168,43 @@
                 (click)="activeDataTab.set('positions')">Your positions</button>
             <button type="button" [class.active]="activeDataTab() === 'open-orders'"
                 (click)="activeDataTab.set('open-orders')">Open Orders</button>
-            <button type="button" [class.active]="activeDataTab() === 'history'"
-                (click)="activeDataTab.set('history')">Order history</button>
+            <button type="button" [class.active]="activeDataTab() === 'order-lookup'"
+                (click)="activeDataTab.set('order-lookup')">Order lookup</button>
         </nav>
 
+        @if (copyError()) {
+        <p class="trade-message error-message" role="alert">{{ copyError() }}</p>
+        }
+
+        @if (activeDataTab() === 'order-lookup') {
+        <form class="symbol-search order-search" (ngSubmit)="searchStatusLog()">
+            <label for="tracking-id-search">Search tracking ID</label>
+            <div class="search-row">
+                <input id="tracking-id-search" name="trackingId" type="search" [ngModel]="trackingIdSearch()"
+                    (ngModelChange)="trackingIdSearch.set($event)" placeholder="Enter a tracking ID"
+                    autocomplete="off" />
+                <button type="submit" [disabled]="statusLogLoading()">
+                    {{ statusLogLoading() ? 'Searching...' : 'Search' }}
+                </button>
+            </div>
+        </form>
+        @if (statusLogMessage()) {
+        <p class="trade-message success-message" role="status">{{ statusLogMessage() }}</p>
+        }
+        @if (formattedStatusLog().length > 0) {
+        <ol class="status-log" aria-label="Order status history">
+            @for (entry of formattedStatusLog(); track entry.status + entry.timestamp) {
+            <li class="status-log-entry">
+                <span class="status-log-status">{{ entry.status }}</span>
+                <time>{{ entry.timestamp }}</time>
+            </li>
+            }
+        </ol>
+        }
+        } @else {
         <app-data-grid [columnDefs]="gridColumns()" [rowData]="gridRows()"
             [gridOptions]="gridOptions()"></app-data-grid>
+        }
     </section>
 
 </main>

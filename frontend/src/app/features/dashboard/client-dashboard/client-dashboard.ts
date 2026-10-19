@@ -4,12 +4,12 @@ import { Router } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
 import { ApiService } from '../../../core/services/api.service';
 import { TradingService } from '../../../core/services/trading.service';
-import { Client, Holding, PortfolioHistory, PortfolioSummary } from '../../../core/models/trading.models';
+import { Client, Holding, Order, PortfolioHistory, PortfolioSummary } from '../../../core/models/trading.models';
 import { StockSearch } from './components/stock-search/stock-search';
 import { PortfolioTableComponent } from '../components/portfolio-table/portfolio-table';
 import { PortfolioTable } from '../interfaces/portfolio-table.interface';
-import { OrdersTable } from '../interfaces/orders-table.interface';
-import { OrdersTableComponent } from '../components/orders-table/orders-table';
+import { DataGrid } from '../components/data-grid/data-grid';
+import { ColDef, GridOptions } from 'ag-grid-community';
 import { BalanceGraphInterface } from '../interfaces/balances-graph.interface';
 import { BalanceGraph } from '../components/balance-graph/balance-graph';
 import { TopBar, TopBarNavItem } from '../../components/top-bar/top-bar';
@@ -47,55 +47,12 @@ const MOCK_TICKER: StockTickerData[] = [
     },
 ];
 
-const MOCK_ORDERS: OrdersTable[] = [
-    {
-        action: 'BUY',
-        symbol: 'AAPL',
-        name: 'Apple Inc.',
-        transactionDate: new Date('2024-01-15'),
-        shares: 10,
-        price: 190.5,
-        instrument: 'STOCK',
-        status: 'PENDING',
-    },
-    {
-        action: 'SELL',
-        symbol: 'TSLA',
-        name: 'Tesla Inc.',
-        transactionDate: new Date('2024-01-20'),
-        shares: 2,
-        price: 238.9,
-        instrument: 'STOCK',
-        status: 'PENDING',
-    },
-    {
-        action: 'BUY',
-        symbol: 'AMZN',
-        name: 'Amazon.com Inc.',
-        transactionDate: new Date('2024-01-25'),
-        shares: 3,
-        price: 3200.0,
-        instrument: 'STOCK',
-        status: 'PENDING',
-    },
-    {
-        action: 'SELL',
-        symbol: 'MSFT',
-        name: 'Microsoft Corp.',
-        transactionDate: new Date('2024-01-30'),
-        shares: 1,
-        price: 415.0,
-        instrument: 'STOCK',
-        status: 'PENDING',
-    }
-];
-
 @Component({
     imports: [
         DecimalPipe,
         StockSearch,
         PortfolioTableComponent,
-        OrdersTableComponent,
+        DataGrid,
         TopBar,
         BalanceGraph,
         StockTicker,
@@ -124,8 +81,9 @@ export class ClientDashboard implements OnInit {
     protected readonly loadingAccount = signal(false);
     protected readonly holdings = signal<Holding[]>([]);
     protected readonly loadingHoldings = signal(false);
-    protected readonly orders = signal<OrdersTable[]>(MOCK_ORDERS);
+    protected readonly orders = signal<Order[]>([]);
     protected readonly loadingOrders = signal(false);
+    protected readonly copyError = signal<string | null>(null);
     protected readonly portfolioSummary = signal<PortfolioSummary | null>(null);
     protected readonly portfolioHistory = signal<PortfolioHistory | null>(null);
 
@@ -169,8 +127,48 @@ export class ClientDashboard implements OnInit {
         return costBasis > 0 ? (this.totalGainLoss() / costBasis) * 100 : 0;
     });
     protected readonly orderHistory = computed(() =>
-        [...this.orders()].sort((a, b) => b.transactionDate.getTime() - a.transactionDate.getTime()),
+        [...this.orders()].sort((a, b) =>
+            this.orderTimestamp(b).localeCompare(this.orderTimestamp(a))),
     );
+    protected readonly orderGridOptions: GridOptions<Order> = {
+        domLayout: 'autoHeight',
+        suppressCellFocus: true,
+    };
+    protected readonly orderColumns: ColDef<Order>[] = [
+        {
+            field: 'trackingId',
+            headerName: 'Tracking ID',
+            minWidth: 220,
+            cellRenderer: (params: { value?: string }) => {
+                const button = document.createElement('button');
+                const trackingId = params.value ?? '';
+                button.type = 'button';
+                button.textContent = trackingId || 'Unavailable';
+                button.title = trackingId ? 'Copy tracking ID' : 'Tracking ID unavailable';
+                button.disabled = !trackingId;
+                button.style.border = '0';
+                button.style.background = 'transparent';
+                button.style.color = 'inherit';
+                button.style.cursor = trackingId ? 'copy' : 'default';
+                button.style.padding = '0';
+                button.addEventListener('click', (event) => {
+                    event.stopPropagation();
+                    if (trackingId) {
+                        void this.copyTrackingId(trackingId, button);
+                    }
+                });
+                return button;
+            },
+        },
+        { field: 'orderType', headerName: 'Action', minWidth: 100 },
+        { field: 'symbol', headerName: 'Symbol', minWidth: 115 },
+        { field: 'name', headerName: 'Name', minWidth: 160 },
+        { field: 'quantity', headerName: 'Quantity', minWidth: 110 },
+        { field: 'price', headerName: 'Price', minWidth: 110 },
+        { field: 'status', headerName: 'Status', minWidth: 125 },
+        { field: 'executedAt', headerName: 'Change log time', minWidth: 190,
+            valueFormatter: (params) => params.value || 'Pending' },
+    ];
     protected readonly balanceData = computed<BalanceGraphInterface[]>(() => {
         const points = this.portfolioHistory()?.points ?? [];
         if (points.length > 0) {
@@ -215,6 +213,23 @@ export class ClientDashboard implements OnInit {
         return value !== null && value < 0;
     }
 
+    private async copyTrackingId(trackingId: string, button: HTMLButtonElement): Promise<void> {
+        try {
+            if (!navigator.clipboard) {
+                throw new Error('Clipboard access is unavailable.');
+            }
+            await navigator.clipboard.writeText(trackingId);
+            button.textContent = 'Copied';
+            window.setTimeout(() => {
+                button.textContent = trackingId;
+            }, 1500);
+            this.copyError.set(null);
+        } catch (error) {
+            console.error('Unable to copy tracking ID:', error);
+            this.copyError.set('Unable to copy the tracking ID. Please copy it manually.');
+        }
+    }
+
     ngOnInit(): void {
         this.fetchAccount();
         this.fetchHoldings();
@@ -255,18 +270,21 @@ export class ClientDashboard implements OnInit {
         this.loadingOrders.set(true);
         this.trading.loadOrders(clientId).subscribe({
             next: (orders: unknown) => {
-                // Map API response to OrdersTable interface
                 if (Array.isArray(orders)) {
-                    this.orders.set(orders as OrdersTable[]);
+                    this.orders.set(orders as Order[]);
                 }
                 this.loadingOrders.set(false);
             },
             error: (err) => {
                 console.error('Error fetching orders:', err);
-                // Keep mock data on error
+                this.orders.set([]);
                 this.loadingOrders.set(false);
             },
         });
+    }
+
+    private orderTimestamp(order: Order): string {
+        return order.executedAt ?? '';
     }
 
     private fetchHoldings(): void {

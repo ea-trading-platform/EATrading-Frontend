@@ -221,6 +221,8 @@ export interface OrderResponse {
     trackingId: string;
 }
 
+export type OrderStatusLog = Record<string, string>;
+
 // ============================================================================
 // WATCHLIST MODELS
 // ============================================================================

@@ -18,6 +18,7 @@ import {
     Order,
     OrderRequest,
     OrderResponse,
+    OrderStatusLog,
     CandleQuery,
     WatchlistItemResponse
 } from '../models/trading.models';
@@ -219,6 +220,11 @@ export class ApiService {
             ...request,
             quantity: String(request.quantity),
         }).pipe(map((response) => typeof response === 'string' ? { trackingId: response } : response));
+    }
+
+    /** Get status changes for an order tracking ID. */
+    getOrderStatusLog(trackingId: string): Observable<OrderStatusLog> {
+        return this.get<OrderStatusLog>(`/api/orders/${encodeURIComponent(trackingId)}/status-log`);
     }
 
     // ========================================================================
