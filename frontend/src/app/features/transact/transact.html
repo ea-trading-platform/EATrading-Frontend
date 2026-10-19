@@ -63,7 +63,7 @@
                         <strong>{{ quote()!.price | currency: quote()!.currency }}</strong>
                         <span [class.positive]="quoteChange() >= 0" [class.negative]="quoteChange() < 0">
                             {{ quoteChange() >= 0 ? '+' : '' }}{{ quoteChange() | number: '1.2-2' }}
-                            ({{ quoteChangePercent() | number: '1.2-2' }}%)
+                            ({{ quoteChangePercent() >= 0 ? '+' : '' }}{{ quoteChangePercent() | number: '1.2-2' }}%)
                         </span>
                     </div>
                 </div>

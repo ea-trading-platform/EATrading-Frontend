@@ -14,5 +14,6 @@ export interface TopBarNavItem {
 })
 export class TopBar {
   navItems = input<readonly TopBarNavItem[]>([]);
+  dashboardRoute = input('/dashboard');
   logout = output<void>();
 }
