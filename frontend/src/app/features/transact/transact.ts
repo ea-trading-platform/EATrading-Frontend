@@ -128,6 +128,14 @@ export class Transact implements OnInit {
     });
     protected readonly quoteChange = computed(() => {
         const quote = this.quote();
+        const prices = this.candles()
+            .map((candle) => Number(candle.adjclose ?? candle.close))
+            .filter((price) => Number.isFinite(price));
+
+        if (prices.length >= 2) {
+            return prices[prices.length - 1] - prices[0];
+        }
+
         if (!quote) {
             return 0;
         }
@@ -137,6 +145,14 @@ export class Transact implements OnInit {
     });
     protected readonly quoteChangePercent = computed(() => {
         const quote = this.quote();
+        const prices = this.candles()
+            .map((candle) => Number(candle.adjclose ?? candle.close))
+            .filter((price) => Number.isFinite(price));
+
+        if (prices.length >= 2 && prices[0] !== 0) {
+            return (this.quoteChange() / prices[0]) * 100;
+        }
+
         const previousClose = Number(quote?.previousClose);
         if (!quote || !Number.isFinite(previousClose) || previousClose === 0) {
             return Number(quote?.changePercent) || 0;
