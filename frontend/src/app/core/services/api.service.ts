@@ -173,6 +173,14 @@ export class ApiService {
     }
 
     /**
+     * Get a single client by email
+     * GET /api/clients?clientEmail={clientEmail}
+     */
+    getClientByEmail(clientEmail: string): Observable<Client> {
+        return this.get<Client>(`/api/clients`, { clientEmail });
+    }
+
+    /**
      * Update a client
      * PUT /api/clients?clientId={clientId}
      */

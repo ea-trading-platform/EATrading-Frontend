@@ -7,12 +7,14 @@
 			<h1>{{ adminName() }}</h1>
 		</div>
 		<form class="client-search" (ngSubmit)="searchClient()">
-			<label for="client-search-input">Search clients</label>
+			<label for="client-search-input">Search clients by email</label>
 			<div class="client-search-controls">
 				<input id="client-search-input" name="clientSearch" type="search"
-				placeholder="Search by client ID, name, or email"
+				placeholder="Enter client email"
 				[ngModel]="searchQuery()" (ngModelChange)="searchQuery.set($event)">
-				<button type="submit">Search</button>
+				<button type="submit" [disabled]="loadingClientSearch()">
+					{{ loadingClientSearch() ? 'Searching...' : 'Search' }}
+				</button>
 			</div>
 		</form>
 	</section>
@@ -26,10 +28,16 @@
 		}
 	</nav>
 
-	<section class="client-details" aria-label="Selected client">
-		<h3>{{ selectedAccount().name }}</h3>
-		<p>{{ selectedAccount().email }}</p>
-	</section>
+	@if (selectedAccount(); as account) {
+		<section class="client-details" aria-label="Selected client">
+			<h3>{{ account.name }}</h3>
+			<p>{{ account.email }}</p>
+		</section>
+	}
+
+	@if (searchError()) {
+		<p class="client-error" role="alert">{{ searchError() }}</p>
+	}
 
 	<section class="portfolio-summary" aria-label="Portfolio summary">
 		<div class="summary-stat">
@@ -75,10 +83,18 @@
 
 	<div class="tab-content">
 		<div *ngIf="activeTab() === 'portfolio'">
-			<app-portfolio-table [rowData]="portfolioHoldings()"></app-portfolio-table>
+			@if (loadingClientData()) {
+				<p class="client-status">Loading portfolio...</p>
+			} @else {
+				<app-portfolio-table [rowData]="portfolioHoldings()"></app-portfolio-table>
+			}
 		</div>
 		<div *ngIf="activeTab() === 'orders'">
-			<app-admin-orders-table [rowData]="orderHistory()"></app-admin-orders-table>
+			@if (loadingClientData()) {
+				<p class="client-status">Loading orders...</p>
+			} @else {
+				<app-admin-orders-table [rowData]="orderHistory()"></app-admin-orders-table>
+			}
 		</div>
 	</div>
 </main>

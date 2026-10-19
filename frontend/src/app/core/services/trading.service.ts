@@ -81,6 +81,10 @@ export class TradingService {
         return this.apiService.getClient(clientId);
     }
 
+    getClientByEmail(clientEmail: string): Observable<Client> {
+        return this.apiService.getClientByEmail(clientEmail);
+    }
+
     getPortfolioSummary(clientId: string): Observable<PortfolioSummary> {
         return this.apiService.getPortfolioSummary(clientId);
     }

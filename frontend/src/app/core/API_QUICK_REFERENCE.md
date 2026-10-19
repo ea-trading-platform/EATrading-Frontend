@@ -108,6 +108,9 @@ loadClient(clientId: string): Observable<Client>
 getClient(clientId: string): Observable<Client>
 // GET /api/clients?clientId={clientId}
 
+getClientByEmail(clientEmail: string): Observable<Client>
+// GET /api/clients?clientEmail={clientEmail}
+
 getClients(): Observable<Client[]>
 // GET /api/clients
 

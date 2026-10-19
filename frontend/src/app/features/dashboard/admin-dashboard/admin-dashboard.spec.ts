@@ -27,8 +27,7 @@ describe('AdminDashboard', () => {
       { id: 'order-aapl', clientId: 'client-xxxx', symbol: 'AAPL', quantity: 10, orderType: 'BUY', status: 'PENDING', executedAt: '2024-01-15T00:00:00Z', price: 190.5 },
     ];
     const trading = {
-      getClients: () => of(clients),
-      getClient: (id: string) => of(clients.find(client => client.id === id)!),
+      getClientByEmail: (email: string) => of(clients.find(client => client.email === email)!),
       getHoldings: (id: string) => of(holdings.filter(holding => holding.clientId === id)),
       getOrders: (id: string) => of(orders.filter(order => order.clientId === id)),
     };
@@ -39,7 +38,7 @@ describe('AdminDashboard', () => {
         { provide: AuthService, useValue: { profile: () => null, user: () => null, signOut: () => Promise.resolve() } },
         { provide: Router, useValue: { navigate: () => Promise.resolve() } },
         { provide: TradingService, useValue: trading },
-        { provide: ApiService, useValue: { getUsers: () => of(clients) } },
+        { provide: ApiService, useValue: {} },
       ],
     }).compileComponents();
 
@@ -52,12 +51,14 @@ describe('AdminDashboard', () => {
     expect(component).toBeTruthy();
   });
 
-  it('starts with the first client and portfolio tab selected', () => {
-    expect(component.selectedAccountId()).toBe('client-xxxx');
+  it('starts with no client selected and portfolio tab active', () => {
+    expect(component.selectedAccountId()).toBeNull();
     expect(component.activeTab()).toBe('portfolio');
   });
 
   it('changes the selected client without changing the dashboard section', () => {
+    component.searchQuery.set('alex.morgan@example.com');
+    component.searchClient();
     component.setTab('orders');
     component.setClient('client-yyyy');
 
@@ -67,6 +68,8 @@ describe('AdminDashboard', () => {
   });
 
   it('shows only the selected client portfolio holdings', () => {
+    component.searchQuery.set('alex.morgan@example.com');
+    component.searchClient();
     component.setClient('client-yyyy');
 
     expect(component.portfolioHoldings().map(holding => holding.symbol)).toEqual(['AMZN', 'NVDA']);
@@ -77,6 +80,8 @@ describe('AdminDashboard', () => {
   });
 
   it('shows only the selected client orders', () => {
+    component.searchQuery.set('alex.morgan@example.com');
+    component.searchClient();
     component.setClient('client-yyyy');
 
     expect(component.orderHistory().map(order => order.symbol)).toEqual(['AMZN']);
@@ -92,6 +97,16 @@ describe('AdminDashboard', () => {
 
     expect(component.selectedAccountId()).toBe('client-yyyy');
     expect(component.selectedAccount()?.email).toBe('jordan.lee@example.com');
+    expect(component.clients().map(client => client.id)).toEqual(['client-yyyy']);
+  });
+
+  it('keeps multiple email-search results in the client tabs', () => {
+    component.searchQuery.set('alex.morgan@example.com');
+    component.searchClient();
+    component.searchQuery.set('jordan.lee@example.com');
+    component.searchClient();
+
     expect(component.clients().map(client => client.id)).toEqual(['client-xxxx', 'client-yyyy']);
+    expect(component.selectedAccountId()).toBe('client-yyyy');
   });
 });
