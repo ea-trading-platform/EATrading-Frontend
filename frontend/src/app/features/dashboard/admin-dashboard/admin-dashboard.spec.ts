@@ -107,6 +107,10 @@ describe('AdminDashboard', () => {
     component.searchClient();
 
     expect(component.clients().map(client => client.id)).toEqual(['client-xxxx', 'client-yyyy']);
+    expect(component.clients().map(client => client.email)).toEqual([
+      'alex.morgan@example.com',
+      'jordan.lee@example.com',
+    ]);
     expect(component.selectedAccountId()).toBe('client-yyyy');
   });
 });
