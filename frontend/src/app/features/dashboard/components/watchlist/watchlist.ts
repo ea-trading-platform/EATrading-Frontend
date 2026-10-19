@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { WatchlistService } from '../../../../core/services/watchlist.service';
 import { StockCardComponent } from '../stock-card/stock-card';
@@ -13,6 +13,7 @@ import { StockSearch } from '../../client-dashboard/components/stock-search/stoc
 })
 export class WatchlistComponent {
     protected readonly watchlistService = inject(WatchlistService);
+    readonly symbolSelected = output<string>();
 
     protected readonly watchlist = this.watchlistService.watchlist;
     protected readonly isLoading = this.watchlistService.isLoading;
@@ -20,5 +21,9 @@ export class WatchlistComponent {
 
     removeFromWatchlist(symbol: string): void {
         this.watchlistService.remove(symbol);
+    }
+
+    selectSymbol(symbol: string): void {
+        this.symbolSelected.emit(symbol);
     }
 }

@@ -1,0 +1,653 @@
+:host {
+    display: block;
+    min-height: 100dvh;
+    background: linear-gradient(160deg, var(--dark-primary) 0%, var(--dark-secondary) 50%, var(--dark-tertiary) 100%);
+    color: var(--text-light);
+}
+
+.transact-page {
+    min-height: 100dvh;
+    padding: 1.15rem;
+}
+
+.trade-header,
+.trade-layout,
+.market-resources {
+    width: min(100%, 90rem);
+    margin: 0 auto;
+}
+
+.trade-header {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 1.5rem;
+    padding: 4.5rem 1rem 2.5rem;
+}
+
+.refresh-page-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    border: 1px solid var(--border-light);
+    border-radius: 0.35rem;
+    padding: 0.65rem 0.85rem;
+    background: transparent;
+    color: var(--text-light);
+    cursor: pointer;
+    font-size: 0.8rem;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.refresh-page-button:hover:not(:disabled) {
+    border-color: var(--accent);
+    color: var(--accent-secondary);
+}
+
+.refresh-page-button:disabled {
+    cursor: wait;
+    opacity: 0.6;
+}
+
+.refresh-page-button span {
+    font-size: 1.15rem;
+}
+
+.refresh-page-button .refreshing {
+    animation: refresh-spin 0.9s linear infinite;
+}
+
+@keyframes refresh-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.eyebrow {
+    margin: 0 0 0.35rem;
+    color: var(--accent-secondary);
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+}
+
+.trade-header h1,
+.quote-heading h2,
+.empty-chart h2 {
+    margin: 0;
+    color: var(--text-light);
+}
+
+.trade-header h1 {
+    font-size: clamp(2.25rem, 5vw, 4rem);
+    font-weight: 600;
+    letter-spacing: -0.03em;
+}
+
+.subtitle {
+    margin: 0.65rem 0 0;
+    color: var(--text-muted);
+    font-size: 1.05rem;
+}
+
+.trade-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(19rem, 24rem);
+    gap: 1.5rem;
+    padding: 0 1rem 2rem;
+}
+
+.market-column {
+    min-width: 0;
+}
+
+.watchlist-near-search {
+    margin-top: 1.35rem;
+    border: 1px solid var(--border-light);
+    border-radius: 0.65rem;
+    padding: 0.9rem 1rem;
+    background: transparent;
+}
+
+.watchlist-near-search .symbol-search {
+    max-width: none;
+    margin: 1.25rem 0 0;
+    border-top: 1px solid var(--border-lighter);
+    padding-top: 1.1rem;
+}
+
+.symbol-recommendations {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.45rem;
+    margin-top: 0.9rem;
+}
+
+.symbol-recommendations span {
+    margin-right: 0.25rem;
+    color: var(--text-muted);
+    font-size: 0.78rem;
+}
+
+.symbol-recommendations button {
+    border: 1px solid var(--border-light);
+    border-radius: 999px;
+    padding: 0.35rem 0.65rem;
+    background: transparent;
+    color: var(--text-light);
+    cursor: pointer;
+    font-size: 0.75rem;
+}
+
+.symbol-recommendations button:hover {
+    border-color: var(--accent);
+    color: var(--accent-secondary);
+}
+
+.nav-with-action {
+    border-bottom: 1px solid var(--border-lighter);
+}
+
+.dashboard-tabs {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.tab-button {
+    padding: 0.8rem 1rem;
+    border: 0;
+    border-bottom: 2px solid transparent;
+    background: transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+.tab-button:hover,
+.tab-button.active {
+    color: var(--text-light);
+}
+
+.tab-button.active {
+    border-bottom-color: var(--accent);
+}
+
+.symbol-search {
+    max-width: 42rem;
+    margin: 2.25rem 0 1.5rem;
+}
+
+.symbol-search label {
+    display: block;
+    margin-bottom: 0.55rem;
+    color: var(--text-muted);
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.search-row {
+    display: flex;
+    gap: 0.75rem;
+}
+
+.search-row input {
+    min-width: 0;
+    flex: 1;
+    border: 1px solid var(--border-light);
+    border-radius: 0.35rem;
+    padding: 0.85rem 1rem;
+    background: transparent;
+    color: var(--text-light);
+    outline: none;
+}
+
+.search-row input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(78, 204, 204, 0.12);
+}
+
+.search-row button {
+    border: 0;
+    border-radius: 0.35rem;
+    padding: 0.85rem 1.15rem;
+    background: var(--accent);
+    color: var(--dark-primary);
+    cursor: pointer;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.search-row button:disabled {
+    cursor: wait;
+    opacity: 0.65;
+}
+
+.trade-message {
+    margin: 0 0 1rem;
+    color: var(--neg-accent);
+}
+
+.chart-panel {
+    min-height: 29rem;
+    border-top: 1px solid var(--border-lighter);
+    padding-top: 1.5rem;
+}
+
+.quote-heading {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.quote-heading h2 {
+    font-size: 1.5rem;
+}
+
+.quote-price {
+    display: flex;
+    align-items: baseline;
+    gap: 0.75rem;
+}
+
+.quote-price strong {
+    color: var(--text-light);
+    font-size: 1.4rem;
+}
+
+.chart-range-controls {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.35rem;
+    margin-bottom: 0.75rem;
+}
+
+.chart-range-controls button {
+    border: 1px solid var(--border-light);
+    border-radius: 0.25rem;
+    padding: 0.35rem 0.55rem;
+    background: transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-size: 0.72rem;
+    font-weight: 700;
+}
+
+.chart-range-controls button:hover:not(:disabled),
+.chart-range-controls button.active {
+    border-color: var(--accent);
+    color: var(--text-light);
+}
+
+.chart-range-controls button:disabled {
+    cursor: wait;
+    opacity: 0.6;
+}
+
+.positive {
+    color: var(--accent-secondary);
+}
+
+.negative {
+    color: var(--neg-accent);
+}
+
+.chart-wrap {
+    height: 25rem;
+}
+
+.chart-wrap ag-charts {
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+
+.empty-chart {
+    position: relative;
+    isolation: isolate;
+    display: grid;
+    min-height: 25rem;
+    place-content: center;
+    justify-items: center;
+    overflow: hidden;
+    /* border: 1px dashed var(--border-light); */
+    color: var(--text-muted);
+    text-align: center;
+}
+
+.placeholder-plot {
+    position: absolute;
+    inset: 1.5rem;
+    z-index: -1;
+    opacity: 0.7;
+    background-image: linear-gradient(rgba(255, 255, 255, 0.07) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.07) 1px, transparent 1px);
+    background-size: 25% 25%;
+}
+
+.placeholder-line {
+    position: absolute;
+    inset: 12% 0 0;
+    display: block;
+    background: linear-gradient(145deg, transparent 0 12%, rgba(78, 204, 204, 0.2) 12.5% 13%, transparent 13.5% 28%, rgba(78, 204, 204, 0.2) 28.5% 29%, transparent 29.5% 45%, rgba(78, 204, 204, 0.2) 45.5% 46%, transparent 46.5% 63%, rgba(78, 204, 204, 0.2) 63.5% 64%, transparent 64.5% 78%, rgba(78, 204, 204, 0.2) 78.5% 79%, transparent 79.5%);
+    clip-path: polygon(0 72%, 12% 64%, 24% 69%, 36% 45%, 48% 52%, 60% 30%, 72% 38%, 84% 18%, 100% 24%, 100% 28%, 84% 23%, 72% 43%, 60% 35%, 48% 57%, 36% 50%, 24% 74%, 12% 69%, 0 77%);
+}
+
+.empty-chart-message {
+    display: grid;
+    justify-items: center;
+    padding: 1.5rem;
+    background: transparent;
+}
+
+.chart-mark {
+    display: grid;
+    width: 3rem;
+    height: 3rem;
+    margin-bottom: 1rem;
+    place-items: center;
+    border: 1px solid var(--accent);
+    border-radius: 50%;
+    color: var(--accent-secondary);
+    font-size: 1.4rem;
+}
+
+.empty-chart h2 {
+    font-size: 1.15rem;
+}
+
+.empty-chart p {
+    margin: 0.5rem 0 0;
+}
+
+.order-panel {
+    display: flex;
+    min-height: 31rem;
+    flex-direction: column;
+    gap: 1.25rem;
+    border: 1px solid var(--border-light);
+    border-radius: 0.65rem;
+    padding: 1.25rem;
+    background: transparent;
+}
+
+.order-watchlist {
+    border-top: 1px solid var(--border-lighter);
+    padding-top: 1.1rem;
+}
+
+.order-watchlist app-stock-search {
+    display: block;
+}
+
+.order-watchlist ::ng-deep .watchlist-items {
+    max-height: 12rem;
+    overflow-y: auto;
+    padding-right: 0.35rem;
+}
+
+.order-panel-header h2 {
+    margin: 0;
+    color: var(--text-light);
+    font-size: 1.35rem;
+}
+
+.order-symbol {
+    margin: 0.45rem 0 0;
+    color: var(--accent-secondary);
+    font-size: 0.9rem;
+    font-weight: 700;
+}
+
+.side-toggle {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    border-bottom: 1px solid var(--border-lighter);
+}
+
+.side-toggle button {
+    border: 0;
+    border-bottom: 2px solid transparent;
+    padding: 0.75rem;
+    background: transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-weight: 700;
+}
+
+.side-toggle button.active {
+    border-bottom-color: var(--accent);
+    color: var(--text-light);
+}
+
+.order-field {
+    display: grid;
+    gap: 0.5rem;
+}
+
+.order-field label,
+.order-summary span {
+    color: var(--text-muted);
+    font-size: 0.78rem;
+    font-weight: 600;
+}
+
+.order-field label span {
+    font-weight: 400;
+}
+
+.order-field input,
+.fixed-order-type {
+    width: 100%;
+    border: 1px solid var(--border-light);
+    border-radius: 0.35rem;
+    padding: 0.75rem;
+    background: transparent;
+    color: var(--text-light);
+}
+
+.order-field option {
+    color: #12202b;
+}
+
+.trade-data {
+    width: min(100%, 90rem);
+    margin: 0 auto;
+    padding: 0 1rem 3rem;
+}
+
+.data-tabs {
+    display: flex;
+    gap: 0.5rem;
+    border-bottom: 1px solid var(--border-lighter);
+}
+
+.data-tabs button {
+    border: 0;
+    border-bottom: 2px solid transparent;
+    padding: 0.8rem 1rem;
+    background: transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-weight: 700;
+}
+
+.data-tabs button.active,
+.data-tabs button:hover {
+    border-bottom-color: var(--accent);
+    color: var(--text-light);
+}
+
+.data-table-wrap {
+    overflow-x: auto;
+}
+
+.trade-table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 42rem;
+}
+
+.trade-table th,
+.trade-table td {
+    border-bottom: 1px solid var(--border-lighter);
+    padding: 0.9rem 0.75rem;
+    text-align: left;
+    white-space: nowrap;
+}
+
+.trade-table th {
+    color: var(--text-muted);
+    font-size: 0.72rem;
+    text-transform: uppercase;
+}
+
+.trade-table td {
+    color: var(--text-light);
+    font-size: 0.88rem;
+}
+
+.position-actions {
+    display: flex;
+    gap: 0.45rem;
+}
+
+.trade-action {
+    border: 0;
+    border-radius: 0.3rem;
+    padding: 0.45rem 0.7rem;
+    color: #08131c;
+    cursor: pointer;
+    font-size: 0.78rem;
+    font-weight: 800;
+}
+
+.buy-action {
+    background: #65d6a0;
+}
+
+.sell-action {
+    background: #e06c75;
+}
+
+.trade-action:hover {
+    filter: brightness(1.12);
+}
+
+.table-empty {
+    color: var(--text-muted) !important;
+    text-align: center !important;
+}
+
+.order-summary {
+    display: grid;
+    gap: 1rem;
+    border-top: 1px solid var(--border-lighter);
+    padding-top: 1rem;
+}
+
+.order-summary div {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.75rem;
+}
+
+.order-summary strong {
+    color: var(--text-light);
+    font-size: 1rem;
+}
+
+.order-message {
+    margin: 0;
+    font-size: 0.82rem;
+    line-height: 1.4;
+}
+
+.order-success {
+    color: var(--accent-secondary);
+}
+
+.order-failure {
+    color: var(--neg-accent);
+}
+
+.review-order-button {
+    width: 100%;
+    margin-top: auto;
+    border: 0;
+    border-radius: 0.35rem;
+    padding: 1rem;
+    background: var(--accent);
+    color: var(--dark-primary);
+    cursor: pointer;
+    font-weight: 800;
+}
+
+.review-order-button:disabled {
+    cursor: not-allowed;
+    opacity: 0.45;
+}
+
+@media (max-width: 600px) {
+    .trade-header {
+        align-items: flex-start;
+        flex-direction: column;
+        padding: 3rem 0.25rem 2rem;
+    }
+
+    .trade-workspace {
+        padding: 0 0.25rem 2rem;
+    }
+
+    .trade-layout {
+        display: block;
+        padding-inline: 0.25rem;
+    }
+
+    .trade-data {
+        padding-inline: 0.25rem;
+    }
+
+    .order-panel {
+        min-height: 0;
+        margin-top: 1.5rem;
+    }
+
+    .dashboard-tabs {
+        width: 100%;
+    }
+
+    .tab-button {
+        flex: 1;
+        padding-inline: 0.35rem;
+    }
+
+    .search-row {
+        flex-direction: column;
+    }
+
+    .search-row button {
+        width: 100%;
+    }
+
+    .quote-heading {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .chart-wrap {
+        height: 20rem;
+    }
+
+    .chart-range-controls {
+        justify-content: flex-start;
+        overflow-x: auto;
+    }
+}

@@ -1,24 +1,129 @@
-:host {
-    display: block;
-    width: 100%;
+.pie-chart-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 0.5rem;
+  background: transparent;
+  box-sizing: border-box;
+  margin: 0px auto;
 }
 
-.chart-container {
-    display: flex;
-    justify-content: center;
-    width: 100%;
-    height: clamp(16rem, 45vw, 26rem);
+.pie-chart-header {
+  display: flex;
+  align-items: center;
+  min-height: 2.35rem;
+  padding: 0 0.25rem;
 }
 
-ag-charts {
-    display: block;
-    width: 100%;
-    max-width: 42rem;
-    height: 100%;
+.pie-chart-header h2 {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 1rem;
+  font-weight: 700;
 }
 
-@media (max-width: 576px) {
-    .chart-container {
-        height: clamp(14rem, 70vw, 20rem);
-    }
+.pie-chart-content {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  flex: 1;
+  min-height: 0;
+  gap: 0.15rem;
+}
+
+.donut-chart {
+  position: relative;
+  display: block;
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 100%;
+}
+
+.donut-chart ag-charts {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.donut-center {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  max-width: 70%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  text-align: center;
+}
+
+.donut-total {
+  color: var(--text-light);
+  font-size: clamp(0.9rem, 1.6vw, 1.25rem);
+  font-weight: 700;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.donut-total-label {
+  margin-top: 0.2rem;
+  color: var(--text-muted);
+  font-size: clamp(0.6rem, 0.9vw, 0.75rem);
+  line-height: 1.2;
+}
+
+.pie-chart-legend {
+  display: flex;
+  flex: 0 0 clamp(5.5rem, 28%, 7rem);
+  flex-direction: column;
+  gap: clamp(0.25rem, 1.2vw, 0.5rem);
+  min-width: 0;
+  padding-top: 0;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.2rem;
+  color: var(--text-light);
+  font-size: clamp(0.7rem, 1.1vw, 0.85rem);
+}
+
+.legend-label {
+  display: inline-flex;
+  align-items: center;
+  min-width: 0;
+  gap: 0.2rem;
+}
+
+.legend-marker {
+  display: inline-block;
+  flex: 0 0 auto;
+  width: clamp(0.4rem, 0.7vw, 0.55rem);
+  height: clamp(0.4rem, 0.7vw, 0.55rem);
+  border-radius: 50%;
+}
+
+.legend-marker-0 {
+  background: #66bfe2;
+}
+
+.legend-marker-1 {
+  background: #a287e6;
+}
+
+.legend-marker-2 {
+  background: #e4a076;
+}
+
+.legend-marker-3 {
+  background: #88a4b8;
+}
+
+.legend-percentage {
+  flex: 0 0 clamp(1.75rem, 4vw, 2.25rem);
+  color: var(--text-muted);
+  text-align: right;
 }

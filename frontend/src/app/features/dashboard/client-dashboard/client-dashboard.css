@@ -1,8 +1,9 @@
 :host {
     display: block;
-    background: linear-gradient(160deg, var(--dark-primary) 0%, var(--dark-secondary) 50%, var(--dark-tertiary) 100%);
+    background: transparent;
     color: var(--text-light);
     width: 100%;
+    --dashboard-gutter: 2rem;
     overflow-x: hidden;
 }
 
@@ -21,7 +22,7 @@
 
 .client-dashboard .row {
     margin: 0 auto;
-    padding: 0 2rem;
+    padding: 0 var(--dashboard-gutter);
 }
 
 .client-dashboard .col-lg-4 {
@@ -31,15 +32,69 @@
     gap: 0;
 }
 
-.welcome-card {
-    display: flex;
+.client-dashboard .col-lg-8,
+.client-dashboard .col-lg-4 {
+    padding-left: 0;
+}
+
+.portfolio-summary {
+    display: grid;
+    grid-template-columns: minmax(12rem, 1.3fr) repeat(4, minmax(10rem, 1fr));
     align-items: center;
-    justify-content: flex-start;
     gap: 1.5rem;
     border-radius: 1rem;
-    padding: 2rem 2rem 2rem 0rem;
-    max-width: none;
-    flex-wrap: wrap;
+    width: calc(100% - (var(--dashboard-gutter) * 2));
+    margin: 0 var(--dashboard-gutter);
+    padding: 1.5rem 0;
+}
+
+.summary-welcome,
+.summary-stat {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    min-width: 0;
+}
+
+.summary-welcome {
+    min-width: 0;
+}
+
+.summary-welcome h1 {
+    margin: 0;
+    font-size: clamp(1.5rem, 2vw, 2rem);
+    font-weight: 600;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.summary-stat {
+    padding-left: 2rem;
+    border-left: 1px solid rgba(255, 255, 255, 0.2);
+    min-width: 0;
+}
+
+.summary-change {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: clamp(0.72rem, 1vw, 0.85rem);
+    font-weight: 600;
+    min-height: 1.275rem;
+    white-space: nowrap;
+}
+
+.summary-change-placeholder {
+    visibility: hidden;
+}
+
+.change-positive {
+    color: var(--accent-secondary);
+}
+
+.change-negative {
+    color: var(--neg-accent);
 }
 
 .stock-search-section {
@@ -49,33 +104,14 @@
 
 .graph-card {
     margin-top: 0.5rem;
-    min-height: 22rem;
+    height: 25rem;
+    min-height: 25rem;
     border-radius: 1rem;
 }
 
-.greeting {
-    display: flex;
-    flex-direction: column;
-    gap: 0.25rem;
-    margin: 0;
-    /* color: var(--text-muted); */
-    font-size: 0.95rem;
-}
-
-.greeting p {
-    margin: 0;
-}
-
-.welcome-card h1 {
-    margin: 0;
-    font-size: 2rem;
-    font-weight: 600;
-}
-
-.stat {
-    display: flex;
-    flex-direction: column;
-    gap: 0.25rem;
+.pie-chart-card {
+    height: 25rem;
+    min-height: 25rem;
 }
 
 .stat-label {
@@ -89,9 +125,10 @@
 }
 
 .stat-value {
-    font-size: 1.75rem;
+    font-size: clamp(1.1rem, 1.6vw, 1.75rem);
     font-weight: 600;
     color: white;
+    white-space: nowrap;
 }
 
 .holdings-list {
@@ -146,9 +183,31 @@
     font-size: 0.9rem;
 }
 
-@media (max-width: 991px) {
+.empty-portfolio-action {
+    margin-top: 0.6rem;
+    padding: 0.6rem 1rem;
+    border: 1px solid rgba(78, 204, 204, 0.45);
+    border-radius: 0.5rem;
+    background: rgba(78, 204, 204, 0.12);
+    color: var(--text-light);
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.empty-portfolio-action:hover {
+    border-color: var(--accent-secondary);
+    background: rgba(78, 204, 204, 0.22);
+}
+
+@media (max-width: 1200px) {
+    :host {
+        --dashboard-gutter: 1rem;
+    }
+
     .client-dashboard .row {
-        padding: 0 1rem;
+        padding: 0 var(--dashboard-gutter);
     }
 
     .trade-sidebar {
@@ -157,40 +216,41 @@
         padding: 0;
     }
 
-    .welcome-card {
+    .portfolio-summary {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
         gap: 1rem;
-        padding: 1.5rem 1.5rem 1.5rem 0rem;
+        padding: 1.5rem 0;
     }
 
-    /* First greeting (welcome name) takes full width */
-    .welcome-card>.greeting:nth-child(1) {
-        flex-basis: 100%;
+    .summary-welcome {
+        grid-column: 1 / -1;
+        padding-bottom: 0.5rem;
     }
 
-    /* Hide first divider */
-    .welcome-card>.divider:nth-child(2) {
-        display: none;
-    }
-
-    /* Second greeting and stat share equal space */
-    .welcome-card>.greeting:nth-child(3),
-    .welcome-card>.stat:nth-child(5) {
-        flex: 1;
-        min-width: 0;
+    .summary-stat {
+        padding-left: 0;
+        padding: 1rem;
+        border: 0;
+        border-top: 1px solid var(--border-lighter);
+        border-radius: 0;
+        background: transparent;
     }
 }
 
 @media (max-width: 768px) {
-    .welcome-card {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 1.5rem;
-        padding: 1.5rem 1.5rem 1.5rem 0rem;
+    .portfolio-summary {
+        gap: 0.75rem;
+        padding: 1rem 0;
         max-width: 100%;
     }
 
-    .welcome-card .divider {
-        display: none;
+    .summary-stat {
+        padding: 0.85rem;
+        border-top-color: rgba(255, 255, 255, 0.12);
+    }
+
+    .summary-stat .stat-value {
+        font-size: 1.35rem;
     }
 
     .dashboard-tabs {
@@ -198,13 +258,53 @@
     }
 
     .client-dashboard .row {
-        padding: 0 0.5rem;
+        padding: 0 var(--dashboard-gutter);
     }
 }
 
 @media (max-width: 480px) {
-    .welcome-card {
-        padding: 1.5rem 1.5rem 1.5rem 0rem;
+    :host {
+        --dashboard-gutter: 0.75rem;
+    }
+
+    .client-dashboard {
+        padding: 0.75rem;
+    }
+
+    .portfolio-summary {
+        grid-template-columns: 1fr;
+        gap: 0.65rem;
+        padding: 0.75rem 0;
+    }
+
+    .summary-welcome {
+        grid-column: auto;
+        padding: 0.5rem 0.25rem 0.75rem;
+    }
+
+    .summary-welcome h1 {
+        font-size: 1.6rem;
+    }
+
+    .summary-stat {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        column-gap: 0.75rem;
+        align-items: center;
+        padding: 0.75rem;
+        border-top-color: rgba(255, 255, 255, 0.1);
+    }
+
+    .summary-stat .stat-label {
+        grid-column: 1 / -1;
+    }
+
+    .summary-stat .stat-value {
+        font-size: 1.25rem;
+    }
+
+    .summary-change {
+        justify-self: end;
     }
 
     .topbar {

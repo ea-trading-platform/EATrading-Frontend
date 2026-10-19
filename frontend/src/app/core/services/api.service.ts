@@ -1,6 +1,6 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
-import { Observable } from 'rxjs';
+import { Observable, map } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import {
     StockQuote,
@@ -12,6 +12,8 @@ import {
     SuccessResponse,
     Client,
     ClientRequest,
+    PortfolioHistory,
+    PortfolioSummary,
     Holding,
     Order,
     OrderRequest,
@@ -178,6 +180,15 @@ export class ApiService {
         return this.put<Client>(`/api/clients`, request, { clientId });
     }
 
+    /** Get portfolio cash and valuation summary. */
+    getPortfolioSummary(clientId: string): Observable<PortfolioSummary> {
+        return this.get<PortfolioSummary>(`/api/portfolio`, { clientId });
+    }
+
+    getPortfolioHistory(clientId: string, from: string, to: string): Observable<PortfolioHistory> {
+        return this.get<PortfolioHistory>(`/api/portfolio/history`, { clientId, from, to });
+    }
+
     // ========================================================================
     // HOLDINGS ENDPOINTS
     // ========================================================================
@@ -202,12 +213,12 @@ export class ApiService {
         return this.get<Order[]>(`/api/orders`, { clientId });
     }
 
-    /**
-     * Create a new order/transaction
-     * POST /api/orders/transact
-     */
+    /** Create an asynchronous order and return its tracking ID. */
     createOrder(request: OrderRequest): Observable<OrderResponse> {
-        return this.post<OrderResponse>(`/api/orders/transact`, request);
+        return this.post<string | OrderResponse>(`/api/orders`, {
+            ...request,
+            quantity: String(request.quantity),
+        }).pipe(map((response) => typeof response === 'string' ? { trackingId: response } : response));
     }
 
     // ========================================================================

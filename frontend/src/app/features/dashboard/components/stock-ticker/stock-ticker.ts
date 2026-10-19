@@ -11,20 +11,9 @@ import { StockTickerData } from '../../interfaces/stock-ticker.interface';
 })
 export class StockTicker {
   stocks = input<StockTickerData[]>([]);
-  
-  private readonly DUPLICATE_COUNT = 5;
-  
+
   displayStocks = computed(() => {
-    const original = this.stocks();
-    if (original.length === 0) return [];
-    
-    const duplicated: (StockTickerData & { _index: number })[] = [];
-    for (let i = 0; i < this.DUPLICATE_COUNT; i++) {
-      original.forEach(stock => {
-        duplicated.push({ ...stock, _index: i });
-      });
-    }
-    return duplicated;
+    return this.stocks();
   });
 
   getOpenToCurrentPercent(stock: StockTickerData): number {

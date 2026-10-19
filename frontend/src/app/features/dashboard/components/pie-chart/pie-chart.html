@@ -1,3 +1,25 @@
-<div class="chart-container">
-    <ag-charts [options]="chartOptions"></ag-charts>
+<div class="pie-chart-container">
+  <div class="pie-chart-header">
+    <h2>Portfolio Composition</h2>
+  </div>
+  <div class="pie-chart-content">
+    <div class="donut-chart">
+      <ag-charts [options]="chartOptions"></ag-charts>
+      <div class="donut-center" aria-label="Total portfolio value">
+        <span class="donut-total">{{ totalValueAmount }}</span>
+        <span class="donut-total-label">Total value</span>
+      </div>
+    </div>
+    <div class="pie-chart-legend" aria-label="Portfolio composition legend">
+      @for (item of chartData; track item.label; let index = $index) {
+        <div class="legend-item">
+          <span class="legend-label">
+            <span class="legend-marker" [class]="'legend-marker-' + index"></span>
+            {{ item.label }}
+          </span>
+          <span class="legend-percentage">{{ getPercentage(item.value) }}</span>
+        </div>
+      }
+    </div>
+  </div>
 </div>
