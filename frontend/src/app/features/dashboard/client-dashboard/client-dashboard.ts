@@ -155,6 +155,8 @@ export class ClientDashboard implements OnInit {
             return total + currentValue - costBasis;
         }, 0),
     );
+    protected readonly dailyChangeUsd = computed(() => this.numericSummaryValue('dailyChangeUsd'));
+    protected readonly dailyChangePercent = computed(() => this.numericSummaryValue('dailyChangePercent'));
     protected readonly gainLossPercentage = computed(() => {
         const summaryPercentage = Number(this.portfolioSummary()?.overallReturnPercent);
         if (Number.isFinite(summaryPercentage)) {
@@ -199,6 +201,10 @@ export class ClientDashboard implements OnInit {
 
     protected absoluteValue(value: number): number {
         return Math.abs(value);
+    }
+
+    protected formatChange(value: number | null, suffix = ''): string {
+        return value === null ? 'N/A' : `${value >= 0 ? '+' : ''}${value.toFixed(2)}${suffix}`;
     }
 
     ngOnInit(): void {
@@ -312,6 +318,16 @@ export class ClientDashboard implements OnInit {
             dayChange: undefined,
             overallReturn: undefined,
         };
+    }
+
+    private numericSummaryValue(key: 'dailyChangeUsd' | 'dailyChangePercent'): number | null {
+        const value = this.portfolioSummary()?.[key];
+        if (value === undefined || value === null || value === '') {
+            return null;
+        }
+
+        const numericValue = Number(value);
+        return Number.isFinite(numericValue) ? numericValue : null;
     }
 
     private fetchTickerData(): void {

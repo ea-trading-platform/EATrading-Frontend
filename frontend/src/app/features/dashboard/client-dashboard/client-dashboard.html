@@ -38,8 +38,13 @@
 
         <div class="summary-stat">
             <span class="stat-label">Day change</span>
-            <span class="stat-value">N/A</span>
-            <span class="summary-change summary-change-placeholder" aria-hidden="true">
+            <span class="stat-value" [class.change-positive]="dailyChangeUsd() !== null && dailyChangeUsd() >= 0"
+                [class.change-negative]="dailyChangeUsd() !== null && dailyChangeUsd() < 0">
+                {{ formatChange(dailyChangeUsd(), ' USD') }}
+            </span>
+            <span class="summary-change" [class.change-positive]="dailyChangePercent() !== null && dailyChangePercent() >= 0"
+                [class.change-negative]="dailyChangePercent() !== null && dailyChangePercent() < 0">
+                {{ formatChange(dailyChangePercent(), '%') }}
             </span>
         </div>
     </section>
