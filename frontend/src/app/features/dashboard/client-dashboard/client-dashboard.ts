@@ -207,6 +207,14 @@ export class ClientDashboard implements OnInit {
         return value === null ? 'N/A' : `${value >= 0 ? '+' : ''}${value.toFixed(2)}${suffix}`;
     }
 
+    protected isPositiveChange(value: number | null): boolean {
+        return value !== null && value >= 0;
+    }
+
+    protected isNegativeChange(value: number | null): boolean {
+        return value !== null && value < 0;
+    }
+
     ngOnInit(): void {
         this.fetchAccount();
         this.fetchHoldings();
