@@ -238,21 +238,83 @@ export class TradingService {
             orderId?: string;
             trackingId?: string;
             buy?: boolean;
+            action?: string;
+            transactionType?: string;
+            side?: string;
+            type?: string;
             orderDate?: string;
             currentStatus?: OrderStatus;
+            name?: string | null;
+            instrumentName?: string | null;
+            companyName?: string | null;
+            averagePrice?: number | string | null;
+            avgPrice?: number | string | null;
+            executedPrice?: number | string | null;
+            filledPrice?: number | string | null;
+            fillPrice?: number | string | null;
+            limitPrice?: number | string | null;
+            assetPrice?: number | string | null;
             asset?: { symbol?: string; name?: string };
         };
+
+        const normalizedStatus = raw.currentStatus ?? raw.status;
+        const normalizedAction = raw.buy === undefined
+            ? raw.orderType ?? this.normalizeTransactionType(raw.transactionType ?? raw.action ?? raw.side ?? raw.type)
+            : raw.buy ? 'BUY' : 'SELL';
+        const normalizedName = raw.asset?.name
+            ?? raw.name
+            ?? raw.instrumentName
+            ?? raw.companyName
+            ?? normalizedStatus;
+        const normalizedPrice = this.coercePrice(
+            raw.price,
+            raw.executedPrice,
+            raw.filledPrice,
+            raw.fillPrice,
+            raw.averagePrice,
+            raw.avgPrice,
+            raw.limitPrice,
+            raw.assetPrice,
+        );
 
         return {
             ...order,
             id: raw.id ?? raw.orderId ?? raw.trackingId ?? '',
             trackingId: raw.trackingId,
             symbol: raw.asset?.symbol ?? raw.symbol,
-            name: raw.asset?.name ?? raw.name,
-            orderType: raw.buy === undefined ? raw.orderType : raw.buy ? 'BUY' : 'SELL',
-            status: raw.currentStatus ?? raw.status,
+            name: normalizedName,
+            orderType: normalizedAction ?? 'BUY',
+            status: normalizedStatus,
             executedAt: raw.executedAt ?? raw.orderDate,
+            price: normalizedPrice,
         };
+    }
+
+    private normalizeTransactionType(value?: string): 'BUY' | 'SELL' | undefined {
+        if (!value) {
+            return undefined;
+        }
+
+        const normalizedValue = value.trim().toUpperCase();
+        if (normalizedValue === 'BUY' || normalizedValue === 'SELL') {
+            return normalizedValue;
+        }
+        return undefined;
+    }
+
+    private coercePrice(...values: Array<number | string | null | undefined>): number | undefined {
+        for (const value of values) {
+            if (typeof value === 'number' && Number.isFinite(value)) {
+                return value;
+            }
+            if (typeof value === 'string') {
+                const parsed = Number(value);
+                if (Number.isFinite(parsed)) {
+                    return parsed;
+                }
+            }
+        }
+        return undefined;
     }
 
     private isUsdCashHolding(holding: Holding): boolean {

@@ -28,8 +28,17 @@ ModuleRegistry.registerModules([AllCommunityModule, UnitTimeAxisModule]);
 type Market = 'Equities' | 'Crypto' | 'Forex';
 type TradeDataTab = 'positions' | 'open-orders' | 'order-lookup';
 type ChartRange = '1D' | '1W' | '1M' | '3M' | '1Y' | 'ALL';
+type OrderStatusTimelineStep = {
+    status: string;
+    label: string;
+    rawTimestamp: string | null;
+    timestamp: string | null;
+    reached: boolean;
+    isCurrent: boolean;
+};
 
 const TICKER_SYMBOLS = ['AAPL', 'GOOGL', 'MSFT', 'AMZN', 'TSLA', 'NVDA', 'META', 'NFLX', 'UBER', 'PYPL'];
+const ORDER_TIMELINE_BASE_STATUSES = ['SUBMITTED', 'ACCEPTED', 'FILLED'] as const;
 
 @Component({
     imports: [CurrencyPipe, DecimalPipe, FormsModule, AgCharts, TopBar, WatchlistComponent, StockSearch, StockTicker, DataGrid],
@@ -75,14 +84,45 @@ export class Transact implements OnInit {
     protected readonly statusLogMessage = signal<string | null>(null);
     protected readonly statusLogError = signal<string | null>(null);
     protected readonly statusLog = signal<OrderStatusLog>({});
-    protected readonly formattedStatusLog = computed(() =>
-        Object.entries(this.statusLog())
-            .sort((first, second) => new Date(first[1]).getTime() - new Date(second[1]).getTime())
+    protected readonly statusTimeline = computed<OrderStatusTimelineStep[]>(() => {
+        const statusEntries = Object.entries(this.statusLog())
             .map(([status, timestamp]) => ({
-                status: status.replace(/_/g, ' '),
-                timestamp: this.formatStatusTimestamp(timestamp),
-            })),
-    );
+                status: this.normalizeStatus(status),
+                rawTimestamp: timestamp,
+                parsedTimestamp: new Date(timestamp).getTime(),
+            }))
+            .sort((first, second) => first.parsedTimestamp - second.parsedTimestamp);
+
+        const statusTimestampMap = new Map<string, string>();
+        statusEntries.forEach((entry) => {
+            statusTimestampMap.set(entry.status, entry.rawTimestamp);
+        });
+
+        const reachedStatuses = new Set(statusEntries.map((entry) => entry.status));
+        const lastReachedStatus = statusEntries.length > 0
+            ? statusEntries[statusEntries.length - 1].status
+            : null;
+
+        const statusesInTimeline: string[] = [...ORDER_TIMELINE_BASE_STATUSES];
+
+        statusEntries.forEach((entry) => {
+            if (!statusesInTimeline.includes(entry.status)) {
+                statusesInTimeline.push(entry.status);
+            }
+        });
+
+        return statusesInTimeline.map((status) => {
+            const rawTimestamp = statusTimestampMap.get(status) ?? null;
+            return {
+                status,
+                label: this.formatStatusLabel(status),
+                rawTimestamp,
+                timestamp: rawTimestamp ? this.formatStatusTimestamp(rawTimestamp) : null,
+                reached: reachedStatuses.has(status),
+                isCurrent: reachedStatuses.has(status) && lastReachedStatus === status,
+            };
+        });
+    });
     protected readonly holdings = signal<Holding[]>([]);
     protected readonly orders = signal<Order[]>([]);
     protected readonly stocksSignal = signal<StockTickerData[]>([]);
@@ -400,6 +440,18 @@ export class Transact implements OnInit {
             }).format(date);
     }
 
+    private normalizeStatus(status: string): string {
+        const normalized = status.trim().toUpperCase().replace(/\s+/g, '_');
+        return normalized === 'CANCELLED' ? 'CANCELED' : normalized;
+    }
+
+    private formatStatusLabel(status: string): string {
+        return status
+            .toLowerCase()
+            .replace(/_/g, ' ')
+            .replace(/\b\w/g, (character) => character.toUpperCase());
+    }
+
 
     selectMarket(market: Market): void {
         this.activeMarket.set(market);
@@ -454,12 +506,15 @@ export class Transact implements OnInit {
             return;
         }
 
+        const instrumentType = this.selectedInstrumentType();
         const request: OrderRequest = {
             clientId,
             symbol: requestedSymbol,
             name: this.instrumentName() || requestedSymbol,
             quantity: requestedQuantity,
             transactionType: this.orderSide(),
+            instrument: instrumentType,
+            instrumentType,
         };
 
         this.isSubmittingOrder.set(true);
@@ -496,6 +551,17 @@ export class Transact implements OnInit {
         }
 
         return input;
+    }
+
+    private selectedInstrumentType(): 'EQUITY' | 'CRYPTO' | 'FOREX' {
+        const market = this.activeMarket();
+        if (market === 'Crypto') {
+            return 'CRYPTO';
+        }
+        if (market === 'Forex') {
+            return 'FOREX';
+        }
+        return 'EQUITY';
     }
 
     private displaySymbol(value: string): string {

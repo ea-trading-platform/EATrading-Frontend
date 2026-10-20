@@ -63,7 +63,7 @@ export class BalanceGraph {
       fill: 'transparent',
     },
     padding: {
-      top: 0,
+      top: 24,
       right: 0,
       bottom: 0,
       left: 0,
@@ -75,7 +75,6 @@ export class BalanceGraph {
         xKey: "date",
         yKey: "balance",
         yName: "Account Balance",
-        interpolation: { type: "smooth" },
         stroke: '#007a7a',
         strokeWidth: 2.5,
         marker: {

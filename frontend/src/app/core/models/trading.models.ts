@@ -212,6 +212,8 @@ export interface OrderRequest {
     name: string;
     quantity: number;
     transactionType: TransactionType;
+    instrument?: 'EQUITY' | 'CRYPTO' | 'FOREX';
+    instrumentType?: 'EQUITY' | 'CRYPTO' | 'FOREX';
 }
 
 /**

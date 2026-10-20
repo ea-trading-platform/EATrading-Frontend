@@ -105,28 +105,60 @@ export class ClientDashboard implements OnInit {
         const accountBalance = Number(this.account()?.totalBalance);
         return Number.isFinite(accountBalance) ? accountBalance : 0;
     });
-    protected readonly totalGainLoss = computed(() =>
-        Number(this.portfolioSummary()?.overallReturnUsd) ||
-        this.holdings().reduce((total, holding) => {
+    protected readonly totalGainLoss = computed(() => {
+        const snapshotDayChange = this.toFiniteNumber(this.portfolioSummary()?.dailyChangeUsd);
+        if (snapshotDayChange !== null) {
+            return snapshotDayChange;
+        }
+
+        const historyPoints = this.portfolioHistory()?.points ?? [];
+        if (historyPoints.length >= 2) {
+            const latestValue = this.toFiniteNumber(historyPoints[historyPoints.length - 1].portfolioValueUsd);
+            const priorValue = this.toFiniteNumber(historyPoints[historyPoints.length - 2].portfolioValueUsd);
+            if (latestValue !== null && priorValue !== null) {
+                return latestValue - priorValue;
+            }
+        }
+
+        return this.holdings().reduce((total, holding) => {
             const currentValue = Number(holding.currentValue) || 0;
             const costBasis = (Number(holding.quantity) || 0) * (Number(holding.avgBuyPrice) || 0);
             return total + currentValue - costBasis;
-        }, 0),
-    );
+        }, 0);
+    });
     protected readonly gainLossPercentage = computed(() => {
-        const summaryPercentage = Number(this.portfolioSummary()?.overallReturnPercent);
-        if (Number.isFinite(summaryPercentage)) {
-            return summaryPercentage;
+        const portfolioValue = this.portfolioValue();
+        const dayChangeUsd = this.totalGainLoss();
+        const previousValue = portfolioValue - dayChangeUsd;
+        if (previousValue !== 0) {
+            return (dayChangeUsd / previousValue) * 100;
         }
-        const costBasis = this.holdings().reduce(
-            (total, holding) => total + (Number(holding.quantity) || 0) * (Number(holding.avgBuyPrice) || 0),
-            0,
-        );
-        return costBasis > 0 ? (this.totalGainLoss() / costBasis) * 100 : 0;
+
+        const snapshotPercentage = this.toFiniteNumber(this.portfolioSummary()?.dailyChangePercent);
+        if (snapshotPercentage !== null) {
+            return snapshotPercentage;
+        }
+
+        const historyPoints = this.portfolioHistory()?.points ?? [];
+        if (historyPoints.length >= 2) {
+            const latestValue = this.toFiniteNumber(historyPoints[historyPoints.length - 1].portfolioValueUsd);
+            const priorValue = this.toFiniteNumber(historyPoints[historyPoints.length - 2].portfolioValueUsd);
+            if (latestValue !== null && priorValue !== null && priorValue !== 0) {
+                return ((latestValue - priorValue) / priorValue) * 100;
+            }
+        }
+
+        return 0;
     });
     protected readonly orderHistory = computed(() =>
-        [...this.orders()].sort((a, b) =>
-            this.orderTimestamp(b).localeCompare(this.orderTimestamp(a))),
+        [...this.orders()]
+            .map((order) => ({
+                ...order,
+                orderType: this.resolveOrderAction(order),
+                name: this.resolveOrderName(order),
+                price: this.resolveOrderPrice(order),
+            }))
+            .sort((a, b) => this.orderTimestamp(b).localeCompare(this.orderTimestamp(a))),
     );
     protected readonly orderGridOptions: GridOptions<Order> = {
         domLayout: 'autoHeight',
@@ -161,7 +193,12 @@ export class ClientDashboard implements OnInit {
         { field: 'orderType', headerName: 'Action', minWidth: 100 },
         { field: 'symbol', headerName: 'Symbol', minWidth: 115 },
         { field: 'name', headerName: 'Name', minWidth: 160 },
-        { field: 'quantity', headerName: 'Quantity', minWidth: 110 },
+        {
+            field: 'quantity',
+            headerName: 'Quantity',
+            minWidth: 110,
+            valueFormatter: (params) => this.formatShareQuantity(params.value),
+        },
         { field: 'price', headerName: 'Price', minWidth: 110 },
         { field: 'status', headerName: 'Status', minWidth: 125 },
         {
@@ -199,6 +236,26 @@ export class ClientDashboard implements OnInit {
 
     protected absoluteValue(value: number): number {
         return Math.abs(value);
+    }
+
+    private toFiniteNumber(value: string | number | undefined): number | null {
+        if (value === undefined) {
+            return null;
+        }
+        const parsedValue = typeof value === 'number' ? value : Number(value);
+        return Number.isFinite(parsedValue) ? parsedValue : null;
+    }
+
+    private formatShareQuantity(value: unknown): string {
+        const numericValue = typeof value === 'number' ? value : Number(value);
+        if (!Number.isFinite(numericValue)) {
+            return '0';
+        }
+
+        return new Intl.NumberFormat('en-US', {
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 4,
+        }).format(numericValue);
     }
 
     private async copyTrackingId(trackingId: string, button: HTMLButtonElement): Promise<void> {
@@ -273,6 +330,70 @@ export class ClientDashboard implements OnInit {
 
     private orderTimestamp(order: Order): string {
         return order.executedAt ?? '';
+    }
+
+    private resolveOrderAction(order: Order): 'BUY' | 'SELL' {
+        const raw = order as Order & {
+            transactionType?: string;
+            action?: string;
+            side?: string;
+            buy?: boolean;
+        };
+
+        if (raw.orderType === 'BUY' || raw.orderType === 'SELL') {
+            return raw.orderType;
+        }
+        if (typeof raw.buy === 'boolean') {
+            return raw.buy ? 'BUY' : 'SELL';
+        }
+
+        const action = (raw.transactionType ?? raw.action ?? raw.side ?? '').trim().toUpperCase();
+        return action === 'SELL' ? 'SELL' : 'BUY';
+    }
+
+    private resolveOrderName(order: Order): string {
+        const raw = order as Order & { instrumentName?: string; companyName?: string; asset?: { name?: string } };
+        return raw.name?.trim()
+            || raw.asset?.name?.trim()
+            || raw.instrumentName?.trim()
+            || raw.companyName?.trim()
+            || order.status;
+    }
+
+    private resolveOrderPrice(order: Order): number | undefined {
+        const raw = order as Order & {
+            executedPrice?: number | string;
+            filledPrice?: number | string;
+            fillPrice?: number | string;
+            averagePrice?: number | string;
+            avgPrice?: number | string;
+            limitPrice?: number | string;
+            assetPrice?: number | string;
+        };
+
+        const priceCandidates: Array<number | string | undefined> = [
+            raw.price,
+            raw.executedPrice,
+            raw.filledPrice,
+            raw.fillPrice,
+            raw.averagePrice,
+            raw.avgPrice,
+            raw.limitPrice,
+            raw.assetPrice,
+        ];
+
+        for (const candidate of priceCandidates) {
+            if (typeof candidate === 'number' && Number.isFinite(candidate)) {
+                return candidate;
+            }
+            if (typeof candidate === 'string') {
+                const parsed = Number(candidate);
+                if (Number.isFinite(parsed)) {
+                    return parsed;
+                }
+            }
+        }
+        return undefined;
     }
 
     private fetchHoldings(): void {

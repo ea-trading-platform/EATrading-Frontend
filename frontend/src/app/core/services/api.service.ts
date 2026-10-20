@@ -216,8 +216,11 @@ export class ApiService {
 
     /** Create an asynchronous order and return its tracking ID. */
     createOrder(request: OrderRequest): Observable<OrderResponse> {
+        const instrumentType = request.instrumentType ?? request.instrument;
         return this.post<string | OrderResponse>(`/api/orders`, {
             ...request,
+            instrument: instrumentType,
+            instrumentType,
             quantity: String(request.quantity),
         }).pipe(map((response) => typeof response === 'string' ? { trackingId: response } : response));
     }
