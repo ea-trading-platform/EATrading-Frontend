@@ -1,5 +1,5 @@
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
-import { DecimalPipe } from '@angular/common';
+import { DatePipe, DecimalPipe } from '@angular/common';
 import { Router } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
 import { ApiService } from '../../../core/services/api.service';
@@ -49,6 +49,7 @@ const MOCK_TICKER: StockTickerData[] = [
 
 @Component({
     imports: [
+        DatePipe,
         DecimalPipe,
         StockSearch,
         PortfolioTableComponent,
@@ -86,6 +87,7 @@ export class ClientDashboard implements OnInit {
     protected readonly copyError = signal<string | null>(null);
     protected readonly portfolioSummary = signal<PortfolioSummary | null>(null);
     protected readonly portfolioHistory = signal<PortfolioHistory | null>(null);
+    protected readonly portfolioSnapshotAsOf = computed(() => this.portfolioSummary()?.asOf ?? null);
 
     protected readonly activeTab = signal<ClientDashboardTab>('portfolio');
     protected readonly portfolioHoldings = computed(() =>
@@ -113,8 +115,6 @@ export class ClientDashboard implements OnInit {
             return total + currentValue - costBasis;
         }, 0),
     );
-    protected readonly dailyChangeUsd = computed(() => this.numericSummaryValue('dailyChangeUsd'));
-    protected readonly dailyChangePercent = computed(() => this.numericSummaryValue('dailyChangePercent'));
     protected readonly gainLossPercentage = computed(() => {
         const summaryPercentage = Number(this.portfolioSummary()?.overallReturnPercent);
         if (Number.isFinite(summaryPercentage)) {
@@ -166,8 +166,10 @@ export class ClientDashboard implements OnInit {
         { field: 'quantity', headerName: 'Quantity', minWidth: 110 },
         { field: 'price', headerName: 'Price', minWidth: 110 },
         { field: 'status', headerName: 'Status', minWidth: 125 },
-        { field: 'executedAt', headerName: 'Change log time', minWidth: 190,
-            valueFormatter: (params) => params.value || 'Pending' },
+        {
+            field: 'executedAt', headerName: 'Change log time', minWidth: 190,
+            valueFormatter: (params) => params.value || 'Pending'
+        },
     ];
     protected readonly balanceData = computed<BalanceGraphInterface[]>(() => {
         const points = this.portfolioHistory()?.points ?? [];
@@ -199,18 +201,6 @@ export class ClientDashboard implements OnInit {
 
     protected absoluteValue(value: number): number {
         return Math.abs(value);
-    }
-
-    protected formatChange(value: number | null, suffix = ''): string {
-        return value === null ? 'N/A' : `${value >= 0 ? '+' : ''}${value.toFixed(2)}${suffix}`;
-    }
-
-    protected isPositiveChange(value: number | null): boolean {
-        return value !== null && value >= 0;
-    }
-
-    protected isNegativeChange(value: number | null): boolean {
-        return value !== null && value < 0;
     }
 
     private async copyTrackingId(trackingId: string, button: HTMLButtonElement): Promise<void> {
@@ -344,16 +334,6 @@ export class ClientDashboard implements OnInit {
             dayChange: undefined,
             overallReturn: undefined,
         };
-    }
-
-    private numericSummaryValue(key: 'dailyChangeUsd' | 'dailyChangePercent'): number | null {
-        const value = this.portfolioSummary()?.[key];
-        if (value === undefined || value === null || value === '') {
-            return null;
-        }
-
-        const numericValue = Number(value);
-        return Number.isFinite(numericValue) ? numericValue : null;
     }
 
     private fetchTickerData(): void {
