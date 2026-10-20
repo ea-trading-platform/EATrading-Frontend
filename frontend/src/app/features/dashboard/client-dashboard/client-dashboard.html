@@ -25,7 +25,7 @@
         </div>
 
         <div class="summary-stat">
-            <span class="stat-label">Total gain/loss</span>
+            <span class="stat-label">Today's gain/loss</span>
             <span class="stat-value" [class.change-positive]="totalGainLoss() >= 0"
                 [class.change-negative]="totalGainLoss() < 0">
                 {{ totalGainLoss() >= 0 ? '+' : '-' }}${{ absoluteValue(totalGainLoss()) | number: '1.2-2' }}
