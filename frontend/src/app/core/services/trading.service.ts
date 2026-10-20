@@ -8,9 +8,11 @@ import {
     PortfolioHistory,
     PortfolioSummary,
     Order,
+    OrderTransactionResponse,
     OrderRequest,
     OrderResponse,
     OrderStatus,
+    TransactionType,
 } from '../models/trading.models';
 
 /**
@@ -209,6 +211,36 @@ export class TradingService {
         return this.apiService.getOrders(clientId).pipe(map((orders) => orders.map((order) => this.normalizeOrder(order))));
     }
 
+    getAllOrders(): Observable<Order[]> {
+        return this.apiService.getAllOrders().pipe(
+            map((orders) => orders.map((order) => this.normalizeOrder(order))),
+        );
+    }
+
+    getOrdersByInstrument(instrument: string): Observable<Order[]> {
+        return this.apiService.getOrdersByInstrument(instrument).pipe(
+            map((orders) => orders.map((order) => this.normalizeOrder(order))),
+        );
+    }
+
+    getOrdersBySide(side: 'BUY' | 'SELL'): Observable<Order[]> {
+        return this.apiService.getOrdersBySide(side).pipe(
+            map((orders) => orders.map((order) => this.normalizeOrder(order))),
+        );
+    }
+
+    getOrdersByStatus(status: string): Observable<Order[]> {
+        return this.apiService.getOrdersByStatus(status).pipe(
+            map((orders) => orders.map((order) => this.normalizeOrder(order))),
+        );
+    }
+
+    getOrdersByDateRange(from: string, to: string): Observable<Order[]> {
+        return this.apiService.getOrdersByDateRange(from, to).pipe(
+            map((orders) => orders.map((order) => this.normalizeOrder(order))),
+        );
+    }
+
     /**
      * Submit a new buy/sell order
      */
@@ -228,14 +260,18 @@ export class TradingService {
         );
     }
 
-    private normalizeOrder(order: Order): Order {
-        const raw = order as Order & {
+    private normalizeOrder(order: Order | OrderTransactionResponse): Order {
+        const raw = order as (Order | OrderTransactionResponse) & {
+            id?: string;
             orderId?: string;
             trackingId?: string;
             buy?: boolean;
             orderDate?: string;
+            executedAt?: string;
+            name?: string;
             currentStatus?: OrderStatus;
             asset?: { symbol?: string; name?: string };
+            transactionType?: TransactionType;
         };
 
         return {
@@ -244,7 +280,9 @@ export class TradingService {
             trackingId: raw.trackingId,
             symbol: raw.asset?.symbol ?? raw.symbol,
             name: raw.asset?.name ?? raw.name,
-            orderType: raw.buy === undefined ? raw.orderType : raw.buy ? 'BUY' : 'SELL',
+            quantity: typeof raw.quantity === 'string' ? Number(raw.quantity) || 0 : raw.quantity,
+            orderType: raw.transactionType
+                ?? (raw.buy === undefined ? raw.orderType : raw.buy ? 'BUY' : 'SELL'),
             status: raw.currentStatus ?? raw.status,
             executedAt: raw.executedAt ?? raw.orderDate,
         };
@@ -257,12 +295,6 @@ export class TradingService {
         return this.orders().filter((o) => o.status === 'FILLED');
     }
 
-    /**
-     * Get pending orders (awaiting execution)
-     */
-    getPendingOrders(): Order[] {
-        return this.orders().filter((o) => o.status === 'PENDING' || o.status === 'SUBMITTED');
-    }
 
     // ========================================================================
     // STATE MANAGEMENT
