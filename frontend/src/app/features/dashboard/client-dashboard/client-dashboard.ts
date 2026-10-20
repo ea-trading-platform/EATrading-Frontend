@@ -55,8 +55,8 @@ const MOCK_ORDERS: OrdersTable[] = [
         transactionDate: new Date('2024-01-15'),
         shares: 10,
         price: 190.5,
-        instrument: 'STOCK',
-        status: 'PENDING',
+        instrument: 'EQUITY',
+        status: 'ACCEPTED',
     },
     {
         action: 'SELL',
@@ -65,8 +65,8 @@ const MOCK_ORDERS: OrdersTable[] = [
         transactionDate: new Date('2024-01-20'),
         shares: 2,
         price: 238.9,
-        instrument: 'STOCK',
-        status: 'PENDING',
+        instrument: 'EQUITY',
+        status: 'ACCEPTED',
     },
     {
         action: 'BUY',
@@ -75,8 +75,8 @@ const MOCK_ORDERS: OrdersTable[] = [
         transactionDate: new Date('2024-01-25'),
         shares: 3,
         price: 3200.0,
-        instrument: 'STOCK',
-        status: 'PENDING',
+        instrument: 'EQUITY',
+        status: 'ACCEPTED',
     },
     {
         action: 'SELL',
@@ -85,8 +85,8 @@ const MOCK_ORDERS: OrdersTable[] = [
         transactionDate: new Date('2024-01-30'),
         shares: 1,
         price: 415.0,
-        instrument: 'STOCK',
-        status: 'PENDING',
+        instrument: 'EQUITY',
+        status: 'ACCEPTED',
     }
 ];
 

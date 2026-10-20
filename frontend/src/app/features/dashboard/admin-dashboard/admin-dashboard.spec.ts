@@ -22,9 +22,9 @@ describe('AdminDashboard', () => {
       { clientId: 'client-zzzz', symbol: 'TSLA', name: 'Tesla Inc.', quantity: '4', avgBuyPrice: '200', currentValue: '955.6' },
     ];
     const orders = [
-      { id: 'order-amzn', clientId: 'client-yyyy', symbol: 'AMZN', quantity: 3, orderType: 'BUY', status: 'PENDING', executedAt: '2024-01-25T00:00:00Z', price: 3200 },
-      { id: 'order-tsla', clientId: 'client-xxxx', symbol: 'TSLA', quantity: 2, orderType: 'SELL', status: 'PENDING', executedAt: '2024-01-20T00:00:00Z', price: 238.9 },
-      { id: 'order-aapl', clientId: 'client-xxxx', symbol: 'AAPL', quantity: 10, orderType: 'BUY', status: 'PENDING', executedAt: '2024-01-15T00:00:00Z', price: 190.5 },
+      { id: 'order-amzn', clientId: 'client-yyyy', symbol: 'AMZN', quantity: 3, orderType: 'BUY', status: 'ACCEPTED', executedAt: '2024-01-25T00:00:00Z', price: 3200 },
+      { id: 'order-tsla', clientId: 'client-xxxx', symbol: 'TSLA', quantity: 2, orderType: 'SELL', status: 'ACCEPTED', executedAt: '2024-01-20T00:00:00Z', price: 238.9 },
+      { id: 'order-aapl', clientId: 'client-xxxx', symbol: 'AAPL', quantity: 10, orderType: 'BUY', status: 'ACCEPTED', executedAt: '2024-01-15T00:00:00Z', price: 190.5 },
     ];
     const trading = {
       getClientByEmail: (email: string) => of(clients.find(client => client.email === email)!),

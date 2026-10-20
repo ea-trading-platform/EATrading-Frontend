@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { PortfolioTableComponent } from '../components/portfolio-table/portfolio-table';
 import { PortfolioTable } from '../interfaces/portfolio-table.interface';
-import { OrdersTable, InstrumentType, OrderAction, OrderStatus } from '../interfaces/orders-table.interface';
+import { OrdersTable, InstrumentType, OrderAction } from '../interfaces/orders-table.interface';
 import { TopBar } from '../../components/top-bar/top-bar';
 import { PieChartComponent } from '../components/pie-chart/pie-chart';
 import { BarChartComponent } from '../components/bar-chart/bar-chart';
@@ -12,6 +12,7 @@ import { AdminOrdersTableComponent } from './components/admin-orders-table/admin
 import { AuthService } from '../../../core/services/auth.service';
 import { TradingService } from '../../../core/services/trading.service';
 import { Client, Holding, Order } from '../../../core/models/trading.models';
+import { TopBarNavItem } from '../../components/top-bar/top-bar';
 import { forkJoin } from 'rxjs';
 
 type AdminDashboardTab = 'portfolio' | 'orders';
@@ -43,6 +44,11 @@ export class AdminDashboard {
     readonly adminName = computed(() =>
         this.auth.profile()?.name ?? this.auth.user()?.email ?? 'Admin',
     );
+
+    readonly navItems: readonly TopBarNavItem[] = [
+        { label: 'Dashboard', route: '/admin-dashboard' },
+        { label: 'Trade Logs', route: '/admin-trade-logs' },
+    ];
 
     readonly selectedAccountId = signal<string | null>(null);
     readonly searchQuery = signal('');
@@ -197,20 +203,7 @@ export class AdminDashboard {
             shares: order.quantity,
             price: order.price ?? 0,
             instrument: 'STOCK' as InstrumentType,
-            status: this.toTableOrderStatus(order.status),
+            status: order.status,
         };
-    }
-
-    private toTableOrderStatus(status: Order['status']): OrderStatus {
-        if (status === 'CANCELLED' || status === 'CANCELED') {
-            return 'CANCELED';
-        }
-        if (status === 'FILLED') {
-            return 'COMPLETED';
-        }
-        if (status === 'PENDING' || status === 'SUBMITTED' || status === 'ACCEPTED') {
-            return 'PENDING';
-        }
-        return 'PENDING';
     }
 }

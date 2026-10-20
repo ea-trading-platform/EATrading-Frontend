@@ -114,9 +114,9 @@ export class Transact implements OnInit {
         this.activeDataTab() === 'positions' ? this.positionColumns() : this.orderColumns(),
     );
     protected readonly openOrders = computed(() => this.orders().filter((order) =>
-        order.status === 'PENDING' || order.status === 'SUBMITTED'));
+        order.status === 'SUBMITTED'));
     protected readonly orderHistory = computed(() => this.orders().filter((order) =>
-        order.status !== 'PENDING' && order.status !== 'SUBMITTED'));
+        order.status !== 'SUBMITTED'));
     protected readonly availableToTrade = computed(() => {
         const availableCash = Number(this.portfolio()?.availableCashUsd);
         return Number.isFinite(availableCash) ? availableCash : Number(this.account()?.totalBalance) || 0;
@@ -374,6 +374,7 @@ export class Transact implements OnInit {
             name: this.instrumentName() || requestedSymbol,
             quantity: requestedQuantity,
             transactionType: this.orderSide(),
+            instrument: 'EQUITY',
         };
 
         this.isSubmittingOrder.set(true);
