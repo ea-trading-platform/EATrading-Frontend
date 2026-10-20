@@ -39,7 +39,7 @@
 
 .portfolio-summary {
     display: grid;
-    grid-template-columns: minmax(12rem, 1.3fr) repeat(4, minmax(10rem, 1fr));
+    grid-template-columns: minmax(12rem, 1.3fr) repeat(3, minmax(10rem, 1fr));
     align-items: center;
     gap: 1.5rem;
     border-radius: 1rem;
@@ -129,6 +129,13 @@
     font-weight: 600;
     color: white;
     white-space: nowrap;
+}
+
+.portfolio-summary-as-of {
+    grid-column: 2 / -1;
+    color: var(--text-muted);
+    font-size: 0.75rem;
+    text-align: right;
 }
 
 .holdings-list {
@@ -227,6 +234,11 @@
         padding-bottom: 0.5rem;
     }
 
+    .portfolio-summary-as-of {
+        grid-column: 1 / -1;
+        text-align: left;
+    }
+
     .summary-stat {
         padding-left: 0;
         padding: 1rem;
@@ -280,6 +292,10 @@
     .summary-welcome {
         grid-column: auto;
         padding: 0.5rem 0.25rem 0.75rem;
+    }
+
+    .portfolio-summary-as-of {
+        padding: 0 0.25rem;
     }
 
     .summary-welcome h1 {
