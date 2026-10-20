@@ -230,6 +230,14 @@ export class ApiService {
     }
 
     /**
+     * Get all orders for a client by email. Administrators only.
+     * GET /api/orders?clientEmail={clientEmail}
+     */
+    getOrdersByClientEmail(clientEmail: string): Observable<OrderTransactionResponse[]> {
+        return this.get<OrderTransactionResponse[]>('/api/orders', { clientEmail });
+    }
+
+    /**
      * Get all orders for an instrument. Administrators only.
      * GET /api/orders?instrument={instrument}
      */

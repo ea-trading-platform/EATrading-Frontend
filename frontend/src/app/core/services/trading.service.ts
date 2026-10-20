@@ -217,6 +217,12 @@ export class TradingService {
         );
     }
 
+    getOrdersByClientEmail(clientEmail: string): Observable<Order[]> {
+        return this.apiService.getOrdersByClientEmail(clientEmail).pipe(
+            map((orders) => orders.map((order) => this.normalizeOrder(order))),
+        );
+    }
+
     getOrdersByInstrument(instrument: string): Observable<Order[]> {
         return this.apiService.getOrdersByInstrument(instrument).pipe(
             map((orders) => orders.map((order) => this.normalizeOrder(order))),

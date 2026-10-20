@@ -2,10 +2,9 @@ import { CommonModule } from '@angular/common';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { forkJoin } from 'rxjs';
 import { AuthService } from '../../../../core/services/auth.service';
 import { TradingService } from '../../../../core/services/trading.service';
-import { Client, Order } from '../../../../core/models/trading.models';
+import { Order } from '../../../../core/models/trading.models';
 import { TopBar, TopBarNavItem } from '../../../components/top-bar/top-bar';
 import { AdminOrdersTableComponent } from '../components/admin-orders-table/admin-orders-table';
 import { AdminOrder } from '../admin-dashboard';
@@ -42,7 +41,6 @@ export class AdminTradeLogs implements OnInit {
         'ALL', 'SUBMITTED', 'ACCEPTED', 'FILLED', 'CANCELED', 'REJECTED',
     ];
 
-    readonly clients = signal<Client[]>([]);
     readonly orders = signal<Order[]>([]);
     readonly selectedInstrument = signal<InstrumentFilter>('ALL');
     readonly selectedSide = signal<SideFilter>('ALL');
@@ -73,11 +71,14 @@ export class AdminTradeLogs implements OnInit {
         this.selectedClientEmail.set('');
         this.fromDate.set('');
         this.toDate.set('');
+        this.loadOrders();
     }
 
     applyClientEmailFilter(event: Event): void {
         event.preventDefault();
-        this.selectedClientEmail.set(this.clientEmailQuery().trim());
+        const email = this.clientEmailQuery().trim();
+        this.selectedClientEmail.set(email);
+        this.loadOrders(email || undefined);
     }
 
     logout(): void {
@@ -85,13 +86,15 @@ export class AdminTradeLogs implements OnInit {
         this.router.navigate(['/']);
     }
 
-    private loadOrders(): void {
+    private loadOrders(clientEmail?: string): void {
         this.loadingOrders.set(true);
         this.loadError.set(null);
-        forkJoin({
-            orders: this.trading.getAllOrders(),
-        }).subscribe({
-            next: ({ orders }) => {
+        const request = clientEmail
+            ? this.trading.getOrdersByClientEmail(clientEmail)
+            : this.trading.getAllOrders();
+
+        request.subscribe({
+            next: orders => {
                 this.orders.set(orders);
                 this.loadingOrders.set(false);
             },
@@ -105,7 +108,6 @@ export class AdminTradeLogs implements OnInit {
 
     private matchesFilters(order: Order): boolean {
         const instrument = (order.instrument ?? 'STOCK').toUpperCase();
-        const clientEmail = this.clients().find(client => client.id === order.clientId)?.email ?? '';
         const executedAt = order.executedAt ? new Date(order.executedAt) : null;
         const toDate = this.toDate() ? new Date(`${this.toDate()}T00:00:00`) : null;
         if (toDate) {
@@ -119,9 +121,6 @@ export class AdminTradeLogs implements OnInit {
             return false;
         }
         if (this.selectedStatus() !== 'ALL' && order.status !== this.selectedStatus()) {
-            return false;
-        }
-        if (this.selectedClientEmail() && clientEmail !== this.selectedClientEmail()) {
             return false;
         }
         if (this.fromDate() && (!executedAt || executedAt < new Date(`${this.fromDate()}T00:00:00`))) {
