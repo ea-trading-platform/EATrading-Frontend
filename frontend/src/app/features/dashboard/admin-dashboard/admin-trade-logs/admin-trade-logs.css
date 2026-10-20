@@ -1,0 +1,63 @@
+.admin-trade-logs {
+    min-height: 100dvh;
+    padding: 1.15rem;
+    width: 100%;
+    margin: 0 auto;
+}
+
+.trade-logs-content {
+    margin-top: 2rem;
+}
+
+.trade-logs-content h2 {
+    color: var(--text-light);
+    margin: 0 0 1rem;
+}
+
+.trade-log-filters {
+    display: grid;
+    grid-template-columns: repeat(6, minmax(8rem, 1fr)) auto;
+    gap: 0.75rem;
+    align-items: end;
+    margin-bottom: 1.25rem;
+}
+
+.trade-log-filters label {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.trade-log-filters select,
+.trade-log-filters input {
+    min-width: 0;
+    padding: 0.55rem 0.65rem;
+    background: var(--bg-subtle);
+    border: 1px solid var(--border-lighter);
+    border-radius: 0.3rem;
+    color: var(--text-light);
+}
+
+.clear-filters-button {
+    padding: 0.55rem 0.8rem;
+    background: transparent;
+    border: 1px solid var(--border-lighter);
+    border-radius: 0.3rem;
+    color: var(--text-light);
+    cursor: pointer;
+}
+
+@media (max-width: 1100px) {
+    .trade-log-filters {
+        grid-template-columns: repeat(3, minmax(8rem, 1fr));
+    }
+}
+
+@media (max-width: 600px) {
+    .trade-log-filters {
+        grid-template-columns: 1fr;
+    }
+}
