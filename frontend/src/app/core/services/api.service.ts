@@ -12,11 +12,13 @@ import {
     SuccessResponse,
     Client,
     ClientRequest,
+    PortfolioHistory,
     PortfolioSummary,
     Holding,
     Order,
     OrderRequest,
     OrderResponse,
+    OrderStatusLog,
     CandleQuery,
     WatchlistItemResponse
 } from '../models/trading.models';
@@ -184,6 +186,10 @@ export class ApiService {
         return this.get<PortfolioSummary>(`/api/portfolio`, { clientId });
     }
 
+    getPortfolioHistory(clientId: string, from: string, to: string): Observable<PortfolioHistory> {
+        return this.get<PortfolioHistory>(`/api/portfolio/history`, { clientId, from, to });
+    }
+
     // ========================================================================
     // HOLDINGS ENDPOINTS
     // ========================================================================
@@ -214,6 +220,11 @@ export class ApiService {
             ...request,
             quantity: String(request.quantity),
         }).pipe(map((response) => typeof response === 'string' ? { trackingId: response } : response));
+    }
+
+    /** Get status changes for an order tracking ID. */
+    getOrderStatusLog(trackingId: string): Observable<OrderStatusLog> {
+        return this.get<OrderStatusLog>(`/api/orders/${encodeURIComponent(trackingId)}/status-log`);
     }
 
     // ========================================================================

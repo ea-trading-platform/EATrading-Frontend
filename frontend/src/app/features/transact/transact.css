@@ -181,6 +181,36 @@
     margin: 2.25rem 0 1.5rem;
 }
 
+.status-log {
+    display: grid;
+    gap: 0.65rem;
+    margin: 1rem 0 0;
+    padding: 0;
+    list-style: none;
+}
+
+.status-log-entry {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    border: 1px solid var(--border-light);
+    border-radius: 0.45rem;
+    padding: 0.8rem 1rem;
+    background: rgba(255, 255, 255, 0.03);
+}
+
+.status-log-status {
+    color: var(--text-light);
+    font-weight: 700;
+    text-transform: capitalize;
+}
+
+.status-log-entry time {
+    color: var(--text-muted);
+    font-size: 0.85rem;
+}
+
 .symbol-search label {
     display: block;
     margin-bottom: 0.55rem;
@@ -230,6 +260,10 @@
 .trade-message {
     margin: 0 0 1rem;
     color: var(--neg-accent);
+}
+
+.success-message {
+    color: var(--accent-secondary);
 }
 
 .chart-panel {
@@ -316,7 +350,7 @@
     place-content: center;
     justify-items: center;
     overflow: hidden;
-    border: 1px dashed var(--border-light);
+    /* border: 1px dashed var(--border-light); */
     color: var(--text-muted);
     text-align: center;
 }

@@ -4,12 +4,12 @@ import { Router } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
 import { ApiService } from '../../../core/services/api.service';
 import { TradingService } from '../../../core/services/trading.service';
-import { Client, Holding } from '../../../core/models/trading.models';
+import { Client, Holding, Order, PortfolioHistory, PortfolioSummary } from '../../../core/models/trading.models';
 import { StockSearch } from './components/stock-search/stock-search';
 import { PortfolioTableComponent } from '../components/portfolio-table/portfolio-table';
 import { PortfolioTable } from '../interfaces/portfolio-table.interface';
-import { OrdersTable } from '../interfaces/orders-table.interface';
-import { OrdersTableComponent } from '../components/orders-table/orders-table';
+import { DataGrid } from '../components/data-grid/data-grid';
+import { ColDef, GridOptions } from 'ag-grid-community';
 import { BalanceGraphInterface } from '../interfaces/balances-graph.interface';
 import { BalanceGraph } from '../components/balance-graph/balance-graph';
 import { TopBar, TopBarNavItem } from '../../components/top-bar/top-bar';
@@ -17,6 +17,7 @@ import { StockTicker } from '../components/stock-ticker/stock-ticker';
 import { StockTickerData } from '../interfaces/stock-ticker.interface';
 import { WatchlistComponent } from '../components/watchlist/watchlist';
 import { TopMoversComponent } from '../components/top-movers/top-movers';
+import { PieChartComponent } from '../components/pie-chart/pie-chart';
 import { forkJoin } from 'rxjs';
 type ClientDashboardTab = 'portfolio' | 'orders';
 
@@ -46,60 +47,18 @@ const MOCK_TICKER: StockTickerData[] = [
     },
 ];
 
-const MOCK_ORDERS: OrdersTable[] = [
-    {
-        action: 'BUY',
-        symbol: 'AAPL',
-        name: 'Apple Inc.',
-        transactionDate: new Date('2024-01-15'),
-        shares: 10,
-        price: 190.5,
-        instrument: 'STOCK',
-        status: 'PENDING',
-    },
-    {
-        action: 'SELL',
-        symbol: 'TSLA',
-        name: 'Tesla Inc.',
-        transactionDate: new Date('2024-01-20'),
-        shares: 2,
-        price: 238.9,
-        instrument: 'STOCK',
-        status: 'PENDING',
-    },
-    {
-        action: 'BUY',
-        symbol: 'AMZN',
-        name: 'Amazon.com Inc.',
-        transactionDate: new Date('2024-01-25'),
-        shares: 3,
-        price: 3200.0,
-        instrument: 'STOCK',
-        status: 'PENDING',
-    },
-    {
-        action: 'SELL',
-        symbol: 'MSFT',
-        name: 'Microsoft Corp.',
-        transactionDate: new Date('2024-01-30'),
-        shares: 1,
-        price: 415.0,
-        instrument: 'STOCK',
-        status: 'PENDING',
-    }
-];
-
 @Component({
     imports: [
         DecimalPipe,
         StockSearch,
         PortfolioTableComponent,
-        OrdersTableComponent,
+        DataGrid,
         TopBar,
         BalanceGraph,
         StockTicker,
         WatchlistComponent,
-        TopMoversComponent
+        TopMoversComponent,
+        PieChartComponent,
     ],
     selector: 'app-client-dashboard',
     standalone: true,
@@ -122,8 +81,11 @@ export class ClientDashboard implements OnInit {
     protected readonly loadingAccount = signal(false);
     protected readonly holdings = signal<Holding[]>([]);
     protected readonly loadingHoldings = signal(false);
-    protected readonly orders = signal<OrdersTable[]>(MOCK_ORDERS);
+    protected readonly orders = signal<Order[]>([]);
     protected readonly loadingOrders = signal(false);
+    protected readonly copyError = signal<string | null>(null);
+    protected readonly portfolioSummary = signal<PortfolioSummary | null>(null);
+    protected readonly portfolioHistory = signal<PortfolioHistory | null>(null);
 
     protected readonly activeTab = signal<ClientDashboardTab>('portfolio');
     protected readonly portfolioHoldings = computed(() =>
@@ -132,20 +94,32 @@ export class ClientDashboard implements OnInit {
             .sort((a, b) => a.symbol.localeCompare(b.symbol)),
     );
     protected readonly portfolioValue = computed(() =>
+        Number(this.portfolioSummary()?.portfolioValueUsd) ||
         this.holdings().reduce((total, holding) => total + (Number(holding.currentValue) || 0), 0),
     );
     protected readonly availableToTrade = computed(() => {
+        const availableCash = Number(this.portfolioSummary()?.availableCashUsd);
+        if (Number.isFinite(availableCash)) {
+            return availableCash;
+        }
         const accountBalance = Number(this.account()?.totalBalance);
         return Number.isFinite(accountBalance) ? accountBalance : 0;
     });
     protected readonly totalGainLoss = computed(() =>
+        Number(this.portfolioSummary()?.overallReturnUsd) ||
         this.holdings().reduce((total, holding) => {
             const currentValue = Number(holding.currentValue) || 0;
             const costBasis = (Number(holding.quantity) || 0) * (Number(holding.avgBuyPrice) || 0);
             return total + currentValue - costBasis;
         }, 0),
     );
+    protected readonly dailyChangeUsd = computed(() => this.numericSummaryValue('dailyChangeUsd'));
+    protected readonly dailyChangePercent = computed(() => this.numericSummaryValue('dailyChangePercent'));
     protected readonly gainLossPercentage = computed(() => {
+        const summaryPercentage = Number(this.portfolioSummary()?.overallReturnPercent);
+        if (Number.isFinite(summaryPercentage)) {
+            return summaryPercentage;
+        }
         const costBasis = this.holdings().reduce(
             (total, holding) => total + (Number(holding.quantity) || 0) * (Number(holding.avgBuyPrice) || 0),
             0,
@@ -153,13 +127,71 @@ export class ClientDashboard implements OnInit {
         return costBasis > 0 ? (this.totalGainLoss() / costBasis) * 100 : 0;
     });
     protected readonly orderHistory = computed(() =>
-        [...this.orders()].sort((a, b) => b.transactionDate.getTime() - a.transactionDate.getTime()),
+        [...this.orders()].sort((a, b) =>
+            this.orderTimestamp(b).localeCompare(this.orderTimestamp(a))),
     );
+    protected readonly orderGridOptions: GridOptions<Order> = {
+        domLayout: 'autoHeight',
+        suppressCellFocus: true,
+    };
+    protected readonly orderColumns: ColDef<Order>[] = [
+        {
+            field: 'trackingId',
+            headerName: 'Tracking ID',
+            minWidth: 220,
+            cellRenderer: (params: { value?: string }) => {
+                const button = document.createElement('button');
+                const trackingId = params.value ?? '';
+                button.type = 'button';
+                button.textContent = trackingId || 'Unavailable';
+                button.title = trackingId ? 'Copy tracking ID' : 'Tracking ID unavailable';
+                button.disabled = !trackingId;
+                button.style.border = '0';
+                button.style.background = 'transparent';
+                button.style.color = 'inherit';
+                button.style.cursor = trackingId ? 'copy' : 'default';
+                button.style.padding = '0';
+                button.addEventListener('click', (event) => {
+                    event.stopPropagation();
+                    if (trackingId) {
+                        void this.copyTrackingId(trackingId, button);
+                    }
+                });
+                return button;
+            },
+        },
+        { field: 'orderType', headerName: 'Action', minWidth: 100 },
+        { field: 'symbol', headerName: 'Symbol', minWidth: 115 },
+        { field: 'name', headerName: 'Name', minWidth: 160 },
+        { field: 'quantity', headerName: 'Quantity', minWidth: 110 },
+        { field: 'price', headerName: 'Price', minWidth: 110 },
+        { field: 'status', headerName: 'Status', minWidth: 125 },
+        { field: 'executedAt', headerName: 'Change log time', minWidth: 190,
+            valueFormatter: (params) => params.value || 'Pending' },
+    ];
     protected readonly balanceData = computed<BalanceGraphInterface[]>(() => {
-        const balance = Number(this.account()?.totalBalance);
-        return Number.isFinite(balance)
-            ? [{ date: new Date().toISOString(), balance }]
-            : [];
+        const points = this.portfolioHistory()?.points ?? [];
+        if (points.length > 0) {
+            return points.map((point) => ({
+                date: point.timestamp,
+                balance: Number(point.portfolioValueUsd) || 0,
+            }));
+        }
+        const balance = this.portfolioValue();
+        return balance > 0 ? [{ date: new Date().toISOString(), balance }] : [];
+    });
+    protected readonly portfolioAllocation = computed(() => {
+        const byInstrument = this.holdings().reduce<Record<string, number>>((totals, holding) => {
+            const instrument = (holding.instrument ?? 'EQUITY').toUpperCase();
+            totals[instrument] = (totals[instrument] ?? 0) + (Number(holding.currentValue) || 0);
+            return totals;
+        }, {});
+        return [
+            { label: 'Equities', value: byInstrument['EQUITY'] ?? 0 },
+            { label: 'Crypto', value: byInstrument['CRYPTO'] ?? 0 },
+            { label: 'Forex', value: byInstrument['FOREX'] ?? 0 },
+            { label: 'Cash', value: Number(this.portfolioSummary()?.availableCashUsd) || 0 },
+        ];
     });
 
     protected readonly stocksSignal = signal<StockTickerData[]>([]);
@@ -169,9 +201,39 @@ export class ClientDashboard implements OnInit {
         return Math.abs(value);
     }
 
+    protected formatChange(value: number | null, suffix = ''): string {
+        return value === null ? 'N/A' : `${value >= 0 ? '+' : ''}${value.toFixed(2)}${suffix}`;
+    }
+
+    protected isPositiveChange(value: number | null): boolean {
+        return value !== null && value >= 0;
+    }
+
+    protected isNegativeChange(value: number | null): boolean {
+        return value !== null && value < 0;
+    }
+
+    private async copyTrackingId(trackingId: string, button: HTMLButtonElement): Promise<void> {
+        try {
+            if (!navigator.clipboard) {
+                throw new Error('Clipboard access is unavailable.');
+            }
+            await navigator.clipboard.writeText(trackingId);
+            button.textContent = 'Copied';
+            window.setTimeout(() => {
+                button.textContent = trackingId;
+            }, 1500);
+            this.copyError.set(null);
+        } catch (error) {
+            console.error('Unable to copy tracking ID:', error);
+            this.copyError.set('Unable to copy the tracking ID. Please copy it manually.');
+        }
+    }
+
     ngOnInit(): void {
         this.fetchAccount();
         this.fetchHoldings();
+        this.fetchPortfolioData();
         this.fetchOrders();
         this.fetchTickerData();
     }
@@ -208,18 +270,21 @@ export class ClientDashboard implements OnInit {
         this.loadingOrders.set(true);
         this.trading.loadOrders(clientId).subscribe({
             next: (orders: unknown) => {
-                // Map API response to OrdersTable interface
                 if (Array.isArray(orders)) {
-                    this.orders.set(orders as OrdersTable[]);
+                    this.orders.set(orders as Order[]);
                 }
                 this.loadingOrders.set(false);
             },
             error: (err) => {
                 console.error('Error fetching orders:', err);
-                // Keep mock data on error
+                this.orders.set([]);
                 this.loadingOrders.set(false);
             },
         });
+    }
+
+    private orderTimestamp(order: Order): string {
+        return order.executedAt ?? '';
     }
 
     private fetchHoldings(): void {
@@ -242,6 +307,30 @@ export class ClientDashboard implements OnInit {
         });
     }
 
+    private fetchPortfolioData(): void {
+        const clientId = this.auth.getClientId();
+        if (!clientId) {
+            return;
+        }
+
+        this.trading.getPortfolioSummary(clientId).subscribe({
+            next: (summary) => this.portfolioSummary.set(summary),
+            error: (err) => console.error('Error fetching portfolio summary:', err),
+        });
+
+        const to = new Date();
+        const from = new Date(to);
+        from.setFullYear(to.getFullYear() - 1);
+        this.trading.getPortfolioHistory(
+            clientId,
+            from.toISOString().slice(0, 10),
+            to.toISOString().slice(0, 10),
+        ).subscribe({
+            next: (history) => this.portfolioHistory.set(history),
+            error: (err) => console.error('Error fetching portfolio history:', err),
+        });
+    }
+
     private toPortfolioRow(holding: Holding): PortfolioTable {
         const value = Number(holding.currentValue) || 0;
         const totalBalance = this.portfolioValue();
@@ -255,6 +344,16 @@ export class ClientDashboard implements OnInit {
             dayChange: undefined,
             overallReturn: undefined,
         };
+    }
+
+    private numericSummaryValue(key: 'dailyChangeUsd' | 'dailyChangePercent'): number | null {
+        const value = this.portfolioSummary()?.[key];
+        if (value === undefined || value === null || value === '') {
+            return null;
+        }
+
+        const numericValue = Number(value);
+        return Number.isFinite(numericValue) ? numericValue : null;
     }
 
     private fetchTickerData(): void {

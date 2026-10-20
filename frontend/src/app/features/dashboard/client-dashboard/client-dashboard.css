@@ -32,6 +32,11 @@
     gap: 0;
 }
 
+.client-dashboard .col-lg-8,
+.client-dashboard .col-lg-4 {
+    padding-left: 0;
+}
+
 .portfolio-summary {
     display: grid;
     grid-template-columns: minmax(12rem, 1.3fr) repeat(4, minmax(10rem, 1fr));
@@ -99,8 +104,14 @@
 
 .graph-card {
     margin-top: 0.5rem;
-    min-height: 22rem;
+    height: 25rem;
+    min-height: 25rem;
     border-radius: 1rem;
+}
+
+.pie-chart-card {
+    height: 25rem;
+    min-height: 25rem;
 }
 
 .stat-label {

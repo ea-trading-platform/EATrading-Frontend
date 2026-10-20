@@ -38,8 +38,13 @@
 
         <div class="summary-stat">
             <span class="stat-label">Day change</span>
-            <span class="stat-value">N/A</span>
-            <span class="summary-change summary-change-placeholder" aria-hidden="true">
+            <span class="stat-value" [class.change-positive]="isPositiveChange(dailyChangeUsd())"
+                [class.change-negative]="isNegativeChange(dailyChangeUsd())">
+                {{ formatChange(dailyChangeUsd(), ' USD') }}
+            </span>
+            <span class="summary-change" [class.change-positive]="isPositiveChange(dailyChangePercent())"
+                [class.change-negative]="isNegativeChange(dailyChangePercent())">
+                {{ formatChange(dailyChangePercent(), '%') }}
             </span>
         </div>
     </section>
@@ -78,7 +83,11 @@
                 </section>
                 } @else if (activeTab() === 'orders') {
                 <section class="tab-panel">
-                    <app-orders-table [rowData]="orderHistory()"></app-orders-table>
+                    @if (copyError()) {
+                    <p class="trade-message error-message" role="alert">{{ copyError() }}</p>
+                    }
+                    <app-data-grid [columnDefs]="orderColumns" [rowData]="orderHistory()"
+                        [gridOptions]="orderGridOptions"></app-data-grid>
                 </section>
                 }
 
@@ -86,7 +95,9 @@
 
             <!-- Sidebar: Watchlist and Top Movers -->
             <div class="col-lg-4 col-md-12">
-                <!-- <app-pie-chart></app-pie-chart> -->
+                <section class="pie-chart-card" aria-label="Portfolio allocation">
+                    <app-pie-chart [data]="portfolioAllocation()" [totalValue]="portfolioValue()"></app-pie-chart>
+                </section>
                 <app-top-movers></app-top-movers>
             </div>
 
