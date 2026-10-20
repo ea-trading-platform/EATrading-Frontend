@@ -50,13 +50,11 @@ const MOCK_TICKER: StockTickerData[] = [
 @Component({
     imports: [
         DecimalPipe,
-        StockSearch,
         PortfolioTableComponent,
         DataGrid,
         TopBar,
         BalanceGraph,
         StockTicker,
-        WatchlistComponent,
         TopMoversComponent,
         PieChartComponent,
     ],
