@@ -1,7 +1,7 @@
 <main class="admin-dashboard">
 	<app-top-bar (logout)="logout()"></app-top-bar>
 
-	<h1>Admin Dashboard (mock)</h1>
+	<h1>Hello {{ adminName() }}</h1>
 
 	<form class="client-search" (ngSubmit)="searchClient()">
 		<label for="client-search-input">Search clients</label>
@@ -27,6 +27,11 @@
 		<p>{{ selectedAccount().email }}</p>
 	</section>
 
+	<section class="analytics" aria-label="Portfolio analytics">
+		<h3>Analytics</h3>
+		<app-pie-chart [data]="analyticsData()"></app-pie-chart>
+	</section>
+
 	<nav class="dashboard-tabs" aria-label="Client dashboard sections">
 		<button type="button" class="tab-button" (click)="setTab('portfolio')"
 			[class.active]="activeTab() === 'portfolio'">Portfolio</button>
@@ -42,12 +47,6 @@
 		</div>
 		<div *ngIf="activeTab() === 'orders'">
 			<app-orders-table [rowData]="orderHistory()"></app-orders-table>
-		</div>
-		<div *ngIf="activeTab() === 'analytics'">
-			<div class="analytics">
-				<h3>Analytics</h3>
-				<app-pie-chart [data]="analyticsData()"></app-pie-chart>
-			</div>
 		</div>
 	</div>
 </main>
