@@ -36,7 +36,5 @@ export class PortfolioTableComponent {
         return `${percentValue.toFixed(2)}%`;
       },
     },
-    { field: 'dayChange', headerName: 'Day Change', width: 120 },
-    { field: 'overallReturn', headerName: 'Overall Return', width: 140 },
   ];
 }
