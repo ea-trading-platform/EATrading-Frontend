@@ -73,9 +73,9 @@
     text-decoration: none;
 }
 
-/* .navbar-brand:hover {
+.navbar-brand:hover {
     color: var(--accent);
-} */
+}
 
 .navbar-brand img {
     filter: drop-shadow(0 0 4px var(--accent));

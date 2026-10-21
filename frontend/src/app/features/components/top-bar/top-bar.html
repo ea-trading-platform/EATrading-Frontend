@@ -1,9 +1,9 @@
 <nav class="navbar">
   <div class="navbar-left">
-    <div class="navbar-brand">
+    <a class="navbar-brand" [routerLink]="dashboardRoute()" aria-label="Go to dashboard">
       <img src="/ea-logo.png" alt="Logo" width="50" height="50">
       EA Trading
-    </div>
+    </a>
     @if (navItems().length > 0) {
     <nav class="navbar-links" aria-label="Primary navigation">
       @for (item of navItems(); track item.route) {
