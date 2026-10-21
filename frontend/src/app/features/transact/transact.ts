@@ -380,8 +380,10 @@ export class Transact implements OnInit {
             { field: 'price', headerName: 'Price', minWidth: 110 },
             { field: 'status', headerName: 'Status', minWidth: 125 },
             { field: 'clientId', headerName: 'Client ID', minWidth: 220 },
-            { field: 'executedAt', headerName: 'Change log time', minWidth: 190,
-                valueFormatter: (params) => params.value || 'Pending' },
+            {
+                field: 'executedAt', headerName: 'Change log time', minWidth: 190,
+                valueFormatter: (params) => params.value || 'Pending'
+            },
         ];
     }
 
@@ -553,13 +555,13 @@ export class Transact implements OnInit {
         return input;
     }
 
-    private selectedInstrumentType(): 'EQUITY' | 'CRYPTO' | 'FOREX' {
+    private selectedInstrumentType(): 'EQUITY' | 'CRYPTO' | 'CASH' {
         const market = this.activeMarket();
         if (market === 'Crypto') {
             return 'CRYPTO';
         }
         if (market === 'Forex') {
-            return 'FOREX';
+            return 'CASH';
         }
         return 'EQUITY';
     }
