@@ -1,34 +1,9 @@
 import { inject } from '@angular/core';
 import { CanActivateFn, Router } from '@angular/router';
-import { AuthService } from '../services/auth.service';
+import { AuthService, UserRole } from '../services/auth.service';
 
-/** Blocks access to authenticated-only routes. */
-export const authGuard: CanActivateFn = () => {
-    const auth = inject(AuthService);
-    const router = inject(Router);
-
-    if (auth.isAuthenticated() && auth.session()) {
-        return true;
-    }
-
-    return router.parseUrl('/');
-};
-
-/** Sends already-authenticated users to dashboard or admin-dashboard based on role. */
-export const guestGuard: CanActivateFn = () => {
-    const auth = inject(AuthService);
-    const router = inject(Router);
-
-    if (auth.isAuthenticated() && auth.session()) {
-        const redirectPath = auth.isAdmin() ? '/admin-dashboard' : '/dashboard';
-        return router.parseUrl(redirectPath);
-    }
-
-    return true;
-};
-
-/** Protects admin routes - only allows access if user is in admins table. */
-export const adminGuard: CanActivateFn = () => {
+/** Protects routes according to the role resolved from the authenticated token. */
+export const roleGuard: CanActivateFn = (route) => {
     const auth = inject(AuthService);
     const router = inject(Router);
 
@@ -36,9 +11,24 @@ export const adminGuard: CanActivateFn = () => {
         return router.parseUrl('/');
     }
 
-    if (auth.isAdmin()) {
+    const allowedRoles = route.data['roles'] as UserRole[] | undefined;
+    const role = auth.user()?.role;
+
+    if (role && (!allowedRoles || allowedRoles.includes(role))) {
         return true;
     }
 
-    return router.parseUrl('/dashboard');
+    return role === 'ADMIN' ? router.parseUrl('/admin-dashboard') : router.parseUrl('/dashboard');
+};
+
+/** Sends already-authenticated users to the dashboard for their role. */
+export const guestGuard: CanActivateFn = () => {
+    const auth = inject(AuthService);
+    const router = inject(Router);
+
+    if (auth.isAuthenticated() && auth.session()) {
+        return router.parseUrl(auth.user()?.role === 'ADMIN' ? '/admin-dashboard' : '/dashboard');
+    }
+
+    return true;
 };

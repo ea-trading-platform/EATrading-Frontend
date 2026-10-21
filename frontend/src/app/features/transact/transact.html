@@ -1,0 +1,215 @@
+<main class="transact-page">
+    <app-top-bar [navItems]="navItems" (logout)="logout()"></app-top-bar>
+    <app-stock-ticker [stocks]="stocksSignal()"></app-stock-ticker>
+
+    <section class="trade-header" aria-labelledby="trade-title">
+        <div>
+            <p class="eyebrow">Trade</p>
+            <h1 id="trade-title">Global markets</h1>
+            <p class="subtitle">Equities, crypto and forex</p>
+        </div>
+        <button type="button" class="refresh-page-button" (click)="refreshData()" [disabled]="isRefreshing()"
+            aria-label="Refresh market and account data" title="Refresh data">
+            <span aria-hidden="true" [class.refreshing]="isRefreshing()">&#8635;</span>
+            {{ isRefreshing() ? 'Refreshing...' : 'Refresh data' }}
+        </button>
+    </section>
+
+    <section class="trade-layout" aria-label="Market search and order entry">
+        <div class="market-column">
+            <div class="nav-with-action">
+                <nav class="dashboard-tabs" aria-label="Market type">
+                    @for (market of markets; track market) {
+                    <button type="button" class="tab-button" [class.active]="activeMarket() === market"
+                        (click)="selectMarket(market)">
+                        {{ market }}
+                    </button>
+                    }
+                </nav>
+            </div>
+
+            <div class="watchlist-near-search">
+                <form class="symbol-search" (ngSubmit)="search()">
+                    <label for="symbol">Search symbol</label>
+                    <div class="search-row">
+                        <input id="symbol" name="symbol" type="search" [ngModel]="symbol()"
+                            (ngModelChange)="symbol.set($event)"
+                            [placeholder]="'Search ' + activeMarket().toLowerCase()" autocomplete="off" />
+                        <button type="submit" [disabled]="isLoading()">
+                            {{ isLoading() ? 'Loading...' : 'View market' }}
+                        </button>
+                    </div>
+                </form>
+                <div class="symbol-recommendations">
+                    <span>Suggestions</span>
+                    @for (suggestion of filteredSuggestions(); track suggestion) {
+                    <button type="button" (click)="selectSymbol(suggestion)">{{ suggestion }}</button>
+                    }
+                </div>
+            </div>
+
+            @if (error()) {
+            <p class="trade-message error-message" role="alert">{{ error() }}</p>
+            }
+
+            <section class="chart-panel" aria-live="polite">
+                @if (quote()) {
+                <div class="quote-heading">
+                    <div>
+                        <span class="eyebrow">{{ activeMarket() }}</span>
+                        <h2>{{ quote()!.symbol }}</h2>
+                    </div>
+                    <div class="quote-price">
+                        <strong>{{ quote()!.price | currency: quote()!.currency }}</strong>
+                        <span [class.positive]="quoteChange() >= 0" [class.negative]="quoteChange() < 0">
+                            {{ quoteChange() >= 0 ? '+' : '' }}{{ quoteChange() | number: '1.2-2' }}
+                            ({{ quoteChangePercent() >= 0 ? '+' : '' }}{{ quoteChangePercent() | number: '1.2-2' }}%)
+                        </span>
+                    </div>
+                </div>
+                }
+
+                <div class="chart-range-controls" role="group" aria-label="Chart date range">
+                    @for (range of ranges; track range) {
+                    <button type="button" [class.active]="selectedRange() === range" [disabled]="isLoading()"
+                        [attr.aria-pressed]="selectedRange() === range" (click)="selectRange(range)">
+                        {{ range }}
+                    </button>
+                    }
+                </div>
+
+                @if (candles().length > 0) {
+                <div class="chart-wrap">
+                    <ag-charts [options]="chartOptions()"></ag-charts>
+                </div>
+                } @else if (!isLoading() && !error()) {
+                <div class="empty-chart">
+                    <div class="placeholder-plot" aria-hidden="true">
+                        <span class="placeholder-line"></span>
+                    </div>
+                    <div class="empty-chart-message">
+                        <span class="chart-mark" aria-hidden="true">↗</span>
+                        <h2>Search a symbol to see historical trends</h2>
+                        <p>Choose a recommendation or enter a symbol above.</p>
+                    </div>
+                </div>
+                }
+            </section>
+        </div>
+
+        <aside class="order-panel" aria-labelledby="order-title">
+            <div class="order-panel-header">
+                <p class="eyebrow">Order ticket</p>
+                <h2 id="order-title">Place a trade</h2>
+                <p class="order-symbol">{{ symbol() || 'Select a symbol to trade' }}</p>
+            </div>
+
+            <div class="side-toggle" aria-label="Transaction type">
+                <button type="button" [class.active]="orderSide() === 'BUY'" (click)="orderSide.set('BUY')">Buy</button>
+                <button type="button" [class.active]="orderSide() === 'SELL'"
+                    (click)="orderSide.set('SELL')">Sell</button>
+            </div>
+
+            <div class="order-field">
+                <label for="order-type">Order type</label>
+                <div id="order-type" class="fixed-order-type">Market</div>
+            </div>
+
+            <div class="order-field">
+                <label for="quantity">Quantity <span>(shares)</span></label>
+                <input id="quantity" type="number" min="0" step="1" placeholder="0" [ngModel]="quantity()"
+                    (ngModelChange)="quantity.set($event); orderError.set(null); orderMessage.set(null)" />
+            </div>
+
+            @if (quantityValidationError()) {
+            <p class="order-message order-failure" role="alert">{{ quantityValidationError() }}</p>
+            }
+
+            <div class="order-summary">
+                <div>
+                    <span>Estimated cost</span>
+                    <strong>{{ estimatedCost() | currency: (quote()?.currency ?? 'USD') }}</strong>
+                </div>
+                <div>
+                    @if (orderSide() === 'SELL') {
+                    <span>Shares owned</span>
+                    <strong>{{ ownedQuantity() | number: '1.0-4' }}</strong>
+                    } @else {
+                    <span>Available to trade</span>
+                    <strong>{{ availableToTrade() | currency: 'USD' }}</strong>
+                    }
+                </div>
+            </div>
+
+            @if (orderMessage()) {
+            <p class="order-message order-success" role="status">{{ orderMessage() }}</p>
+            }
+            @if (orderError()) {
+            <p class="order-message order-failure" role="alert">{{ orderError() }}</p>
+            }
+
+            <button type="button" class="review-order-button"
+                [disabled]="isSubmittingOrder() || !!quantityValidationError() || !quote() || !quantity() || quantity()! <= 0"
+                (click)="submitOrder()">
+                {{ isSubmittingOrder() ? 'Submitting...' : 'Submit order' }}
+            </button>
+
+            <div class="order-watchlist">
+                <app-watchlist (symbolSelected)="selectSymbol($event)">
+                    <app-stock-search></app-stock-search>
+                </app-watchlist>
+            </div>
+        </aside>
+    </section>
+
+    <section class="trade-data" aria-label="Trading activity">
+        <nav class="data-tabs" aria-label="Trading data">
+            <button type="button" [class.active]="activeDataTab() === 'positions'"
+                (click)="activeDataTab.set('positions')">Your positions</button>
+            <button type="button" [class.active]="activeDataTab() === 'open-orders'"
+                (click)="activeDataTab.set('open-orders')">Open Orders</button>
+            <button type="button" [class.active]="activeDataTab() === 'order-lookup'"
+                (click)="activeDataTab.set('order-lookup')">Order lookup</button>
+        </nav>
+
+        @if (copyError()) {
+        <p class="trade-message error-message" role="alert">{{ copyError() }}</p>
+        }
+
+        @if (activeDataTab() === 'order-lookup') {
+        <form class="symbol-search order-search" (ngSubmit)="searchStatusLog()">
+            <label for="tracking-id-search">Search tracking ID</label>
+            <div class="search-row">
+                <input id="tracking-id-search" name="trackingId" type="search" [ngModel]="trackingIdSearch()"
+                    (ngModelChange)="trackingIdSearch.set($event)" placeholder="Enter a tracking ID"
+                    autocomplete="off" />
+                <button type="submit" [disabled]="statusLogLoading()">
+                    {{ statusLogLoading() ? 'Searching...' : 'Search' }}
+                </button>
+            </div>
+        </form>
+        @if (statusLogMessage()) {
+        <p class="trade-message success-message" role="status">{{ statusLogMessage() }}</p>
+        }
+        @if (statusTimeline().length > 0) {
+        <ol class="status-timeline" aria-label="Order status timeline">
+            @for (entry of statusTimeline(); track entry.status) {
+            <li class="status-timeline-entry" [class.reached]="entry.reached" [class.current]="entry.isCurrent">
+                <div class="status-marker" aria-hidden="true">
+                    <span class="status-circle"></span>
+                </div>
+                <div class="status-content">
+                    <span class="status-timeline-status">{{ entry.label }}</span>
+                    <time [attr.datetime]="entry.rawTimestamp">{{ entry.timestamp ?? 'Not reached yet' }}</time>
+                </div>
+            </li>
+            }
+        </ol>
+        }
+        } @else {
+        <app-data-grid [columnDefs]="gridColumns()" [rowData]="gridRows()"
+            [gridOptions]="gridOptions()"></app-data-grid>
+        }
+    </section>
+
+</main>

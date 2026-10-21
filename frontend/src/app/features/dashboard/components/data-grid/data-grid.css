@@ -1,45 +1,49 @@
 :host {
   display: block;
   width: 100%;
+  overflow-x: auto;
 }
 
 .grid {
   width: 100%;
-  --ag-background-color: rgba(171, 179, 191, 0.01);
+  --ag-background-color: transparent;
   --ag-foreground-color: var(--text-light);
-  --ag-border-color: rgba(171, 179, 191, 0.04);
-  --ag-header-background-color: rgba(171, 179, 191, 0.02);
+  --ag-border-color: var(--border-lighter);
+  --ag-header-background-color: transparent;
   --ag-header-foreground-color: var(--text-light);
-  --ag-row-hover-color: rgba(171, 179, 191, 0.05);
+  --ag-row-hover-color: transparent;
   --ag-selected-row-background-color: rgba(0, 122, 122, 0.1);
-  --ag-cell-horizontal-padding: 12px;
+  --ag-cell-horizontal-padding: 0.75rem;
   --ag-grid-size: 4px;
-  --ag-row-height: 44px;
-  --ag-header-height: 48px;
+  --ag-row-height: 2.75rem;
+  --ag-header-height: 2.75rem;
   --ag-odd-row-background-color: transparent;
+  font-family: inherit;
 }
 
 :deep(.ag-root) {
-  --ag-background-color: rgba(171, 179, 191, 0.01);
+  --ag-background-color: transparent;
 }
 
 :deep(.ag-header) {
-  background-color: rgba(171, 179, 191, 0.02);
-  border-bottom: 1px solid rgba(171, 179, 191, 0.04);
+  background-color: transparent;
+  border-bottom: 1px solid var(--border-lighter);
 }
 
 :deep(.ag-cell) {
   color: var(--text-light);
-  border-right: 1px solid rgba(171, 179, 191, 0.03);
+  border-right: 0;
+  font-size: 0.88rem;
+  padding: 0.9rem 0.75rem;
 }
 
 :deep(.ag-row) {
-  border-bottom: 1px solid rgba(171, 179, 191, 0.03);
+  border-bottom: 1px solid var(--border-lighter);
   background-color: transparent;
 }
 
 :deep(.ag-row:hover) {
-  background-color: rgba(171, 179, 191, 0.05) !important;
+  background-color: transparent !important;
 }
 
 :deep(.ag-row-odd) {
@@ -52,10 +56,11 @@
 
 :deep(.ag-header-cell) {
   color: var(--text-muted);
-  font-weight: 600;
+  font-weight: 700;
   text-transform: uppercase;
-  font-size: 0.85rem;
-  letter-spacing: 0.05em;
+  font-size: 0.72rem;
+  letter-spacing: normal;
+  padding: 0.9rem 0.75rem;
 }
 
 :deep(.ag-sort-ascending-icon),
@@ -69,7 +74,9 @@
 }
 
 :deep(.ag-overlay-no-rows-center) {
+  padding: 0.9rem 0.75rem;
   color: var(--text-muted);
+  font-size: 0.88rem;
 }
 
 :deep(.ag-menu) {

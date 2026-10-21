@@ -1,39 +1,45 @@
 <main class="client-dashboard">
-    <app-top-bar (logout)="logout()"></app-top-bar>
+    <app-top-bar [navItems]="navItems" (logout)="logout()"></app-top-bar>
     <app-stock-ticker [stocks]="stocksSignal()"></app-stock-ticker>
+    <section class="portfolio-summary" aria-label="Portfolio summary">
+        <div class="summary-welcome">
+            <span class="stat-label">Welcome back,</span>
+            <h1 id="welcome-name">{{ account()?.name ?? auth.user()?.email ?? 'Trader' }}</h1>
+            <span class="summary-change summary-change-placeholder" aria-hidden="true"></span>
+        </div>
+
+        <div class="summary-stat">
+            <span class="stat-label">Portfolio value</span>
+            <span class="stat-value">
+                ${{ portfolioValue() | number: '1.2-2' }} USD
+            </span>
+            <span class="summary-change summary-change-placeholder" aria-hidden="true"></span>
+        </div>
+
+        <div class="summary-stat">
+            <span class="stat-label">Available to trade</span>
+            <span class="stat-value">
+                ${{ availableToTrade() | number: '1.2-2' }} USD
+            </span>
+            <span class="summary-change summary-change-placeholder" aria-hidden="true"></span>
+        </div>
+
+        @if (portfolioSnapshotAsOf(); as snapshotAsOf) {
+        <div class="portfolio-summary-as-of">
+            As of {{ snapshotAsOf | date: 'MMM d, y, h:mm a z' }}
+        </div>
+        }
+    </section>
+
     <div class="container-fluid">
         <div class="row">
 
-            <!-- Main content: welcome, graph, tables -->
+            <!-- Main content: graph and tables -->
             <div class="col-lg-8 col-md-12">
-
-                <!-- @if (loadingAccount()) {
-                <p class="loading-text">Loading account...</p>
-                } @else if (account(); as acc) { -->
-
-                <section class="welcome-card">
-                    <div class="greeting">
-                        <p class="stat-label">Welcome back,</p>
-                        <h1> LongName1234 </h1>
-                        <!-- {{ acc.name ?? auth.user()?.email }} -->
-                    </div>
-
-                    <div class="greeting">
-                        <span class="stat-label">Account balance</span>
-                        <span class="stat-value">$1,200,000 USD (^12%)</span>
-                        <!-- {{ acc.totalBalance | number: '1.2-2' }} -->
-                    </div>
-
-                    <div class="stat">
-                        <span class="stat-label">Available to Trade</span>
-                        <span class="stat-value">$500 USD</span>
-                        <!-- {{ acc.totalBalance | number: '1.2-2' }} -->
-                    </div>
-                </section>
 
                 <!-- Balance graph component -->
                 <section class="graph-card">
-                    <app-balance-graph [graphData]="balanceData"></app-balance-graph>
+                    <app-balance-graph [graphData]="balanceData()"></app-balance-graph>
                 </section>
 
                 <div class="nav-with-action">
@@ -47,17 +53,23 @@
                             Orders
                         </button>
                     </nav>
-
-                    <app-stock-search></app-stock-search>
                 </div>
 
                 @if (activeTab() === 'portfolio') {
                 <section class="tab-panel">
+                    @if (loadingHoldings()) {
+                    <p class="loading-text">Loading holdings...</p>
+                    } @else {
                     <app-portfolio-table [rowData]="portfolioHoldings()"></app-portfolio-table>
+                    }
                 </section>
                 } @else if (activeTab() === 'orders') {
                 <section class="tab-panel">
-                    <app-orders-table [rowData]="orderHistory()"></app-orders-table>
+                    @if (copyError()) {
+                    <p class="trade-message error-message" role="alert">{{ copyError() }}</p>
+                    }
+                    <app-data-grid [columnDefs]="orderColumns" [rowData]="orderHistory()"
+                        [gridOptions]="orderGridOptions"></app-data-grid>
                 </section>
                 }
 
@@ -65,7 +77,9 @@
 
             <!-- Sidebar: Watchlist and Top Movers -->
             <div class="col-lg-4 col-md-12">
-                <app-watchlist></app-watchlist>
+                <section class="pie-chart-card" aria-label="Portfolio allocation">
+                    <app-pie-chart [data]="portfolioAllocation()" [totalValue]="portfolioValue()"></app-pie-chart>
+                </section>
                 <app-top-movers></app-top-movers>
             </div>
 

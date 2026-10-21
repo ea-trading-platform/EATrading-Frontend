@@ -1,9 +1,11 @@
-import { Component, input, output } from '@angular/core';
+import { Component, computed, input, output } from '@angular/core';
 import { AgGridAngular } from 'ag-grid-angular';
 import {
   AllCommunityModule,
   ColDef,
+  FirstDataRenderedEvent,
   GridOptions,
+  GridReadyEvent,
   ModuleRegistry,
   RowClickedEvent,
   RowSelectionOptions,
@@ -27,11 +29,24 @@ export class DataGrid<T = any> {
   // autoHeight sizes the grid to fit all rows instead of scrolling within a fixed box
   gridOptions = input<GridOptions<T>>({ domLayout: 'autoHeight' });
   loading = input(false);
-  defaultColDef = input<ColDef<T>>({ sortable: true, resizable: true, suppressMovable: false }); //flex: 1
+  defaultColDef = input<ColDef<T>>({ sortable: true, resizable: true, suppressMovable: false });
   rowSelection = input<RowSelectionOptions<T> | undefined>(undefined);
 
   rowClicked = output<RowClickedEvent<T>>();
   selectionChanged = output<SelectionChangedEvent<T>>();
+  protected readonly resolvedDefaultColDef = computed<ColDef<T>>(() => ({
+    flex: 1,
+    minWidth: 110,
+    sortable: true,
+    resizable: true,
+    suppressMovable: false,
+    ...this.defaultColDef(),
+  }));
+
+  protected readonly resolvedGridOptions = computed<GridOptions<T>>(() => ({
+    domLayout: 'autoHeight',
+    ...this.gridOptions(),
+  }));
 
   protected readonly theme = themeQuartz.withParams({
     backgroundColor: 'var(--dark-primary)',
@@ -41,4 +56,18 @@ export class DataGrid<T = any> {
     rowHoverColor: 'var(--bg-hover)',
     accentColor: 'var(--accent)',
   });
+
+  onGridReady(event: GridReadyEvent<T>): void {
+    this.sizeColumnsToFit(event.api);
+  }
+
+  onFirstDataRendered(event: FirstDataRenderedEvent<T>): void {
+    this.sizeColumnsToFit(event.api);
+  }
+
+  private sizeColumnsToFit(api: GridReadyEvent<T>['api']): void {
+    setTimeout(() => {
+      api.sizeColumnsToFit();
+    }, 0);
+  }
 }

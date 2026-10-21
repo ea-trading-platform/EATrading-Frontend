@@ -4,6 +4,6 @@ export interface PortfolioTable {
     value: number;
     shares: number;
     allocation: number;
-    dayChange: number;
-    overallReturn: number;
+    dayChange?: number;
+    overallReturn?: number;
 }
