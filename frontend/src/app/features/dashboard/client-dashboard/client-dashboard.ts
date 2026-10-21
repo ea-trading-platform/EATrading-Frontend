@@ -220,14 +220,27 @@ export class ClientDashboard implements OnInit {
     protected readonly portfolioAllocation = computed(() => {
         const byInstrument = this.holdings().reduce<Record<string, number>>((totals, holding) => {
             const instrument = (holding.instrument ?? 'EQUITY').toUpperCase();
-            totals[instrument] = (totals[instrument] ?? 0) + (Number(holding.currentValue) || 0);
+            const holdingValue = Number(holding.currentValue) || 0;
+
+            if (instrument === 'CASH') {
+                const cashCategory = this.isUsdCashHolding(holding) ? 'CASH_USD' : 'FOREX';
+                totals[cashCategory] = (totals[cashCategory] ?? 0) + holdingValue;
+                return totals;
+            }
+
+            totals[instrument] = (totals[instrument] ?? 0) + holdingValue;
             return totals;
         }, {});
+        const summaryCashValue = Number(this.portfolioSummary()?.availableCashUsd) || 0;
+        const cashValue = (byInstrument['CASH_USD'] ?? 0) > 0
+            ? byInstrument['CASH_USD'] ?? 0
+            : summaryCashValue;
+
         return [
             { label: 'Equities', value: byInstrument['EQUITY'] ?? 0 },
             { label: 'Crypto', value: byInstrument['CRYPTO'] ?? 0 },
             { label: 'Forex', value: byInstrument['FOREX'] ?? 0 },
-            { label: 'Cash', value: Number(this.portfolioSummary()?.availableCashUsd) || 0 },
+            { label: 'Cash', value: cashValue },
         ];
     });
 
@@ -256,6 +269,19 @@ export class ClientDashboard implements OnInit {
             minimumFractionDigits: 0,
             maximumFractionDigits: 4,
         }).format(numericValue);
+    }
+
+    private isUsdCashHolding(holding: Holding): boolean {
+        const symbol = holding.symbol.trim().toUpperCase();
+        const name = (holding.name ?? '').trim().toUpperCase();
+        const normalizedSymbol = symbol.replace(/^CASH:/, '').replace(/^FX:/, '').trim();
+        if (normalizedSymbol === 'USD') {
+            return true;
+        }
+
+        return name === 'USD'
+            || name === 'US DOLLAR'
+            || name === 'US DOLLARS';
     }
 
     private async copyTrackingId(trackingId: string, button: HTMLButtonElement): Promise<void> {
