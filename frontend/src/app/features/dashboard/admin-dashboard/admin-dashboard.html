@@ -1,5 +1,5 @@
 <main class="admin-dashboard">
-	<app-top-bar (logout)="logout()"></app-top-bar>
+	<app-top-bar dashboardRoute="/admin-dashboard" (logout)="logout()"></app-top-bar>
 
 	<h1>Hello {{ adminName() }}</h1>
 
@@ -37,6 +37,8 @@
 			[class.active]="activeTab() === 'portfolio'">Portfolio</button>
 		<button type="button" class="tab-button" (click)="setTab('orders')"
 			[class.active]="activeTab() === 'orders'">Orders</button>
+		<button type="button" class="tab-button" (click)="setTab('analytics')"
+			[class.active]="activeTab() === 'analytics'">Analytics</button>
 	</nav>
 
 	<div class="tab-content">

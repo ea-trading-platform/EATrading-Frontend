@@ -1,4 +1,38 @@
-<ag-charts
-    [options]="options()"
-    >
-</ag-charts>
+<div class="chart-shell" [class.chart-shell-empty]="isEmpty()">
+    <div class="chart-header">
+        <h2>Total Account Balance</h2>
+        <div class="chart-range-controls" role="group" aria-label="Chart date range">
+            @for (range of ranges; track range) {
+            <button type="button" [class.active]="selectedRange() === range"
+                [disabled]="!hasGraphData()"
+                [attr.aria-pressed]="selectedRange() === range" (click)="selectRange(range)">
+                {{ range }}
+            </button>
+            }
+        </div>
+        <label class="chart-range-select-label">
+            <span class="visually-hidden">Chart date range</span>
+            <select [value]="selectedRange()" [disabled]="!hasGraphData()"
+                (change)="selectRangeFromEvent($event)">
+                @for (range of ranges; track range) {
+                <option [value]="range">{{ range }}</option>
+                }
+            </select>
+        </label>
+    </div>
+    @if (!isEmpty()) {
+    <ag-charts [options]="options()"></ag-charts>
+    } @else {
+    <div class="empty-chart">
+        <div class="placeholder-plot" aria-hidden="true">
+            <span class="placeholder-line"></span>
+        </div>
+        <div class="empty-chart-message">
+            <span class="chart-mark" aria-hidden="true">↗</span>
+            <h2>Complete a transaction to see account history</h2>
+            <p>Navigate to the transact page or click the button below to get started.</p>
+            <a class="transact-link" routerLink="/transact">Start trading</a>
+        </div>
+    </div>
+    }
+</div>

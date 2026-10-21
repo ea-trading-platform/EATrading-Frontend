@@ -1,13 +1,16 @@
 import { Injectable, inject, signal } from '@angular/core';
-import { Observable, catchError, tap } from 'rxjs';
+import { Observable, catchError, map, tap } from 'rxjs';
 import { ApiService } from './api.service';
 import {
     Client,
     ClientRequest,
     Holding,
+    PortfolioHistory,
+    PortfolioSummary,
     Order,
     OrderRequest,
-    OrderResponse
+    OrderResponse,
+    OrderStatus,
 } from '../models/trading.models';
 
 /**
@@ -78,6 +81,14 @@ export class TradingService {
         return this.apiService.getClient(clientId);
     }
 
+    getPortfolioSummary(clientId: string): Observable<PortfolioSummary> {
+        return this.apiService.getPortfolioSummary(clientId);
+    }
+
+    getPortfolioHistory(clientId: string, from: string, to: string): Observable<PortfolioHistory> {
+        return this.apiService.getPortfolioHistory(clientId, from, to);
+    }
+
     /**
      * Get all clients (admin operation)
      */
@@ -115,6 +126,7 @@ export class TradingService {
         this.error.set(null);
 
         return this.apiService.getHoldings(clientId).pipe(
+            map((holdings) => holdings.filter((holding) => !this.isUsdCashHolding(holding))),
             tap((holdings) => {
                 this.holdings.set(holdings);
                 this.isLoading.set(false);
@@ -131,7 +143,9 @@ export class TradingService {
      * Fetch holdings without caching
      */
     getHoldings(clientId: string): Observable<Holding[]> {
-        return this.apiService.getHoldings(clientId);
+        return this.apiService.getHoldings(clientId).pipe(
+            map((holdings) => holdings.filter((holding) => !this.isUsdCashHolding(holding))),
+        );
     }
 
     /**
@@ -174,6 +188,9 @@ export class TradingService {
         this.error.set(null);
 
         return this.apiService.getOrders(clientId).pipe(
+            map((orders) => orders
+                .map((order) => this.normalizeOrder(order))
+                .filter((order) => order.symbol.trim().toUpperCase() !== 'USD')),
             tap((orders) => {
                 this.orders.set(orders);
                 this.isLoading.set(false);
@@ -190,7 +207,11 @@ export class TradingService {
      * Fetch orders without caching
      */
     getOrders(clientId: string): Observable<Order[]> {
-        return this.apiService.getOrders(clientId);
+        return this.apiService.getOrders(clientId).pipe(
+            map((orders) => orders
+                .map((order) => this.normalizeOrder(order))
+                .filter((order) => order.symbol.trim().toUpperCase() !== 'USD')),
+        );
     }
 
     /**
@@ -203,10 +224,6 @@ export class TradingService {
         return this.apiService.createOrder(request).pipe(
             tap((response) => {
                 this.isLoading.set(false);
-                // Optionally reload orders after successful submission
-                if (request.clientId) {
-                    this.loadOrders(request.clientId).subscribe();
-                }
             }),
             catchError((err) => {
                 this.error.set(err?.message || 'Failed to submit order');
@@ -214,6 +231,94 @@ export class TradingService {
                 throw err;
             })
         );
+    }
+
+    private normalizeOrder(order: Order): Order {
+        const raw = order as Order & {
+            orderId?: string;
+            trackingId?: string;
+            buy?: boolean;
+            action?: string;
+            transactionType?: string;
+            side?: string;
+            type?: string;
+            orderDate?: string;
+            currentStatus?: OrderStatus;
+            name?: string | null;
+            instrumentName?: string | null;
+            companyName?: string | null;
+            averagePrice?: number | string | null;
+            avgPrice?: number | string | null;
+            executedPrice?: number | string | null;
+            filledPrice?: number | string | null;
+            fillPrice?: number | string | null;
+            limitPrice?: number | string | null;
+            assetPrice?: number | string | null;
+            asset?: { symbol?: string; name?: string };
+        };
+
+        const normalizedStatus = raw.currentStatus ?? raw.status;
+        const normalizedAction = raw.buy === undefined
+            ? raw.orderType ?? this.normalizeTransactionType(raw.transactionType ?? raw.action ?? raw.side ?? raw.type)
+            : raw.buy ? 'BUY' : 'SELL';
+        const normalizedName = raw.asset?.name
+            ?? raw.name
+            ?? raw.instrumentName
+            ?? raw.companyName
+            ?? normalizedStatus;
+        const normalizedPrice = this.coercePrice(
+            raw.price,
+            raw.executedPrice,
+            raw.filledPrice,
+            raw.fillPrice,
+            raw.averagePrice,
+            raw.avgPrice,
+            raw.limitPrice,
+            raw.assetPrice,
+        );
+
+        return {
+            ...order,
+            id: raw.id ?? raw.orderId ?? raw.trackingId ?? '',
+            trackingId: raw.trackingId,
+            symbol: raw.asset?.symbol ?? raw.symbol,
+            name: normalizedName,
+            orderType: normalizedAction ?? 'BUY',
+            status: normalizedStatus,
+            executedAt: raw.executedAt ?? raw.orderDate,
+            price: normalizedPrice,
+        };
+    }
+
+    private normalizeTransactionType(value?: string): 'BUY' | 'SELL' | undefined {
+        if (!value) {
+            return undefined;
+        }
+
+        const normalizedValue = value.trim().toUpperCase();
+        if (normalizedValue === 'BUY' || normalizedValue === 'SELL') {
+            return normalizedValue;
+        }
+        return undefined;
+    }
+
+    private coercePrice(...values: Array<number | string | null | undefined>): number | undefined {
+        for (const value of values) {
+            if (typeof value === 'number' && Number.isFinite(value)) {
+                return value;
+            }
+            if (typeof value === 'string') {
+                const parsed = Number(value);
+                if (Number.isFinite(parsed)) {
+                    return parsed;
+                }
+            }
+        }
+        return undefined;
+    }
+
+    private isUsdCashHolding(holding: Holding): boolean {
+        return holding.symbol.trim().toUpperCase() === 'USD';
     }
 
     /**

@@ -1,20 +1,23 @@
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { DatePipe, DecimalPipe } from '@angular/common';
 import { Router } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
 import { ApiService } from '../../../core/services/api.service';
-import { Client } from '../../../core/models/trading.models';
+import { TradingService } from '../../../core/services/trading.service';
+import { Client, Holding, Order, PortfolioHistory, PortfolioSummary } from '../../../core/models/trading.models';
 import { StockSearch } from './components/stock-search/stock-search';
 import { PortfolioTableComponent } from '../components/portfolio-table/portfolio-table';
 import { PortfolioTable } from '../interfaces/portfolio-table.interface';
-import { OrdersTable } from '../interfaces/orders-table.interface';
-import { OrdersTableComponent } from '../components/orders-table/orders-table';
+import { DataGrid } from '../components/data-grid/data-grid';
+import { ColDef, GridOptions } from 'ag-grid-community';
 import { BalanceGraphInterface } from '../interfaces/balances-graph.interface';
 import { BalanceGraph } from '../components/balance-graph/balance-graph';
-import { TopBar } from '../../components/top-bar/top-bar';
+import { TopBar, TopBarNavItem } from '../../components/top-bar/top-bar';
 import { StockTicker } from '../components/stock-ticker/stock-ticker';
 import { StockTickerData } from '../interfaces/stock-ticker.interface';
 import { WatchlistComponent } from '../components/watchlist/watchlist';
 import { TopMoversComponent } from '../components/top-movers/top-movers';
+import { PieChartComponent } from '../components/pie-chart/pie-chart';
 import { forkJoin } from 'rxjs';
 type ClientDashboardTab = 'portfolio' | 'orders';
 
@@ -44,80 +47,17 @@ const MOCK_TICKER: StockTickerData[] = [
     },
 ];
 
-const MOCK_BALANCES: BalanceGraphInterface[] = [
-    { date: '2024-01-01', balance: 50000 },
-    { date: '2024-01-02', balance: 51200 },
-    { date: '2024-01-03', balance: 50800 },
-    { date: '2024-01-04', balance: 52500 },
-    { date: '2024-01-05', balance: 53100 },
-    { date: '2024-01-08', balance: 52900 },
-    { date: '2024-01-09', balance: 54300 },
-    { date: '2024-01-10', balance: 55600 },
-    { date: '2024-01-11', balance: 56200 },
-    { date: '2024-01-12', balance: 57100 },
-];
-
-const MOCK_PORTFOLIO: PortfolioTable[] = [
-    { symbol: 'AAPL', name: 'Apple Inc.', shares: 12, value: 2271.84, allocation: 30, dayChange: 3.42, overallReturn: 0 },
-    { symbol: 'AMZN', name: 'Amazon.com Inc.', shares: 5, value: 891.05, allocation: 15, dayChange: 7.32, overallReturn: 0 },
-    { symbol: 'MSFT', name: 'Microsoft Corp.', shares: 3, value: 1246.8, allocation: 20, dayChange: -1.23, overallReturn: 0 },
-    { symbol: 'NVDA', name: 'NVIDIA Corp.', shares: 8, value: 971.2, allocation: 20, dayChange: 23.4, overallReturn: 0 },
-    { symbol: 'TSLA', name: 'Tesla Inc.', shares: 4, value: 955.6, allocation: 15, dayChange: -2.30, overallReturn: 0 },
-];
-
-const MOCK_ORDERS: OrdersTable[] = [
-    {
-        action: 'BUY',
-        symbol: 'AAPL',
-        name: 'Apple Inc.',
-        transactionDate: new Date('2024-01-15'),
-        shares: 10,
-        price: 190.5,
-        instrument: 'STOCK',
-        status: 'PENDING',
-    },
-    {
-        action: 'SELL',
-        symbol: 'TSLA',
-        name: 'Tesla Inc.',
-        transactionDate: new Date('2024-01-20'),
-        shares: 2,
-        price: 238.9,
-        instrument: 'STOCK',
-        status: 'PENDING',
-    },
-    {
-        action: 'BUY',
-        symbol: 'AMZN',
-        name: 'Amazon.com Inc.',
-        transactionDate: new Date('2024-01-25'),
-        shares: 3,
-        price: 3200.0,
-        instrument: 'STOCK',
-        status: 'PENDING',
-    },
-    {
-        action: 'SELL',
-        symbol: 'MSFT',
-        name: 'Microsoft Corp.',
-        transactionDate: new Date('2024-01-30'),
-        shares: 1,
-        price: 415.0,
-        instrument: 'STOCK',
-        status: 'PENDING',
-    }
-];
-
 @Component({
     imports: [
-        StockSearch,
+        DatePipe,
+        DecimalPipe,
         PortfolioTableComponent,
-        OrdersTableComponent,
+        DataGrid,
         TopBar,
         BalanceGraph,
         StockTicker,
-        WatchlistComponent,
-        TopMoversComponent
+        TopMoversComponent,
+        PieChartComponent,
     ],
     selector: 'app-client-dashboard',
     standalone: true,
@@ -128,26 +68,243 @@ export class ClientDashboard implements OnInit {
     protected readonly auth = inject(AuthService);
     private readonly router = inject(Router);
     private readonly api = inject(ApiService);
+    private readonly trading = inject(TradingService);
+
+    protected readonly navItems: readonly TopBarNavItem[] = [
+        { label: 'Dashboard', route: '/dashboard' },
+        { label: 'Transact', route: '/transact' },
+        { label: 'News', route: '/news' },
+    ];
 
     protected readonly account = signal<Client | null>(null);
     protected readonly loadingAccount = signal(false);
-    protected readonly orders = signal<OrdersTable[]>(MOCK_ORDERS);
+    protected readonly holdings = signal<Holding[]>([]);
+    protected readonly loadingHoldings = signal(false);
+    protected readonly orders = signal<Order[]>([]);
     protected readonly loadingOrders = signal(false);
+    protected readonly copyError = signal<string | null>(null);
+    protected readonly portfolioSummary = signal<PortfolioSummary | null>(null);
+    protected readonly portfolioHistory = signal<PortfolioHistory | null>(null);
+    protected readonly portfolioSnapshotAsOf = computed(() => this.portfolioSummary()?.asOf ?? null);
 
     protected readonly activeTab = signal<ClientDashboardTab>('portfolio');
     protected readonly portfolioHoldings = computed(() =>
-        [...MOCK_PORTFOLIO].sort((a, b) => a.symbol.localeCompare(b.symbol)),
+        this.holdings()
+            .map((holding) => this.toPortfolioRow(holding))
+            .sort((a, b) => a.symbol.localeCompare(b.symbol)),
     );
+    protected readonly portfolioValue = computed(() =>
+        Number(this.portfolioSummary()?.portfolioValueUsd) ||
+        this.holdings().reduce((total, holding) => total + (Number(holding.currentValue) || 0), 0),
+    );
+    protected readonly availableToTrade = computed(() => {
+        const availableCash = Number(this.portfolioSummary()?.availableCashUsd);
+        if (Number.isFinite(availableCash)) {
+            return availableCash;
+        }
+        const accountBalance = Number(this.account()?.totalBalance);
+        return Number.isFinite(accountBalance) ? accountBalance : 0;
+    });
+    protected readonly totalGainLoss = computed(() => {
+        const snapshotDayChange = this.toFiniteNumber(this.portfolioSummary()?.dailyChangeUsd);
+        if (snapshotDayChange !== null) {
+            return snapshotDayChange;
+        }
+
+        const historyPoints = this.portfolioHistory()?.points ?? [];
+        if (historyPoints.length >= 2) {
+            const latestValue = this.toFiniteNumber(historyPoints[historyPoints.length - 1].portfolioValueUsd);
+            const priorValue = this.toFiniteNumber(historyPoints[historyPoints.length - 2].portfolioValueUsd);
+            if (latestValue !== null && priorValue !== null) {
+                return latestValue - priorValue;
+            }
+        }
+
+        return this.holdings().reduce((total, holding) => {
+            const currentValue = Number(holding.currentValue) || 0;
+            const costBasis = (Number(holding.quantity) || 0) * (Number(holding.avgBuyPrice) || 0);
+            return total + currentValue - costBasis;
+        }, 0);
+    });
+    protected readonly gainLossPercentage = computed(() => {
+        const portfolioValue = this.portfolioValue();
+        const dayChangeUsd = this.totalGainLoss();
+        const previousValue = portfolioValue - dayChangeUsd;
+        if (previousValue !== 0) {
+            return (dayChangeUsd / previousValue) * 100;
+        }
+
+        const snapshotPercentage = this.toFiniteNumber(this.portfolioSummary()?.dailyChangePercent);
+        if (snapshotPercentage !== null) {
+            return snapshotPercentage;
+        }
+
+        const historyPoints = this.portfolioHistory()?.points ?? [];
+        if (historyPoints.length >= 2) {
+            const latestValue = this.toFiniteNumber(historyPoints[historyPoints.length - 1].portfolioValueUsd);
+            const priorValue = this.toFiniteNumber(historyPoints[historyPoints.length - 2].portfolioValueUsd);
+            if (latestValue !== null && priorValue !== null && priorValue !== 0) {
+                return ((latestValue - priorValue) / priorValue) * 100;
+            }
+        }
+
+        return 0;
+    });
     protected readonly orderHistory = computed(() =>
-        [...this.orders()].sort((a, b) => b.transactionDate.getTime() - a.transactionDate.getTime()),
+        [...this.orders()]
+            .map((order) => ({
+                ...order,
+                orderType: this.resolveOrderAction(order),
+                name: this.resolveOrderName(order),
+                price: this.resolveOrderPrice(order),
+            }))
+            .sort((a, b) => this.orderTimestamp(b).localeCompare(this.orderTimestamp(a))),
     );
-    protected readonly balanceData = [...MOCK_BALANCES];
+    protected readonly orderGridOptions: GridOptions<Order> = {
+        domLayout: 'autoHeight',
+        suppressCellFocus: true,
+    };
+    protected readonly orderColumns: ColDef<Order>[] = [
+        {
+            field: 'trackingId',
+            headerName: 'Tracking ID',
+            minWidth: 220,
+            cellRenderer: (params: { value?: string }) => {
+                const button = document.createElement('button');
+                const trackingId = params.value ?? '';
+                button.type = 'button';
+                button.textContent = trackingId || 'Unavailable';
+                button.title = trackingId ? 'Copy tracking ID' : 'Tracking ID unavailable';
+                button.disabled = !trackingId;
+                button.style.border = '0';
+                button.style.background = 'transparent';
+                button.style.color = 'inherit';
+                button.style.cursor = trackingId ? 'copy' : 'default';
+                button.style.padding = '0';
+                button.addEventListener('click', (event) => {
+                    event.stopPropagation();
+                    if (trackingId) {
+                        void this.copyTrackingId(trackingId, button);
+                    }
+                });
+                return button;
+            },
+        },
+        { field: 'orderType', headerName: 'Action', minWidth: 100 },
+        { field: 'symbol', headerName: 'Symbol', minWidth: 115 },
+        { field: 'name', headerName: 'Name', minWidth: 160 },
+        {
+            field: 'quantity',
+            headerName: 'Quantity',
+            minWidth: 110,
+            valueFormatter: (params) => this.formatShareQuantity(params.value),
+        },
+        { field: 'price', headerName: 'Price', minWidth: 110 },
+        { field: 'status', headerName: 'Status', minWidth: 125 },
+        {
+            field: 'executedAt', headerName: 'Change log time', minWidth: 190,
+            valueFormatter: (params) => params.value || 'Pending'
+        },
+    ];
+    protected readonly balanceData = computed<BalanceGraphInterface[]>(() => {
+        const points = this.portfolioHistory()?.points ?? [];
+        if (points.length > 0) {
+            return points.map((point) => ({
+                date: point.timestamp,
+                balance: Number(point.portfolioValueUsd) || 0,
+            }));
+        }
+        const balance = this.portfolioValue();
+        return balance > 0 ? [{ date: new Date().toISOString(), balance }] : [];
+    });
+    protected readonly portfolioAllocation = computed(() => {
+        const byInstrument = this.holdings().reduce<Record<string, number>>((totals, holding) => {
+            const instrument = (holding.instrument ?? 'EQUITY').toUpperCase();
+            const holdingValue = Number(holding.currentValue) || 0;
+
+            if (instrument === 'CASH') {
+                const cashCategory = this.isUsdCashHolding(holding) ? 'CASH_USD' : 'FOREX';
+                totals[cashCategory] = (totals[cashCategory] ?? 0) + holdingValue;
+                return totals;
+            }
+
+            totals[instrument] = (totals[instrument] ?? 0) + holdingValue;
+            return totals;
+        }, {});
+        const summaryCashValue = Number(this.portfolioSummary()?.availableCashUsd) || 0;
+        const cashValue = (byInstrument['CASH_USD'] ?? 0) > 0
+            ? byInstrument['CASH_USD'] ?? 0
+            : summaryCashValue;
+
+        return [
+            { label: 'Equities', value: byInstrument['EQUITY'] ?? 0 },
+            { label: 'Crypto', value: byInstrument['CRYPTO'] ?? 0 },
+            { label: 'Forex', value: byInstrument['FOREX'] ?? 0 },
+            { label: 'Cash', value: cashValue },
+        ];
+    });
 
     protected readonly stocksSignal = signal<StockTickerData[]>([]);
     protected readonly loadingTickers = signal(false);
 
+    protected absoluteValue(value: number): number {
+        return Math.abs(value);
+    }
+
+    private toFiniteNumber(value: string | number | undefined): number | null {
+        if (value === undefined) {
+            return null;
+        }
+        const parsedValue = typeof value === 'number' ? value : Number(value);
+        return Number.isFinite(parsedValue) ? parsedValue : null;
+    }
+
+    private formatShareQuantity(value: unknown): string {
+        const numericValue = typeof value === 'number' ? value : Number(value);
+        if (!Number.isFinite(numericValue)) {
+            return '0';
+        }
+
+        return new Intl.NumberFormat('en-US', {
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 4,
+        }).format(numericValue);
+    }
+
+    private isUsdCashHolding(holding: Holding): boolean {
+        const symbol = holding.symbol.trim().toUpperCase();
+        const name = (holding.name ?? '').trim().toUpperCase();
+        const normalizedSymbol = symbol.replace(/^CASH:/, '').replace(/^FX:/, '').trim();
+        if (normalizedSymbol === 'USD') {
+            return true;
+        }
+
+        return name === 'USD'
+            || name === 'US DOLLAR'
+            || name === 'US DOLLARS';
+    }
+
+    private async copyTrackingId(trackingId: string, button: HTMLButtonElement): Promise<void> {
+        try {
+            if (!navigator.clipboard) {
+                throw new Error('Clipboard access is unavailable.');
+            }
+            await navigator.clipboard.writeText(trackingId);
+            button.textContent = 'Copied';
+            window.setTimeout(() => {
+                button.textContent = trackingId;
+            }, 1500);
+            this.copyError.set(null);
+        } catch (error) {
+            console.error('Unable to copy tracking ID:', error);
+            this.copyError.set('Unable to copy the tracking ID. Please copy it manually.');
+        }
+    }
+
     ngOnInit(): void {
         this.fetchAccount();
+        this.fetchHoldings();
+        this.fetchPortfolioData();
         this.fetchOrders();
         this.fetchTickerData();
     }
@@ -157,13 +314,13 @@ export class ClientDashboard implements OnInit {
     }
 
     private fetchAccount(): void {
-        const clientId = this.auth.user()?.id;
+        const clientId = this.auth.getClientId();
         if (!clientId) {
             return;
         }
 
         this.loadingAccount.set(true);
-        this.api.getClient(clientId).subscribe({
+        this.trading.loadClient(clientId).subscribe({
             next: (account) => {
                 this.account.set(account ?? null);
                 this.loadingAccount.set(false);
@@ -176,26 +333,152 @@ export class ClientDashboard implements OnInit {
     }
 
     private fetchOrders(): void {
-        const clientId = this.auth.user()?.id;
+        const clientId = this.auth.getClientId();
         if (!clientId) {
             return;
         }
 
         this.loadingOrders.set(true);
-        this.api.getOrders(clientId).subscribe({
+        this.trading.loadOrders(clientId).subscribe({
             next: (orders: unknown) => {
-                // Map API response to OrdersTable interface
                 if (Array.isArray(orders)) {
-                    this.orders.set(orders as OrdersTable[]);
+                    this.orders.set(orders as Order[]);
                 }
                 this.loadingOrders.set(false);
             },
             error: (err) => {
                 console.error('Error fetching orders:', err);
-                // Keep mock data on error
+                this.orders.set([]);
                 this.loadingOrders.set(false);
             },
         });
+    }
+
+    private orderTimestamp(order: Order): string {
+        return order.executedAt ?? '';
+    }
+
+    private resolveOrderAction(order: Order): 'BUY' | 'SELL' {
+        const raw = order as Order & {
+            transactionType?: string;
+            action?: string;
+            side?: string;
+            buy?: boolean;
+        };
+
+        if (raw.orderType === 'BUY' || raw.orderType === 'SELL') {
+            return raw.orderType;
+        }
+        if (typeof raw.buy === 'boolean') {
+            return raw.buy ? 'BUY' : 'SELL';
+        }
+
+        const action = (raw.transactionType ?? raw.action ?? raw.side ?? '').trim().toUpperCase();
+        return action === 'SELL' ? 'SELL' : 'BUY';
+    }
+
+    private resolveOrderName(order: Order): string {
+        const raw = order as Order & { instrumentName?: string; companyName?: string; asset?: { name?: string } };
+        return raw.name?.trim()
+            || raw.asset?.name?.trim()
+            || raw.instrumentName?.trim()
+            || raw.companyName?.trim()
+            || order.status;
+    }
+
+    private resolveOrderPrice(order: Order): number | undefined {
+        const raw = order as Order & {
+            executedPrice?: number | string;
+            filledPrice?: number | string;
+            fillPrice?: number | string;
+            averagePrice?: number | string;
+            avgPrice?: number | string;
+            limitPrice?: number | string;
+            assetPrice?: number | string;
+        };
+
+        const priceCandidates: Array<number | string | undefined> = [
+            raw.price,
+            raw.executedPrice,
+            raw.filledPrice,
+            raw.fillPrice,
+            raw.averagePrice,
+            raw.avgPrice,
+            raw.limitPrice,
+            raw.assetPrice,
+        ];
+
+        for (const candidate of priceCandidates) {
+            if (typeof candidate === 'number' && Number.isFinite(candidate)) {
+                return candidate;
+            }
+            if (typeof candidate === 'string') {
+                const parsed = Number(candidate);
+                if (Number.isFinite(parsed)) {
+                    return parsed;
+                }
+            }
+        }
+        return undefined;
+    }
+
+    private fetchHoldings(): void {
+        const clientId = this.auth.getClientId();
+        if (!clientId) {
+            return;
+        }
+
+        this.loadingHoldings.set(true);
+        this.trading.loadHoldings(clientId).subscribe({
+            next: (holdings) => {
+                this.holdings.set(holdings);
+                this.loadingHoldings.set(false);
+            },
+            error: (err) => {
+                console.error('Error fetching holdings:', err);
+                this.holdings.set([]);
+                this.loadingHoldings.set(false);
+            },
+        });
+    }
+
+    private fetchPortfolioData(): void {
+        const clientId = this.auth.getClientId();
+        if (!clientId) {
+            return;
+        }
+
+        this.trading.getPortfolioSummary(clientId).subscribe({
+            next: (summary) => this.portfolioSummary.set(summary),
+            error: (err) => console.error('Error fetching portfolio summary:', err),
+        });
+
+        const to = new Date();
+        const from = new Date(to);
+        from.setFullYear(to.getFullYear() - 1);
+        this.trading.getPortfolioHistory(
+            clientId,
+            from.toISOString().slice(0, 10),
+            to.toISOString().slice(0, 10),
+        ).subscribe({
+            next: (history) => this.portfolioHistory.set(history),
+            error: (err) => console.error('Error fetching portfolio history:', err),
+        });
+    }
+
+    private toPortfolioRow(holding: Holding): PortfolioTable {
+        const value = Number(holding.currentValue) || 0;
+        const totalBalance = this.portfolioValue();
+
+        return {
+            symbol: holding.symbol,
+            name: holding.symbol,
+            shares: Number(holding.quantity) || 0,
+            value,
+            allocation: totalBalance > 0 ? (value / totalBalance) * 100 : 0,
+            dayChange: undefined,
+            overallReturn: undefined,
+        };
     }
 
     private fetchTickerData(): void {

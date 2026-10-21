@@ -7,6 +7,9 @@
             </svg>
             Watchlist
         </h3>
+        <div class="watchlist-header-action">
+            <ng-content></ng-content>
+        </div>
     </div>
 
     <!-- Loading State -->
@@ -35,14 +38,15 @@
     @if (watchlist().length > 0) {
     <div class="watchlist-items">
         @for (stock of watchlist(); track stock.symbol) {
-        <div class="watchlist-item">
+        <div class="watchlist-item" role="button" tabindex="0" (click)="selectSymbol(stock.symbol)"
+            (keydown.enter)="selectSymbol(stock.symbol)" (keydown.space)="selectSymbol(stock.symbol)">
             <div class="stock-info">
                 <div class="stock-symbol">{{ stock.symbol }}</div>
                 <div class="stock-details">
                     <span class="stock-price">${{ stock.price?.toFixed(2) }}</span>
                     <span class="stock-change" [class.positive]="(stock.change || 0) > 0"
                         [class.negative]="(stock.change || 0) < 0">
-                        {{ stock.change?.toFixed(2) }}%
+                        {{ stock.changePercent?.toFixed(2) }}%
                     </span>
                 </div>
             </div>

@@ -9,7 +9,7 @@ import { OrdersTable } from '../interfaces/orders-table.interface';
 import { TopBar } from '../../components/top-bar/top-bar';
 import { PieChartComponent } from '../components/pie-chart/pie-chart';
 import { AuthService } from '../../../core/services/auth.service';
-type AdminDashboardTab = 'portfolio' | 'orders';
+type AdminDashboardTab = 'portfolio' | 'orders' | 'analytics';
 interface AdminClient {
     id: string;
     name: string;
