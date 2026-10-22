@@ -289,18 +289,16 @@ export class TradingService {
         );
     }
 
-    private normalizeOrder(order: Order): Order {
-        const raw = order as Order & {
+    private normalizeOrder(order: Order | OrderTransactionResponse): Order {
+        const raw = order as OrderTransactionResponse & Partial<Order> & {
             orderId?: string;
             trackingId?: string;
             buy?: boolean;
             action?: string;
-            transactionType?: string;
             side?: string;
             type?: string;
             orderDate?: string;
             executedAt?: string;
-            name?: string;
             currentStatus?: OrderStatus;
             name?: string | null;
             instrumentName?: string | null;
@@ -313,7 +311,6 @@ export class TradingService {
             limitPrice?: number | string | null;
             assetPrice?: number | string | null;
             asset?: { symbol?: string; name?: string };
-            transactionType?: TransactionType;
         };
 
         const normalizedStatus = raw.currentStatus ?? raw.status;
@@ -342,6 +339,7 @@ export class TradingService {
             trackingId: raw.trackingId,
             symbol: raw.asset?.symbol ?? raw.symbol,
             name: normalizedName,
+            quantity: this.coerceQuantity(raw.quantity),
             orderType: normalizedAction ?? 'BUY',
             status: normalizedStatus,
             executedAt: raw.executedAt ?? raw.orderDate,
@@ -374,6 +372,19 @@ export class TradingService {
             }
         }
         return undefined;
+    }
+
+    private coerceQuantity(value: number | string | null | undefined): number {
+        if (typeof value === 'number' && Number.isFinite(value)) {
+            return value;
+        }
+        if (typeof value === 'string') {
+            const parsed = Number(value);
+            if (Number.isFinite(parsed)) {
+                return parsed;
+            }
+        }
+        return 0;
     }
 
     private isUsdCashHolding(holding: Holding): boolean {
