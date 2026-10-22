@@ -11,8 +11,7 @@
         </div>
 
         <div class="auth-panel">
-            <h2>{{ mode() === 'signup' ? 'Create your account' : mode() === 'change-password' ? 'Change your password' :
-                'Welcome back' }}</h2>
+            <h2>{{ mode() === 'signup' ? 'Create your account' : 'Welcome back' }}</h2>
 
             <form #authForm="ngForm" (ngSubmit)="submit(authForm)" novalidate>
                 @if (mode() === 'signup') {

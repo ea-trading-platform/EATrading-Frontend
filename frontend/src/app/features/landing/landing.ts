@@ -3,7 +3,7 @@ import { FormsModule, NgForm } from '@angular/forms';
 import { Router } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
 
-type AuthMode = 'none' | 'login' | 'signup';
+type AuthMode = 'login' | 'signup';
 
 @Component({
     selector: 'app-landing',
@@ -33,11 +33,6 @@ export class Landing {
     openSignup(): void {
         this.error.set(null);
         this.mode.set('signup');
-    }
-
-    closePanel(): void {
-        this.mode.set('none');
-        this.error.set(null);
     }
 
     async submit(form: NgForm): Promise<void> {
