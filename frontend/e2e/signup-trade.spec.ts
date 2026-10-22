@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { mockTradingApi } from './fixtures';
+import { mockTradingApi, submittedTrackingId } from './fixtures';
 
 test('signs up and opens the trading ticket with mocked API data', async ({ page }) => {
     await mockTradingApi(page);
@@ -17,14 +17,26 @@ test('signs up and opens the trading ticket with mocked API data', async ({ page
 
     await expect(page).toHaveURL(/\/transact$/);
     const suggestions = page.locator('.symbol-recommendations');
-    await suggestions.getByRole('button', { name: 'TSLA' }).click();
-    await expect(page.locator('#symbol')).toHaveValue('TSLA');
-
-    await page.getByRole('spinbutton', { name: 'Quantity (shares)' }).fill('2');
-    await page.getByRole('button', { name: 'Crypto' }).click();
     await page.getByRole('button', { name: 'Forex' }).click();
-    await page.getByRole('button', { name: 'Equities' }).click();
-    await expect(page.getByRole('button', { name: 'Equities' })).toHaveClass(/active/);
+    await suggestions.getByRole('button', { name: 'EURUSD' }).click();
+    await expect(page.locator('#symbol')).toHaveValue('EURUSD');
+    await page.getByRole('spinbutton', { name: 'Quantity (shares)' }).fill('2');
+
+    const orderRequest = page.waitForRequest((request) =>
+        request.method() === 'POST' && new URL(request.url()).pathname === '/api/orders',
+    );
+    await page.getByRole('button', { name: 'Submit order' }).click();
+
+    const requestBody = (await orderRequest).postDataJSON();
+    expect(requestBody).toMatchObject({
+        clientId: expect.any(String),
+        symbol: 'FX:EURUSD',
+        quantity: '2',
+        transactionType: 'BUY',
+        instrument: 'CASH',
+        instrumentType: 'CASH',
+    });
+    await expect(page.getByRole('status')).toContainText(`Tracking ID: ${submittedTrackingId}`);
 
     await page.getByRole('button', { name: 'Sign out' }).click();
     await expect(page).toHaveURL(/\/$/);

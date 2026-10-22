@@ -2,6 +2,7 @@ import { Page, Route } from '@playwright/test';
 
 export const clientId = 'd7274a95-fd81-4a0b-be3e-682b3722111b';
 export const trackingId = '550e8400-e29b-41d4-a716-446655440099';
+export const submittedTrackingId = '6ba7b810-9dad-11d1-80b4-00c04fd430c8';
 
 export async function mockAuthenticatedClient(page: Page): Promise<void> {
     await page.addInitScript(({ clientId }) => {
@@ -52,6 +53,15 @@ export async function mockTradingApi(page: Page): Promise<void> {
         if (request.method() === 'PATCH' && path.endsWith(`/api/orders/${trackingId}`)) {
             orderStatus = 'CANCELED';
             await route.fulfill({ status: 200, contentType: 'application/json', body: '{}' });
+            return;
+        }
+
+        if (request.method() === 'POST' && path === '/api/orders') {
+            await route.fulfill({
+                status: 200,
+                contentType: 'application/json',
+                body: JSON.stringify({ trackingId: submittedTrackingId }),
+            });
             return;
         }
 
