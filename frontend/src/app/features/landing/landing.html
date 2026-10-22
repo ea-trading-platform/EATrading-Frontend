@@ -1,24 +1,16 @@
 <main class="landing">
-    <section class="hero">
-        <div class="logo-spot" aria-label="Trading platform logo">
-            <img src="ea-logo.png" alt="EA Trading logo" class="logo-mark" />
-            <span class="logo-text">EA Trading</span>
+    <section class="landing-copy">
+        <div class="hero">
+            <div class="logo-spot" aria-label="Trading platform logo">
+                <img src="ea-logo.png" alt="EA Trading logo" class="logo-mark" />
+                <span class="logo-text">EA Trading</span>
+            </div>
+
+            <h1>Trade smarter, together.</h1>
+            <p class="tagline">Real-time markets, automated strategies, one dashboard.</p>
         </div>
 
-        <h1>Trade smarter, together.</h1>
-        <p class="tagline">Real-time markets, automated strategies, one dashboard.</p>
-
-        <div class="cta-group">
-            <button type="button" class="btn btn-primary" (click)="openSignup()">Sign up</button>
-            <button type="button" class="btn btn-ghost" (click)="openLogin()">Log in</button>
-        </div>
-    </section>
-
-    @if (mode() !== 'none') {
-    <div class="overlay" (click)="closePanel()">
-        <div class="auth-panel" (click)="$event.stopPropagation()">
-            <button type="button" class="close-btn" (click)="closePanel()" aria-label="Close">×</button>
-
+        <div class="auth-panel">
             <h2>{{ mode() === 'signup' ? 'Create your account' : 'Welcome back' }}</h2>
 
             <form #authForm="ngForm" (ngSubmit)="submit(authForm)" novalidate>
@@ -98,6 +90,10 @@
                 }
             </p>
         </div>
-    </div>
-    }
+    </section>
+
+    <aside class="landing-preview" aria-label="Sample dashboard preview">
+        <div class="preview-half preview-top" role="img" aria-label="Sample dashboard top preview"></div>
+        <div class="preview-half preview-bottom" role="img" aria-label="Sample dashboard bottom preview"></div>
+    </aside>
 </main>

@@ -16,13 +16,33 @@ describe('Landing account actions', () => {
     const fixture = TestBed.createComponent(Landing);
     await fixture.whenStable();
     const element: HTMLElement = fixture.nativeElement;
-    for (const button of element.querySelectorAll<HTMLButtonElement>('.cta-group button')) {
-      button.click();
-      await fixture.whenStable();
+    const expectNoPasswordChange = () => {
       expect(element.querySelector('form')).toBeTruthy();
       expect(element.textContent?.toLowerCase()).not.toContain('change password');
       expect(element.querySelector('[name="currentPassword"]')).toBeNull();
-    }
+      expect(element.querySelector('[name="newPassword"]')).toBeNull();
+      expect(element.querySelector('[name="confirmNewPassword"]')).toBeNull();
+    };
+
+    expectNoPasswordChange();
+    expect(element.querySelector('h2')!.textContent).toContain('Welcome back');
+    expect(element.querySelector('[name="email"]')).toBeTruthy();
+    expect(element.querySelector('[name="password"]')).toBeTruthy();
+    expect(element.querySelector('[name="name"]')).toBeNull();
+
+    element.querySelector<HTMLAnchorElement>('.switch-mode a')!.click();
+    await fixture.whenStable();
+    expectNoPasswordChange();
+    expect(element.querySelector('h2')!.textContent).toContain('Create your account');
+    expect(element.querySelector('[name="name"]')).toBeTruthy();
+    expect(element.querySelector('[name="confirmPassword"]')).toBeTruthy();
+
+    element.querySelector<HTMLAnchorElement>('.switch-mode a')!.click();
+    await fixture.whenStable();
+    expectNoPasswordChange();
+    expect(element.querySelector('h2')!.textContent).toContain('Welcome back');
+    expect(element.querySelector('[name="name"]')).toBeNull();
+    expect(element.querySelector('[name="confirmPassword"]')).toBeNull();
   });
 
   it.each([false, true])('preserves login navigation for admin=%s', async isAdmin => {
