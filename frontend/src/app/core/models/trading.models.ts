@@ -218,6 +218,29 @@ export interface OrderTransactionResponse {
     orderDate: string;
 }
 
+export interface OrderAnalyticsResponse {
+    totalOrders: number;
+    totalQuantity: number | string;
+    buyOrders: number;
+    sellOrders: number;
+    filledOrders: number;
+    pendingOrders: number;
+    canceledOrders: number;
+    rejectedOrders: number;
+    ordersByInstrument: Record<string, number>;
+    ordersBySide: Record<string, number>;
+    ordersByStatus: Record<string, number>;
+}
+
+export interface OrderAnalyticsFilters {
+    clientId?: string;
+    from?: string;
+    to?: string;
+    instrument?: 'CASH' | 'EQUITY' | 'CRYPTO';
+    side?: TransactionType;
+    status?: OrderStatus;
+}
+
 /**
  * Request body for creating an order
  */

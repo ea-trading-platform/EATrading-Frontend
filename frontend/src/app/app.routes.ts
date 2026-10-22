@@ -3,6 +3,7 @@ import { Landing } from './features/landing/landing';
 import { ClientDashboard } from './features/dashboard/client-dashboard/client-dashboard';
 import { AdminDashboard } from './features/dashboard/admin-dashboard/admin-dashboard';
 import { AdminTradeLogs } from './features/dashboard/admin-dashboard/admin-trade-logs/admin-trade-logs';
+import { AdminAnalytics } from './features/dashboard/admin-dashboard/admin-analytics/admin-analytics';
 import { Transact } from './features/transact/transact';
 import { News } from './features/news/news';
 import { guestGuard, roleGuard } from './core/guards/auth.guard';
@@ -14,5 +15,6 @@ export const routes: Routes = [
     { path: 'news', component: News, canActivate: [roleGuard], data: { roles: ['CLIENT'] } },
     { path: 'admin-dashboard', component: AdminDashboard, canActivate: [roleGuard], data: { roles: ['ADMIN'] } },
     { path: 'admin-trade-logs', component: AdminTradeLogs, canActivate: [roleGuard], data: { roles: ['ADMIN'] } },
+    { path: 'admin-analytics', component: AdminAnalytics, canActivate: [roleGuard], data: { roles: ['ADMIN'] } },
     { path: '**', redirectTo: '' },
 ];

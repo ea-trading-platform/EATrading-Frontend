@@ -12,7 +12,7 @@ import { AdminOrdersTableComponent } from './components/admin-orders-table/admin
 import { AuthService } from '../../../core/services/auth.service';
 import { TradingService } from '../../../core/services/trading.service';
 import { Client, Holding, Order } from '../../../core/models/trading.models';
-import { TopBarNavItem } from '../../components/top-bar/top-bar';
+import { ADMIN_NAV_ITEMS } from './admin-navigation';
 import { forkJoin } from 'rxjs';
 
 type AdminDashboardTab = 'portfolio' | 'orders';
@@ -45,10 +45,7 @@ export class AdminDashboard {
         this.auth.profile()?.name ?? this.auth.user()?.email ?? 'Admin',
     );
 
-    readonly navItems: readonly TopBarNavItem[] = [
-        { label: 'Dashboard', route: '/admin-dashboard' },
-        { label: 'Trade Logs', route: '/admin-trade-logs' },
-    ];
+    readonly navItems = ADMIN_NAV_ITEMS;
 
     readonly selectedAccountId = signal<string | null>(null);
     readonly searchQuery = signal('');
