@@ -160,7 +160,7 @@ export class Transact implements OnInit {
         this.activeDataTab() === 'positions' ? this.positionColumns() : this.orderColumns(),
     );
     protected readonly openOrders = computed(() => this.orders().filter((order) =>
-        order.status === 'PENDING' || order.status === 'SUBMITTED' || order.status === 'ACCEPTED'));
+        order.status === 'SUBMITTED' || order.status === 'ACCEPTED'));
     protected readonly availableToTrade = computed(() => {
         const availableCash = Number(this.portfolio()?.availableCashUsd);
         return Number.isFinite(availableCash) ? availableCash : Number(this.account()?.totalBalance) || 0;
@@ -390,7 +390,7 @@ export class Transact implements OnInit {
                 cellRenderer: (params: { data: Order }) => {
                     const button = document.createElement('button');
                     const trackingId = params.data.trackingId ?? '';
-                    const canCancel = params.data.status === 'PENDING' || params.data.status === 'SUBMITTED';
+                    const canCancel = params.data.status === 'SUBMITTED';
                     button.type = 'button';
                     button.textContent = 'Cancel';
                     button.disabled = !trackingId || !canCancel || this.cancellingTrackingId() === trackingId;

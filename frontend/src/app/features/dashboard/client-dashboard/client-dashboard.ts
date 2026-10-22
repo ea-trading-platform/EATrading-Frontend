@@ -8,6 +8,7 @@ import { Client, Holding, Order, PortfolioHistory, PortfolioSummary } from '../.
 import { StockSearch } from './components/stock-search/stock-search';
 import { PortfolioTableComponent } from '../components/portfolio-table/portfolio-table';
 import { PortfolioTable } from '../interfaces/portfolio-table.interface';
+import { OrdersTable } from '../interfaces/orders-table.interface';
 import { DataGrid } from '../components/data-grid/data-grid';
 import { ColDef, GridOptions } from 'ag-grid-community';
 import { BalanceGraphInterface } from '../interfaces/balances-graph.interface';
