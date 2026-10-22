@@ -233,6 +233,20 @@ export class TradingService {
         );
     }
 
+    cancelOrder(trackingId: string): Observable<void> {
+        this.isLoading.set(true);
+        this.error.set(null);
+
+        return this.apiService.cancelOrder(trackingId).pipe(
+            tap(() => this.isLoading.set(false)),
+            catchError((err) => {
+                this.error.set(err?.message || 'Failed to cancel order');
+                this.isLoading.set(false);
+                throw err;
+            }),
+        );
+    }
+
     private normalizeOrder(order: Order): Order {
         const raw = order as Order & {
             orderId?: string;
