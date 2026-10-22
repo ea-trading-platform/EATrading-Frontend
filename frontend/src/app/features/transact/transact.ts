@@ -130,10 +130,10 @@ export class Transact implements OnInit {
     protected readonly suggestedSymbols: Record<Market, string[]> = {
         Equities: ['AAPL', 'GOOGL', 'MSFT', 'AMZN', 'TSLA', 'NVDA'],
         Crypto: ['BTC', 'ETH', 'SOL', 'XRP', 'ADA', 'DOGE'],
-        Forex: ['EURUSD', 'GBPUSD', 'USDJPY', 'AUDUSD', 'USDCAD', 'USDCHF'],
+        Forex: ['EUR', 'GBP', 'JPY', 'AUD', 'CAD', 'CHF'],
     };
     protected readonly filteredSuggestions = computed(() => {
-        const term = this.symbol().trim().toUpperCase();
+        const term = this.displaySymbol(this.symbol());
         const suggestions = this.suggestedSymbols[this.activeMarket()];
         return term
             ? suggestions.filter((suggestion) => suggestion.includes(term))
@@ -141,6 +141,7 @@ export class Transact implements OnInit {
     });
     protected readonly positions = computed(() => this.holdings().map((holding) => ({
         symbol: holding.symbol,
+        instrument: holding.instrument,
         name: holding.name ?? holding.symbol,
         quantity: Number(holding.quantity) || 0,
         averageCost: Number(holding.avgBuyPrice) || 0,
@@ -207,7 +208,12 @@ export class Transact implements OnInit {
 
     protected readonly ownedQuantity = computed(() => {
         const selectedSymbol = this.marketSymbol();
-        const holding = this.holdings().find((item) => this.marketSymbol(item.symbol) === selectedSymbol);
+        if (!selectedSymbol) {
+            return 0;
+        }
+        const holding = this.holdings().find((item) =>
+            (!item.instrument || item.instrument === this.selectedInstrumentType()) &&
+            this.marketSymbol(item.symbol) === selectedSymbol);
         return Number(holding?.quantity) || 0;
     });
     protected readonly quantityValidationError = computed(() => {
@@ -217,7 +223,7 @@ export class Transact implements OnInit {
         }
 
         if (this.orderSide() === 'SELL' && requestedQuantity > this.ownedQuantity()) {
-            return `You can sell at most ${this.ownedQuantity()} shares of ${this.symbol()}.`;
+            return `You can sell at most ${this.ownedQuantity()} ${this.activeMarket() === 'Equities' ? 'shares' : 'units'} of ${this.displaySymbol(this.symbol())}.`;
         }
 
         if (this.orderSide() === 'BUY' && this.quote() && this.estimatedCost() > this.availableToTrade()) {
@@ -320,7 +326,7 @@ export class Transact implements OnInit {
             { field: 'value', headerName: 'Value', minWidth: 125, valueFormatter: currencyFormatter },
             {
                 colId: 'actions', headerName: 'Actions', minWidth: 155, sortable: false,
-                cellRenderer: (params: { data: { symbol: string; name: string } }) => {
+                cellRenderer: (params: { data: { symbol: string; name: string; instrument?: string } }) => {
                     const container = document.createElement('div');
                     container.style.display = 'flex';
                     container.style.gap = '0.4rem';
@@ -337,7 +343,7 @@ export class Transact implements OnInit {
                         button.style.background = side === 'BUY' ? '#65d6a0' : '#e06c75';
                         button.addEventListener('click', (event) => {
                             event.stopPropagation();
-                            this.prepareTrade(params.data.symbol, side, params.data.name);
+                            this.prepareTrade(params.data.symbol, side, params.data.name, params.data.instrument);
                         });
                         container.appendChild(button);
                     }
@@ -487,6 +493,7 @@ export class Transact implements OnInit {
     selectMarket(market: Market): void {
         this.activeMarket.set(market);
         this.symbol.set('');
+        this.instrumentName.set('');
         this.quote.set(null);
         this.candles.set([]);
         this.error.set(null);
@@ -510,18 +517,26 @@ export class Transact implements OnInit {
     }
 
     selectSymbol(symbol: string, name = symbol): void {
-        this.symbol.set(this.displaySymbol(symbol));
-        this.instrumentName.set(name);
+        this.symbol.set(symbol);
+        this.instrumentName.set(name === symbol ? this.displaySymbol(symbol) : name);
         this.search();
     }
 
-    prepareTrade(symbol: string, side: 'BUY' | 'SELL', name = symbol): void {
+    prepareTrade(symbol: string, side: 'BUY' | 'SELL', name = symbol, instrument?: string): void {
+        const input = symbol.trim().toUpperCase();
+        const market = instrument === 'CASH' || input.startsWith('FX:') ? 'Forex'
+            : instrument === 'CRYPTO' || input.startsWith('X:') ? 'Crypto'
+            : instrument === 'EQUITY' ? 'Equities' : this.activeMarket();
+        if (market !== this.activeMarket()) {
+            this.selectMarket(market);
+        }
         this.orderSide.set(side);
         this.selectSymbol(symbol, name);
     }
 
     submitOrder(): void {
         const clientId = this.auth.getClientId();
+        const currency = this.displaySymbol(this.symbol());
         const requestedSymbol = this.marketSymbol();
         const requestedQuantity = Number(this.quantity());
 
@@ -541,7 +556,7 @@ export class Transact implements OnInit {
         const request: OrderRequest = {
             clientId,
             symbol: requestedSymbol,
-            name: this.instrumentName() || requestedSymbol,
+            name: this.instrumentName() || currency,
             quantity: requestedQuantity,
             transactionType: this.orderSide(),
             instrument: instrumentType,
@@ -555,7 +570,7 @@ export class Transact implements OnInit {
         this.trading.submitOrder(request).subscribe({
             next: (response) => {
                 this.isSubmittingOrder.set(false);
-                this.orderMessage.set(`${this.orderSide()} order for ${requestedSymbol} submitted. Tracking ID: ${response.trackingId}`);
+                this.orderMessage.set(`${request.transactionType} order for ${currency} submitted. Tracking ID: ${response.trackingId}`);
                 this.quantity.set(null);
                 window.setTimeout(() => this.refreshData(), 1000);
             },
@@ -595,18 +610,17 @@ export class Transact implements OnInit {
     }
 
     private marketSymbol(value = this.symbol()): string {
-        const input = value.trim().toUpperCase();
+        const input = this.displaySymbol(value);
         if (!input) {
             return '';
         }
 
         if (this.activeMarket() === 'Crypto') {
-            const base = input.replace(/^X:/, '').replace(/-USD$/, '');
-            return `X:${base}-USD`;
+            return `X:${input}-USD`;
         }
 
         if (this.activeMarket() === 'Forex') {
-            return `FX:${input.replace(/^FX:/, '')}`;
+            return `FX:${input}USD`;
         }
 
         return input;
@@ -630,7 +644,12 @@ export class Transact implements OnInit {
         }
 
         if (this.activeMarket() === 'Forex') {
-            return input.replace(/^FX:/, '');
+            const pair = input.replace(/^FX:/, '');
+            const currency = pair.length === 6
+                ? pair.endsWith('USD') ? pair.slice(0, 3)
+                    : pair.startsWith('USD') ? pair.slice(3) : ''
+                : pair;
+            return /^[A-Z]{3}$/.test(currency) && currency !== 'USD' ? currency : '';
         }
 
         return input;
@@ -675,10 +694,13 @@ export class Transact implements OnInit {
     search(): void {
         const requestedSymbol = this.marketSymbol();
         if (!requestedSymbol) {
-            this.error.set('Enter a symbol to view market data.');
+            this.error.set(this.activeMarket() === 'Forex'
+                ? 'Enter a non-USD currency such as EUR or a USD pair such as EURUSD.'
+                : 'Enter a symbol to view market data.');
             return;
         }
 
+        this.symbol.set(this.displaySymbol(this.symbol()));
         this.isLoading.set(true);
         this.error.set(null);
         this.quote.set(null);
