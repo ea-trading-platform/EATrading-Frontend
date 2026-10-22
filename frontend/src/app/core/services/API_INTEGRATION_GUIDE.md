@@ -154,6 +154,21 @@ totalValue = this.trading.getTotalPortfolioValue();
 totalGain = this.trading.getTotalUnrealizedGain();
 ```
 
+#### Transact symbol conventions
+
+The transact page presents forex as currency holdings, not selectable inverse pairs:
+
+| Input | Displayed holding | Quote/candles | BUY order symbol | SELL order symbol |
+|---|---|---|---|---|
+| `EUR` or `EURUSD` | `EUR` | `FX:EURUSD` | `FX:EURUSD` | `FX:EURUSD` |
+| `BTC` or `X:BTC-USD` | `BTC` | `X:BTC-USD` | `X:BTC-USD` | `X:BTC-USD` |
+
+Forex uses instrument type `CASH`; crypto uses `CRYPTO`. Order direction is also
+sent in `transactionType`; selling does not reverse the symbol. Currency quantities refer to the selected currency
+holding. Legacy USD-first forex symbols are normalized to the non-USD currency
+before display or quote lookup. USD itself and non-USD cross pairs are not
+supported by this ticket. Equity symbols and instrument types are unchanged.
+
 #### Submit an Order
 ```typescript
 submitBuyOrder(symbol: string, quantity: number) {

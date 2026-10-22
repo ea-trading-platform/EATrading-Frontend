@@ -34,7 +34,7 @@
                     <div class="search-row">
                         <input id="symbol" name="symbol" type="search" [ngModel]="symbol()"
                             (ngModelChange)="symbol.set($event)"
-                            [placeholder]="'Search ' + activeMarket().toLowerCase()" autocomplete="off" />
+                            [placeholder]="activeMarket() === 'Forex' ? 'EUR or EURUSD' : 'Search ' + activeMarket().toLowerCase()" autocomplete="off" />
                         <button type="submit" [disabled]="isLoading()">
                             {{ isLoading() ? 'Loading...' : 'View market' }}
                         </button>
@@ -57,7 +57,7 @@
                 <div class="quote-heading">
                     <div>
                         <span class="eyebrow">{{ activeMarket() }}</span>
-                        <h2>{{ quote()!.symbol }}</h2>
+                        <h2>{{ activeMarket() === 'Forex' ? symbol() : quote()!.symbol }}</h2>
                     </div>
                     <div class="quote-price">
                         <strong>{{ quote()!.price | currency: quote()!.currency }}</strong>
@@ -116,7 +116,7 @@
             </div>
 
             <div class="order-field">
-                <label for="quantity">Quantity <span>(shares)</span></label>
+                <label for="quantity">Quantity <span>({{ activeMarket() === 'Equities' ? 'shares' : 'units' }})</span></label>
                 <input id="quantity" type="number" min="0" step="1" placeholder="0" [ngModel]="quantity()"
                     (ngModelChange)="quantity.set($event); orderError.set(null); orderMessage.set(null)" />
             </div>
@@ -132,7 +132,7 @@
                 </div>
                 <div>
                     @if (orderSide() === 'SELL') {
-                    <span>Shares owned</span>
+                    <span>{{ activeMarket() === 'Equities' ? 'Shares owned' : 'Units owned' }}</span>
                     <strong>{{ ownedQuantity() | number: '1.0-4' }}</strong>
                     } @else {
                     <span>Available to trade</span>
