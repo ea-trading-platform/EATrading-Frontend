@@ -74,6 +74,7 @@ export class Transact implements OnInit {
     protected readonly orderSide = signal<'BUY' | 'SELL'>('BUY');
     protected readonly quantity = signal<number | null>(null);
     protected readonly isSubmittingOrder = signal(false);
+    protected readonly cancellingTrackingId = signal<string | null>(null);
     protected readonly isRefreshing = signal(false);
     protected readonly orderMessage = signal<string | null>(null);
     protected readonly orderError = signal<string | null>(null);
@@ -384,6 +385,34 @@ export class Transact implements OnInit {
                 field: 'executedAt', headerName: 'Change log time', minWidth: 190,
                 valueFormatter: (params) => params.value || 'Pending'
             },
+            {
+                colId: 'actions', headerName: 'Actions', minWidth: 130, sortable: false,
+                cellRenderer: (params: { data: Order }) => {
+                    const button = document.createElement('button');
+                    const trackingId = params.data.trackingId ?? '';
+                    const canCancel = params.data.status === 'PENDING' || params.data.status === 'SUBMITTED';
+                    button.type = 'button';
+                    button.textContent = 'Cancel';
+                    button.disabled = !trackingId || !canCancel || this.cancellingTrackingId() === trackingId;
+                    button.title = !trackingId
+                        ? 'Tracking ID unavailable'
+                        : canCancel ? 'Cancel order' : `Orders in ${params.data.status} status cannot be canceled`;
+                    button.style.border = '0';
+                    button.style.borderRadius = '0.3rem';
+                    button.style.padding = '0.35rem 0.6rem';
+                    button.style.color = '#08131c';
+                    button.style.cursor = button.disabled ? 'default' : 'pointer';
+                    button.style.fontWeight = '800';
+                    button.style.background = '#f0b45b';
+                    button.addEventListener('click', (event) => {
+                        event.stopPropagation();
+                        if (trackingId && canCancel) {
+                            this.cancelOrder(trackingId);
+                        }
+                    });
+                    return button;
+                },
+            },
         ];
     }
 
@@ -534,6 +563,34 @@ export class Transact implements OnInit {
                 this.isSubmittingOrder.set(false);
                 this.orderError.set('Order could not be submitted. Please try again.');
             },
+        });
+    }
+
+    private cancelOrder(trackingId: string): void {
+        if (this.cancellingTrackingId()) {
+            return;
+        }
+
+        this.cancellingTrackingId.set(trackingId);
+        this.orderMessage.set(null);
+        this.orderError.set(null);
+
+        this.trading.cancelOrder(trackingId).subscribe({
+            next: () => {
+                this.orderMessage.set(`Order ${trackingId} canceled.`);
+                const clientId = this.auth.getClientId();
+                if (clientId) {
+                    this.trading.loadOrders(clientId).subscribe({
+                        next: (orders) => this.orders.set(orders),
+                        error: (error) => console.error('Error refreshing orders:', error),
+                    });
+                }
+            },
+            error: () => {
+                this.cancellingTrackingId.set(null);
+                this.orderError.set('Order could not be canceled. Please try again.');
+            },
+            complete: () => this.cancellingTrackingId.set(null),
         });
     }
 
