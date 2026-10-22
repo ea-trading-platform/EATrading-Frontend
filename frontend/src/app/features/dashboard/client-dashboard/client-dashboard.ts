@@ -1,15 +1,15 @@
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
-import { DecimalPipe } from '@angular/common';
+import { DatePipe, DecimalPipe } from '@angular/common';
 import { Router } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
 import { ApiService } from '../../../core/services/api.service';
 import { TradingService } from '../../../core/services/trading.service';
-import { Client, Holding, PortfolioHistory, PortfolioSummary } from '../../../core/models/trading.models';
+import { Client, Holding, Order, PortfolioHistory, PortfolioSummary } from '../../../core/models/trading.models';
 import { StockSearch } from './components/stock-search/stock-search';
 import { PortfolioTableComponent } from '../components/portfolio-table/portfolio-table';
 import { PortfolioTable } from '../interfaces/portfolio-table.interface';
-import { OrdersTable } from '../interfaces/orders-table.interface';
-import { OrdersTableComponent } from '../components/orders-table/orders-table';
+import { DataGrid } from '../components/data-grid/data-grid';
+import { ColDef, GridOptions } from 'ag-grid-community';
 import { BalanceGraphInterface } from '../interfaces/balances-graph.interface';
 import { BalanceGraph } from '../components/balance-graph/balance-graph';
 import { TopBar, TopBarNavItem } from '../../components/top-bar/top-bar';
@@ -92,14 +92,13 @@ const MOCK_ORDERS: OrdersTable[] = [
 
 @Component({
     imports: [
+        DatePipe,
         DecimalPipe,
-        StockSearch,
         PortfolioTableComponent,
-        OrdersTableComponent,
+        DataGrid,
         TopBar,
         BalanceGraph,
         StockTicker,
-        WatchlistComponent,
         TopMoversComponent,
         PieChartComponent,
     ],
@@ -124,10 +123,12 @@ export class ClientDashboard implements OnInit {
     protected readonly loadingAccount = signal(false);
     protected readonly holdings = signal<Holding[]>([]);
     protected readonly loadingHoldings = signal(false);
-    protected readonly orders = signal<OrdersTable[]>(MOCK_ORDERS);
+    protected readonly orders = signal<Order[]>([]);
     protected readonly loadingOrders = signal(false);
+    protected readonly copyError = signal<string | null>(null);
     protected readonly portfolioSummary = signal<PortfolioSummary | null>(null);
     protected readonly portfolioHistory = signal<PortfolioHistory | null>(null);
+    protected readonly portfolioSnapshotAsOf = computed(() => this.portfolioSummary()?.asOf ?? null);
 
     protected readonly activeTab = signal<ClientDashboardTab>('portfolio');
     protected readonly portfolioHoldings = computed(() =>
@@ -147,28 +148,107 @@ export class ClientDashboard implements OnInit {
         const accountBalance = Number(this.account()?.totalBalance);
         return Number.isFinite(accountBalance) ? accountBalance : 0;
     });
-    protected readonly totalGainLoss = computed(() =>
-        Number(this.portfolioSummary()?.overallReturnUsd) ||
-        this.holdings().reduce((total, holding) => {
+    protected readonly totalGainLoss = computed(() => {
+        const snapshotDayChange = this.toFiniteNumber(this.portfolioSummary()?.dailyChangeUsd);
+        if (snapshotDayChange !== null) {
+            return snapshotDayChange;
+        }
+
+        const historyPoints = this.portfolioHistory()?.points ?? [];
+        if (historyPoints.length >= 2) {
+            const latestValue = this.toFiniteNumber(historyPoints[historyPoints.length - 1].portfolioValueUsd);
+            const priorValue = this.toFiniteNumber(historyPoints[historyPoints.length - 2].portfolioValueUsd);
+            if (latestValue !== null && priorValue !== null) {
+                return latestValue - priorValue;
+            }
+        }
+
+        return this.holdings().reduce((total, holding) => {
             const currentValue = Number(holding.currentValue) || 0;
             const costBasis = (Number(holding.quantity) || 0) * (Number(holding.avgBuyPrice) || 0);
             return total + currentValue - costBasis;
-        }, 0),
-    );
+        }, 0);
+    });
     protected readonly gainLossPercentage = computed(() => {
-        const summaryPercentage = Number(this.portfolioSummary()?.overallReturnPercent);
-        if (Number.isFinite(summaryPercentage)) {
-            return summaryPercentage;
+        const portfolioValue = this.portfolioValue();
+        const dayChangeUsd = this.totalGainLoss();
+        const previousValue = portfolioValue - dayChangeUsd;
+        if (previousValue !== 0) {
+            return (dayChangeUsd / previousValue) * 100;
         }
-        const costBasis = this.holdings().reduce(
-            (total, holding) => total + (Number(holding.quantity) || 0) * (Number(holding.avgBuyPrice) || 0),
-            0,
-        );
-        return costBasis > 0 ? (this.totalGainLoss() / costBasis) * 100 : 0;
+
+        const snapshotPercentage = this.toFiniteNumber(this.portfolioSummary()?.dailyChangePercent);
+        if (snapshotPercentage !== null) {
+            return snapshotPercentage;
+        }
+
+        const historyPoints = this.portfolioHistory()?.points ?? [];
+        if (historyPoints.length >= 2) {
+            const latestValue = this.toFiniteNumber(historyPoints[historyPoints.length - 1].portfolioValueUsd);
+            const priorValue = this.toFiniteNumber(historyPoints[historyPoints.length - 2].portfolioValueUsd);
+            if (latestValue !== null && priorValue !== null && priorValue !== 0) {
+                return ((latestValue - priorValue) / priorValue) * 100;
+            }
+        }
+
+        return 0;
     });
     protected readonly orderHistory = computed(() =>
-        [...this.orders()].sort((a, b) => b.transactionDate.getTime() - a.transactionDate.getTime()),
+        [...this.orders()]
+            .map((order) => ({
+                ...order,
+                orderType: this.resolveOrderAction(order),
+                name: this.resolveOrderName(order),
+                price: this.resolveOrderPrice(order),
+            }))
+            .sort((a, b) => this.orderTimestamp(b).localeCompare(this.orderTimestamp(a))),
     );
+    protected readonly orderGridOptions: GridOptions<Order> = {
+        domLayout: 'autoHeight',
+        suppressCellFocus: true,
+    };
+    protected readonly orderColumns: ColDef<Order>[] = [
+        {
+            field: 'trackingId',
+            headerName: 'Tracking ID',
+            minWidth: 220,
+            cellRenderer: (params: { value?: string }) => {
+                const button = document.createElement('button');
+                const trackingId = params.value ?? '';
+                button.type = 'button';
+                button.textContent = trackingId || 'Unavailable';
+                button.title = trackingId ? 'Copy tracking ID' : 'Tracking ID unavailable';
+                button.disabled = !trackingId;
+                button.style.border = '0';
+                button.style.background = 'transparent';
+                button.style.color = 'inherit';
+                button.style.cursor = trackingId ? 'copy' : 'default';
+                button.style.padding = '0';
+                button.addEventListener('click', (event) => {
+                    event.stopPropagation();
+                    if (trackingId) {
+                        void this.copyTrackingId(trackingId, button);
+                    }
+                });
+                return button;
+            },
+        },
+        { field: 'orderType', headerName: 'Action', minWidth: 100 },
+        { field: 'symbol', headerName: 'Symbol', minWidth: 115 },
+        { field: 'name', headerName: 'Name', minWidth: 160 },
+        {
+            field: 'quantity',
+            headerName: 'Quantity',
+            minWidth: 110,
+            valueFormatter: (params) => this.formatShareQuantity(params.value),
+        },
+        { field: 'price', headerName: 'Price', minWidth: 110 },
+        { field: 'status', headerName: 'Status', minWidth: 125 },
+        {
+            field: 'executedAt', headerName: 'Change log time', minWidth: 190,
+            valueFormatter: (params) => params.value || 'Pending'
+        },
+    ];
     protected readonly balanceData = computed<BalanceGraphInterface[]>(() => {
         const points = this.portfolioHistory()?.points ?? [];
         if (points.length > 0) {
@@ -183,14 +263,27 @@ export class ClientDashboard implements OnInit {
     protected readonly portfolioAllocation = computed(() => {
         const byInstrument = this.holdings().reduce<Record<string, number>>((totals, holding) => {
             const instrument = (holding.instrument ?? 'EQUITY').toUpperCase();
-            totals[instrument] = (totals[instrument] ?? 0) + (Number(holding.currentValue) || 0);
+            const holdingValue = Number(holding.currentValue) || 0;
+
+            if (instrument === 'CASH') {
+                const cashCategory = this.isUsdCashHolding(holding) ? 'CASH_USD' : 'FOREX';
+                totals[cashCategory] = (totals[cashCategory] ?? 0) + holdingValue;
+                return totals;
+            }
+
+            totals[instrument] = (totals[instrument] ?? 0) + holdingValue;
             return totals;
         }, {});
+        const summaryCashValue = Number(this.portfolioSummary()?.availableCashUsd) || 0;
+        const cashValue = (byInstrument['CASH_USD'] ?? 0) > 0
+            ? byInstrument['CASH_USD'] ?? 0
+            : summaryCashValue;
+
         return [
             { label: 'Equities', value: byInstrument['EQUITY'] ?? 0 },
             { label: 'Crypto', value: byInstrument['CRYPTO'] ?? 0 },
             { label: 'Forex', value: byInstrument['FOREX'] ?? 0 },
-            { label: 'Cash', value: Number(this.portfolioSummary()?.availableCashUsd) || 0 },
+            { label: 'Cash', value: cashValue },
         ];
     });
 
@@ -199,6 +292,56 @@ export class ClientDashboard implements OnInit {
 
     protected absoluteValue(value: number): number {
         return Math.abs(value);
+    }
+
+    private toFiniteNumber(value: string | number | undefined): number | null {
+        if (value === undefined) {
+            return null;
+        }
+        const parsedValue = typeof value === 'number' ? value : Number(value);
+        return Number.isFinite(parsedValue) ? parsedValue : null;
+    }
+
+    private formatShareQuantity(value: unknown): string {
+        const numericValue = typeof value === 'number' ? value : Number(value);
+        if (!Number.isFinite(numericValue)) {
+            return '0';
+        }
+
+        return new Intl.NumberFormat('en-US', {
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 4,
+        }).format(numericValue);
+    }
+
+    private isUsdCashHolding(holding: Holding): boolean {
+        const symbol = holding.symbol.trim().toUpperCase();
+        const name = (holding.name ?? '').trim().toUpperCase();
+        const normalizedSymbol = symbol.replace(/^CASH:/, '').replace(/^FX:/, '').trim();
+        if (normalizedSymbol === 'USD') {
+            return true;
+        }
+
+        return name === 'USD'
+            || name === 'US DOLLAR'
+            || name === 'US DOLLARS';
+    }
+
+    private async copyTrackingId(trackingId: string, button: HTMLButtonElement): Promise<void> {
+        try {
+            if (!navigator.clipboard) {
+                throw new Error('Clipboard access is unavailable.');
+            }
+            await navigator.clipboard.writeText(trackingId);
+            button.textContent = 'Copied';
+            window.setTimeout(() => {
+                button.textContent = trackingId;
+            }, 1500);
+            this.copyError.set(null);
+        } catch (error) {
+            console.error('Unable to copy tracking ID:', error);
+            this.copyError.set('Unable to copy the tracking ID. Please copy it manually.');
+        }
     }
 
     ngOnInit(): void {
@@ -241,18 +384,85 @@ export class ClientDashboard implements OnInit {
         this.loadingOrders.set(true);
         this.trading.loadOrders(clientId).subscribe({
             next: (orders: unknown) => {
-                // Map API response to OrdersTable interface
                 if (Array.isArray(orders)) {
-                    this.orders.set(orders as OrdersTable[]);
+                    this.orders.set(orders as Order[]);
                 }
                 this.loadingOrders.set(false);
             },
             error: (err) => {
                 console.error('Error fetching orders:', err);
-                // Keep mock data on error
+                this.orders.set([]);
                 this.loadingOrders.set(false);
             },
         });
+    }
+
+    private orderTimestamp(order: Order): string {
+        return order.executedAt ?? '';
+    }
+
+    private resolveOrderAction(order: Order): 'BUY' | 'SELL' {
+        const raw = order as Order & {
+            transactionType?: string;
+            action?: string;
+            side?: string;
+            buy?: boolean;
+        };
+
+        if (raw.orderType === 'BUY' || raw.orderType === 'SELL') {
+            return raw.orderType;
+        }
+        if (typeof raw.buy === 'boolean') {
+            return raw.buy ? 'BUY' : 'SELL';
+        }
+
+        const action = (raw.transactionType ?? raw.action ?? raw.side ?? '').trim().toUpperCase();
+        return action === 'SELL' ? 'SELL' : 'BUY';
+    }
+
+    private resolveOrderName(order: Order): string {
+        const raw = order as Order & { instrumentName?: string; companyName?: string; asset?: { name?: string } };
+        return raw.name?.trim()
+            || raw.asset?.name?.trim()
+            || raw.instrumentName?.trim()
+            || raw.companyName?.trim()
+            || order.status;
+    }
+
+    private resolveOrderPrice(order: Order): number | undefined {
+        const raw = order as Order & {
+            executedPrice?: number | string;
+            filledPrice?: number | string;
+            fillPrice?: number | string;
+            averagePrice?: number | string;
+            avgPrice?: number | string;
+            limitPrice?: number | string;
+            assetPrice?: number | string;
+        };
+
+        const priceCandidates: Array<number | string | undefined> = [
+            raw.price,
+            raw.executedPrice,
+            raw.filledPrice,
+            raw.fillPrice,
+            raw.averagePrice,
+            raw.avgPrice,
+            raw.limitPrice,
+            raw.assetPrice,
+        ];
+
+        for (const candidate of priceCandidates) {
+            if (typeof candidate === 'number' && Number.isFinite(candidate)) {
+                return candidate;
+            }
+            if (typeof candidate === 'string') {
+                const parsed = Number(candidate);
+                if (Number.isFinite(parsed)) {
+                    return parsed;
+                }
+            }
+        }
+        return undefined;
     }
 
     private fetchHoldings(): void {

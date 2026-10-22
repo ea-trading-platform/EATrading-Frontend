@@ -18,6 +18,7 @@ import {
     OrderTransactionResponse,
     OrderRequest,
     OrderResponse,
+    OrderStatusLog,
     CandleQuery,
     WatchlistItemResponse
 } from '../models/trading.models';
@@ -49,6 +50,10 @@ export class ApiService {
 
     post<T>(path: string, body: unknown): Observable<T> {
         return this.http.post<T>(this.buildUrl(path), body);
+    }
+
+    patch<T>(path: string, body: unknown = {}): Observable<T> {
+        return this.http.patch<T>(this.buildUrl(path), body);
     }
 
     put<T>(path: string, body: unknown, params?: Record<string, string | number | boolean>): Observable<T> {
@@ -271,10 +276,23 @@ export class ApiService {
 
     /** Create an asynchronous order and return its tracking ID. */
     createOrder(request: OrderRequest): Observable<OrderResponse> {
+        const instrumentType = request.instrumentType ?? request.instrument;
         return this.post<string | OrderResponse>(`/api/orders`, {
             ...request,
+            instrument: instrumentType,
+            instrumentType,
             quantity: String(request.quantity),
         }).pipe(map((response) => typeof response === 'string' ? { trackingId: response } : response));
+    }
+
+    /** Get status changes for an order tracking ID. */
+    getOrderStatusLog(trackingId: string): Observable<OrderStatusLog> {
+        return this.get<OrderStatusLog>(`/api/orders/${encodeURIComponent(trackingId)}/status-log`);
+    }
+
+    /** Cancel an existing order by its tracking ID. */
+    cancelOrder(trackingId: string): Observable<void> {
+        return this.patch<void>(`/api/orders/${encodeURIComponent(trackingId)}`);
     }
 
     // ========================================================================

@@ -74,6 +74,11 @@
 		</div>
 	</section>
 
+	<section class="analytics" aria-label="Portfolio analytics">
+		<h3>Analytics</h3>
+		<app-pie-chart [data]="analyticsData()"></app-pie-chart>
+	</section>
+
 	<nav class="dashboard-tabs" aria-label="Client dashboard sections">
 		<button type="button" class="tab-button" (click)="setTab('portfolio')"
 			[class.active]="activeTab() === 'portfolio'">Portfolio</button>

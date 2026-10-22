@@ -181,6 +181,74 @@
     margin: 2.25rem 0 1.5rem;
 }
 
+.status-timeline {
+    margin: 1rem 0 0;
+    padding: 0;
+    list-style: none;
+}
+
+.status-timeline-entry {
+    display: grid;
+    grid-template-columns: 1.5rem 1fr;
+    gap: 0.9rem;
+}
+
+.status-marker {
+    position: relative;
+    display: flex;
+    justify-content: center;
+}
+
+.status-timeline-entry:not(:last-child) .status-marker::after {
+    content: '';
+    position: absolute;
+    top: 1rem;
+    bottom: -0.95rem;
+    width: 2px;
+    background: var(--border-light);
+}
+
+.status-circle {
+    width: 0.8rem;
+    height: 0.8rem;
+    margin-top: 0.25rem;
+    border: 2px solid var(--accent);
+    border-radius: 50%;
+    background: transparent;
+}
+
+.status-timeline-entry.reached .status-circle {
+    background: var(--accent);
+}
+
+.status-timeline-entry.current .status-circle {
+    box-shadow: 0 0 0 0.2rem rgba(102, 184, 255, 0.25);
+}
+
+.status-content {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.25rem;
+    margin-bottom: 0.9rem;
+    min-height: 1.3rem;
+}
+
+.status-timeline-status {
+    color: var(--text-muted);
+    font-weight: 600;
+}
+
+.status-timeline-entry.reached .status-timeline-status {
+    color: var(--text-light);
+}
+
+.status-content time {
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    text-align: left;
+}
+
 .symbol-search label {
     display: block;
     margin-bottom: 0.55rem;
@@ -230,6 +298,10 @@
 .trade-message {
     margin: 0 0 1rem;
     color: var(--neg-accent);
+}
+
+.success-message {
+    color: var(--accent-secondary);
 }
 
 .chart-panel {

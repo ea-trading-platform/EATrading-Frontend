@@ -168,12 +168,48 @@
                 (click)="activeDataTab.set('positions')">Your positions</button>
             <button type="button" [class.active]="activeDataTab() === 'open-orders'"
                 (click)="activeDataTab.set('open-orders')">Open Orders</button>
-            <button type="button" [class.active]="activeDataTab() === 'history'"
-                (click)="activeDataTab.set('history')">Order history</button>
+            <button type="button" [class.active]="activeDataTab() === 'order-lookup'"
+                (click)="activeDataTab.set('order-lookup')">Order lookup</button>
         </nav>
 
+        @if (copyError()) {
+        <p class="trade-message error-message" role="alert">{{ copyError() }}</p>
+        }
+
+        @if (activeDataTab() === 'order-lookup') {
+        <form class="symbol-search order-search" (ngSubmit)="searchStatusLog()">
+            <label for="tracking-id-search">Search tracking ID</label>
+            <div class="search-row">
+                <input id="tracking-id-search" name="trackingId" type="search" [ngModel]="trackingIdSearch()"
+                    (ngModelChange)="trackingIdSearch.set($event)" placeholder="Enter a tracking ID"
+                    autocomplete="off" />
+                <button type="submit" [disabled]="statusLogLoading()">
+                    {{ statusLogLoading() ? 'Searching...' : 'Search' }}
+                </button>
+            </div>
+        </form>
+        @if (statusLogMessage()) {
+        <p class="trade-message success-message" role="status">{{ statusLogMessage() }}</p>
+        }
+        @if (statusTimeline().length > 0) {
+        <ol class="status-timeline" aria-label="Order status timeline">
+            @for (entry of statusTimeline(); track entry.status) {
+            <li class="status-timeline-entry" [class.reached]="entry.reached" [class.current]="entry.isCurrent">
+                <div class="status-marker" aria-hidden="true">
+                    <span class="status-circle"></span>
+                </div>
+                <div class="status-content">
+                    <span class="status-timeline-status">{{ entry.label }}</span>
+                    <time [attr.datetime]="entry.rawTimestamp">{{ entry.timestamp ?? 'Not reached yet' }}</time>
+                </div>
+            </li>
+            }
+        </ol>
+        }
+        } @else {
         <app-data-grid [columnDefs]="gridColumns()" [rowData]="gridRows()"
             [gridOptions]="gridOptions()"></app-data-grid>
+        }
     </section>
 
 </main>

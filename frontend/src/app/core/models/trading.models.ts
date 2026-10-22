@@ -227,7 +227,8 @@ export interface OrderRequest {
     name: string;
     quantity: number;
     transactionType: TransactionType;
-    instrument: string;
+    instrument?: 'EQUITY' | 'CRYPTO' | 'CASH';
+    instrumentType?: 'EQUITY' | 'CRYPTO' | 'CASH';
 }
 
 /**
@@ -240,6 +241,7 @@ export interface OrderResponse {
 export interface CancelOrderResponse {
     [key: string]: unknown;
 }
+export type OrderStatusLog = Record<string, string>;
 
 // ============================================================================
 // WATCHLIST MODELS

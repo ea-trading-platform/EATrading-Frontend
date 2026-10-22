@@ -6,7 +6,6 @@
 
 .grid {
   width: 100%;
-  min-width: 42rem;
   --ag-background-color: transparent;
   --ag-foreground-color: var(--text-light);
   --ag-border-color: var(--border-lighter);

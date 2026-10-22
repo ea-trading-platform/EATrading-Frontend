@@ -39,13 +39,17 @@
 
 .portfolio-summary {
     display: grid;
-    grid-template-columns: minmax(12rem, 1.3fr) repeat(4, minmax(10rem, 1fr));
+    grid-template-columns: minmax(12rem, 1.3fr) repeat(3, minmax(10rem, 1fr));
     align-items: center;
     gap: 1.5rem;
     border-radius: 1rem;
     width: calc(100% - (var(--dashboard-gutter) * 2));
     margin: 0 var(--dashboard-gutter);
     padding: 1.5rem 0;
+}
+
+#welcome-name {
+    line-height: 1.2;
 }
 
 .summary-welcome,
@@ -64,9 +68,15 @@
     margin: 0;
     font-size: clamp(1.5rem, 2vw, 2rem);
     font-weight: 600;
+    line-height: 1.2;
+    padding-bottom: 0.08em;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+}
+
+.summary-welcome .summary-change-placeholder {
+    display: none;
 }
 
 .summary-stat {
@@ -129,6 +139,13 @@
     font-weight: 600;
     color: white;
     white-space: nowrap;
+}
+
+.portfolio-summary-as-of {
+    grid-column: 2 / -1;
+    color: var(--text-muted);
+    font-size: 0.75rem;
+    text-align: right;
 }
 
 .holdings-list {
@@ -227,6 +244,11 @@
         padding-bottom: 0.5rem;
     }
 
+    .portfolio-summary-as-of {
+        grid-column: 1 / -1;
+        text-align: left;
+    }
+
     .summary-stat {
         padding-left: 0;
         padding: 1rem;
@@ -280,6 +302,10 @@
     .summary-welcome {
         grid-column: auto;
         padding: 0.5rem 0.25rem 0.75rem;
+    }
+
+    .portfolio-summary-as-of {
+        padding: 0 0.25rem;
     }
 
     .summary-welcome h1 {

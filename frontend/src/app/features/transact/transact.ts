@@ -15,7 +15,7 @@ import { ColDef, GridOptions } from 'ag-grid-community';
 import { AuthService } from '../../core/services/auth.service';
 import { ApiService } from '../../core/services/api.service';
 import { TradingService } from '../../core/services/trading.service';
-import { Candle, CandleResponse, Client, Holding, Order, OrderRequest, PortfolioSummary, StockQuote } from '../../core/models/trading.models';
+import { Candle, CandleResponse, Client, Holding, Order, OrderRequest, OrderStatusLog, PortfolioSummary, StockQuote } from '../../core/models/trading.models';
 import { TopBar, TopBarNavItem } from '../components/top-bar/top-bar';
 import { WatchlistComponent } from '../dashboard/components/watchlist/watchlist';
 import { StockSearch } from '../dashboard/client-dashboard/components/stock-search/stock-search';
@@ -26,10 +26,19 @@ import { DataGrid } from '../dashboard/components/data-grid/data-grid';
 ModuleRegistry.registerModules([AllCommunityModule, UnitTimeAxisModule]);
 
 type Market = 'Equities' | 'Crypto' | 'Forex';
-type TradeDataTab = 'positions' | 'open-orders' | 'history';
+type TradeDataTab = 'positions' | 'open-orders' | 'order-lookup';
 type ChartRange = '1D' | '1W' | '1M' | '3M' | '1Y' | 'ALL';
+type OrderStatusTimelineStep = {
+    status: string;
+    label: string;
+    rawTimestamp: string | null;
+    timestamp: string | null;
+    reached: boolean;
+    isCurrent: boolean;
+};
 
 const TICKER_SYMBOLS = ['AAPL', 'GOOGL', 'MSFT', 'AMZN', 'TSLA', 'NVDA', 'META', 'NFLX', 'UBER', 'PYPL'];
+const ORDER_TIMELINE_BASE_STATUSES = ['SUBMITTED', 'ACCEPTED', 'FILLED'] as const;
 
 @Component({
     imports: [CurrencyPipe, DecimalPipe, FormsModule, AgCharts, TopBar, WatchlistComponent, StockSearch, StockTicker, DataGrid],
@@ -65,10 +74,56 @@ export class Transact implements OnInit {
     protected readonly orderSide = signal<'BUY' | 'SELL'>('BUY');
     protected readonly quantity = signal<number | null>(null);
     protected readonly isSubmittingOrder = signal(false);
+    protected readonly cancellingTrackingId = signal<string | null>(null);
     protected readonly isRefreshing = signal(false);
     protected readonly orderMessage = signal<string | null>(null);
     protected readonly orderError = signal<string | null>(null);
     protected readonly activeDataTab = signal<TradeDataTab>('positions');
+    protected readonly copyError = signal<string | null>(null);
+    protected readonly trackingIdSearch = signal('');
+    protected readonly statusLogLoading = signal(false);
+    protected readonly statusLogMessage = signal<string | null>(null);
+    protected readonly statusLogError = signal<string | null>(null);
+    protected readonly statusLog = signal<OrderStatusLog>({});
+    protected readonly statusTimeline = computed<OrderStatusTimelineStep[]>(() => {
+        const statusEntries = Object.entries(this.statusLog())
+            .map(([status, timestamp]) => ({
+                status: this.normalizeStatus(status),
+                rawTimestamp: timestamp,
+                parsedTimestamp: new Date(timestamp).getTime(),
+            }))
+            .sort((first, second) => first.parsedTimestamp - second.parsedTimestamp);
+
+        const statusTimestampMap = new Map<string, string>();
+        statusEntries.forEach((entry) => {
+            statusTimestampMap.set(entry.status, entry.rawTimestamp);
+        });
+
+        const reachedStatuses = new Set(statusEntries.map((entry) => entry.status));
+        const lastReachedStatus = statusEntries.length > 0
+            ? statusEntries[statusEntries.length - 1].status
+            : null;
+
+        const statusesInTimeline: string[] = [...ORDER_TIMELINE_BASE_STATUSES];
+
+        statusEntries.forEach((entry) => {
+            if (!statusesInTimeline.includes(entry.status)) {
+                statusesInTimeline.push(entry.status);
+            }
+        });
+
+        return statusesInTimeline.map((status) => {
+            const rawTimestamp = statusTimestampMap.get(status) ?? null;
+            return {
+                status,
+                label: this.formatStatusLabel(status),
+                rawTimestamp,
+                timestamp: rawTimestamp ? this.formatStatusTimestamp(rawTimestamp) : null,
+                reached: reachedStatuses.has(status),
+                isCurrent: reachedStatuses.has(status) && lastReachedStatus === status,
+            };
+        });
+    });
     protected readonly holdings = signal<Holding[]>([]);
     protected readonly orders = signal<Order[]>([]);
     protected readonly stocksSignal = signal<StockTickerData[]>([]);
@@ -94,18 +149,9 @@ export class Transact implements OnInit {
             : 0,
         value: Number(holding.currentValue) || 0,
     })));
-    protected readonly orderRows = computed(() => this.orders().map((order) => ({
-        id: order.id,
-        trackingId: order.trackingId,
-        orderType: order.orderType,
-        symbol: order.symbol,
-        quantity: order.quantity,
-        status: order.status,
-        executedAt: order.executedAt,
-    })));
     protected readonly gridRows = computed(() => this.activeDataTab() === 'positions'
         ? this.positions()
-        : (this.activeDataTab() === 'open-orders' ? this.openOrders() : this.orderHistory()));
+        : this.openOrders());
     protected readonly gridOptions = computed<GridOptions<any>>(() => ({
         domLayout: 'autoHeight',
         suppressCellFocus: true,
@@ -114,9 +160,7 @@ export class Transact implements OnInit {
         this.activeDataTab() === 'positions' ? this.positionColumns() : this.orderColumns(),
     );
     protected readonly openOrders = computed(() => this.orders().filter((order) =>
-        order.status === 'SUBMITTED'));
-    protected readonly orderHistory = computed(() => this.orders().filter((order) =>
-        order.status !== 'SUBMITTED'));
+        order.status === 'PENDING' || order.status === 'SUBMITTED' || order.status === 'ACCEPTED'));
     protected readonly availableToTrade = computed(() => {
         const availableCash = Number(this.portfolio()?.availableCashUsd);
         return Number.isFinite(availableCash) ? availableCash : Number(this.account()?.totalBalance) || 0;
@@ -305,15 +349,140 @@ export class Transact implements OnInit {
 
     private orderColumns(): ColDef<any>[] {
         return [
-            { field: 'trackingId', headerName: 'Tracking ID', minWidth: 220 },
+            {
+                field: 'trackingId',
+                headerName: 'Tracking ID',
+                minWidth: 220,
+                cellRenderer: (params: { value?: string }) => {
+                    const button = document.createElement('button');
+                    const trackingId = params.value ?? '';
+                    button.type = 'button';
+                    button.textContent = trackingId || 'Unavailable';
+                    button.title = trackingId ? 'Copy tracking ID' : 'Tracking ID unavailable';
+                    button.disabled = !trackingId;
+                    button.style.border = '0';
+                    button.style.background = 'transparent';
+                    button.style.color = 'inherit';
+                    button.style.cursor = trackingId ? 'copy' : 'default';
+                    button.style.padding = '0';
+                    button.addEventListener('click', (event) => {
+                        event.stopPropagation();
+                        if (trackingId) {
+                            void this.copyTrackingId(trackingId, button);
+                        }
+                    });
+                    return button;
+                },
+            },
             { field: 'orderType', headerName: 'Action', minWidth: 100 },
             { field: 'symbol', headerName: 'Symbol', minWidth: 115 },
+            { field: 'name', headerName: 'Name', minWidth: 160 },
             { field: 'quantity', headerName: 'Quantity', minWidth: 110 },
-            { headerName: 'Order type', valueGetter: () => 'Market', minWidth: 120 },
+            { field: 'price', headerName: 'Price', minWidth: 110 },
             { field: 'status', headerName: 'Status', minWidth: 125 },
-            { field: 'executedAt', headerName: 'Date', minWidth: 170, valueFormatter: (params) => params.value || 'Pending' },
+            { field: 'clientId', headerName: 'Client ID', minWidth: 220 },
+            {
+                field: 'executedAt', headerName: 'Change log time', minWidth: 190,
+                valueFormatter: (params) => params.value || 'Pending'
+            },
+            {
+                colId: 'actions', headerName: 'Actions', minWidth: 130, sortable: false,
+                cellRenderer: (params: { data: Order }) => {
+                    const button = document.createElement('button');
+                    const trackingId = params.data.trackingId ?? '';
+                    const canCancel = params.data.status === 'PENDING' || params.data.status === 'SUBMITTED';
+                    button.type = 'button';
+                    button.textContent = 'Cancel';
+                    button.disabled = !trackingId || !canCancel || this.cancellingTrackingId() === trackingId;
+                    button.title = !trackingId
+                        ? 'Tracking ID unavailable'
+                        : canCancel ? 'Cancel order' : `Orders in ${params.data.status} status cannot be canceled`;
+                    button.style.border = '0';
+                    button.style.borderRadius = '0.3rem';
+                    button.style.padding = '0.35rem 0.6rem';
+                    button.style.color = '#08131c';
+                    button.style.cursor = button.disabled ? 'default' : 'pointer';
+                    button.style.fontWeight = '800';
+                    button.style.background = '#f0b45b';
+                    button.addEventListener('click', (event) => {
+                        event.stopPropagation();
+                        if (trackingId && canCancel) {
+                            this.cancelOrder(trackingId);
+                        }
+                    });
+                    return button;
+                },
+            },
         ];
     }
+
+    private async copyTrackingId(trackingId: string, button: HTMLButtonElement): Promise<void> {
+        try {
+            if (!navigator.clipboard) {
+                throw new Error('Clipboard access is unavailable.');
+            }
+            await navigator.clipboard.writeText(trackingId);
+            button.textContent = 'Copied';
+            window.setTimeout(() => {
+                button.textContent = trackingId;
+            }, 1500);
+            this.copyError.set(null);
+        } catch (error) {
+            console.error('Unable to copy tracking ID:', error);
+            this.copyError.set('Unable to copy the tracking ID. Please copy it manually.');
+        }
+    }
+
+    searchStatusLog(): void {
+        const trackingId = this.trackingIdSearch().trim();
+        this.statusLogMessage.set(null);
+        this.statusLogError.set(null);
+        if (!trackingId) {
+            this.statusLogError.set('Enter a tracking ID to search.');
+            return;
+        }
+
+        this.statusLogLoading.set(true);
+        this.api.getOrderStatusLog(trackingId).subscribe({
+            next: (entries: OrderStatusLog) => {
+                this.statusLogLoading.set(false);
+                this.statusLog.set(entries);
+                const entryCount = Object.keys(entries).length;
+                this.statusLogMessage.set(
+                    `Status log loaded for ${trackingId} (${entryCount} change${entryCount === 1 ? '' : 's'}).`,
+                );
+            },
+            error: (error) => {
+                this.statusLogLoading.set(false);
+                this.statusLogError.set(error?.status === 404
+                    ? 'No order was found for that tracking ID.'
+                    : 'Unable to load the status log. Please try again.');
+            },
+        });
+    }
+
+    private formatStatusTimestamp(timestamp: string): string {
+        const date = new Date(timestamp);
+        return Number.isNaN(date.getTime())
+            ? timestamp
+            : new Intl.DateTimeFormat('en-US', {
+                dateStyle: 'medium',
+                timeStyle: 'medium',
+            }).format(date);
+    }
+
+    private normalizeStatus(status: string): string {
+        const normalized = status.trim().toUpperCase().replace(/\s+/g, '_');
+        return normalized === 'CANCELLED' ? 'CANCELED' : normalized;
+    }
+
+    private formatStatusLabel(status: string): string {
+        return status
+            .toLowerCase()
+            .replace(/_/g, ' ')
+            .replace(/\b\w/g, (character) => character.toUpperCase());
+    }
+
 
     selectMarket(market: Market): void {
         this.activeMarket.set(market);
@@ -368,13 +537,15 @@ export class Transact implements OnInit {
             return;
         }
 
+        const instrumentType = this.selectedInstrumentType();
         const request: OrderRequest = {
             clientId,
             symbol: requestedSymbol,
             name: this.instrumentName() || requestedSymbol,
             quantity: requestedQuantity,
             transactionType: this.orderSide(),
-            instrument: 'EQUITY',
+            instrument: instrumentType,
+            instrumentType,
         };
 
         this.isSubmittingOrder.set(true);
@@ -395,6 +566,34 @@ export class Transact implements OnInit {
         });
     }
 
+    private cancelOrder(trackingId: string): void {
+        if (this.cancellingTrackingId()) {
+            return;
+        }
+
+        this.cancellingTrackingId.set(trackingId);
+        this.orderMessage.set(null);
+        this.orderError.set(null);
+
+        this.trading.cancelOrder(trackingId).subscribe({
+            next: () => {
+                this.orderMessage.set(`Order ${trackingId} canceled.`);
+                const clientId = this.auth.getClientId();
+                if (clientId) {
+                    this.trading.loadOrders(clientId).subscribe({
+                        next: (orders) => this.orders.set(orders),
+                        error: (error) => console.error('Error refreshing orders:', error),
+                    });
+                }
+            },
+            error: () => {
+                this.cancellingTrackingId.set(null);
+                this.orderError.set('Order could not be canceled. Please try again.');
+            },
+            complete: () => this.cancellingTrackingId.set(null),
+        });
+    }
+
     private marketSymbol(value = this.symbol()): string {
         const input = value.trim().toUpperCase();
         if (!input) {
@@ -411,6 +610,17 @@ export class Transact implements OnInit {
         }
 
         return input;
+    }
+
+    private selectedInstrumentType(): 'EQUITY' | 'CRYPTO' | 'CASH' {
+        const market = this.activeMarket();
+        if (market === 'Crypto') {
+            return 'CRYPTO';
+        }
+        if (market === 'Forex') {
+            return 'CASH';
+        }
+        return 'EQUITY';
     }
 
     private displaySymbol(value: string): string {

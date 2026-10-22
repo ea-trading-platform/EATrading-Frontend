@@ -22,8 +22,19 @@ export class PortfolioTableComponent {
     { field: 'name', headerName: 'Name', width: 150 },
     { field: 'shares', headerName: 'Shares', width: 100 },
     { field: 'value', headerName: 'Value', width: 120 },
-    { field: 'allocation', headerName: 'Allocation %', width: 120 },
-    { field: 'dayChange', headerName: 'Day Change', width: 120 },
-    { field: 'overallReturn', headerName: 'Overall Return', width: 140 },
+    {
+      field: 'allocation',
+      headerName: 'Allocation %',
+      width: 120,
+      valueFormatter: (params) => {
+        const rawValue = params.value;
+        const numericValue = typeof rawValue === 'number' ? rawValue : Number(rawValue);
+        if (!Number.isFinite(numericValue)) {
+          return '0.00%';
+        }
+        const percentValue = numericValue <= 1 ? numericValue * 100 : numericValue;
+        return `${percentValue.toFixed(2)}%`;
+      },
+    },
   ];
 }

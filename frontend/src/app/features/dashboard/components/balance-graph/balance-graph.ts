@@ -63,7 +63,7 @@ export class BalanceGraph {
       fill: 'transparent',
     },
     padding: {
-      top: 0,
+      top: 24,
       right: 0,
       bottom: 0,
       left: 0,
@@ -75,7 +75,6 @@ export class BalanceGraph {
         xKey: "date",
         yKey: "balance",
         yName: "Account Balance",
-        interpolation: { type: "smooth" },
         stroke: '#007a7a',
         strokeWidth: 2.5,
         marker: {
@@ -108,6 +107,24 @@ export class BalanceGraph {
         label: {
           fontSize: 12,
           color: 'rgba(255, 255, 255, 0.7)',
+          formatter: (params) => {
+            const date = new Date(params.value);
+            if (Number.isNaN(date.getTime())) {
+              return '';
+            }
+            if (this.selectedRange() === '1D') {
+              return date.toLocaleString('en-US', {
+                month: 'short',
+                day: 'numeric',
+                hour: 'numeric',
+                minute: '2-digit',
+              });
+            }
+            return date.toLocaleDateString('en-US', {
+              month: 'short',
+              day: 'numeric',
+            });
+          },
         },
       },
       y: {
