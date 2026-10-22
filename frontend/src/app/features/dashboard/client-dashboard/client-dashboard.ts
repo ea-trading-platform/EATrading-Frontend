@@ -47,6 +47,49 @@ const MOCK_TICKER: StockTickerData[] = [
     },
 ];
 
+const MOCK_ORDERS: OrdersTable[] = [
+    {
+        action: 'BUY',
+        symbol: 'AAPL',
+        name: 'Apple Inc.',
+        transactionDate: new Date('2024-01-15'),
+        shares: 10,
+        price: 190.5,
+        instrument: 'EQUITY',
+        status: 'ACCEPTED',
+    },
+    {
+        action: 'SELL',
+        symbol: 'TSLA',
+        name: 'Tesla Inc.',
+        transactionDate: new Date('2024-01-20'),
+        shares: 2,
+        price: 238.9,
+        instrument: 'EQUITY',
+        status: 'ACCEPTED',
+    },
+    {
+        action: 'BUY',
+        symbol: 'AMZN',
+        name: 'Amazon.com Inc.',
+        transactionDate: new Date('2024-01-25'),
+        shares: 3,
+        price: 3200.0,
+        instrument: 'EQUITY',
+        status: 'ACCEPTED',
+    },
+    {
+        action: 'SELL',
+        symbol: 'MSFT',
+        name: 'Microsoft Corp.',
+        transactionDate: new Date('2024-01-30'),
+        shares: 1,
+        price: 415.0,
+        instrument: 'EQUITY',
+        status: 'ACCEPTED',
+    }
+];
+
 @Component({
     imports: [
         DatePipe,
