@@ -1,6 +1,11 @@
 export type OrderAction = 'BUY' | 'SELL';
-export type OrderStatus = 'PENDING' | 'COMPLETED' | 'CANCELED';
-export type InstrumentType = 'STOCK' | 'FX' | 'ETF';
+export type OrderStatus =
+    | 'FILLED'
+    | 'SUBMITTED'
+    | 'ACCEPTED'
+    | 'CANCELED'
+    | 'REJECTED';
+export type InstrumentType = 'CASH' | 'EQUITY' | 'CRYPTO';
 
 export interface OrdersTable {
     action: OrderAction;

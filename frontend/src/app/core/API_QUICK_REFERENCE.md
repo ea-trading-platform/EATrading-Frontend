@@ -108,6 +108,9 @@ loadClient(clientId: string): Observable<Client>
 getClient(clientId: string): Observable<Client>
 // GET /api/clients?clientId={clientId}
 
+getClientByEmail(clientEmail: string): Observable<Client>
+// GET /api/clients?clientEmail={clientEmail}
+
 getClients(): Observable<Client[]>
 // GET /api/clients
 
@@ -142,9 +145,6 @@ submitOrder(request: OrderRequest): Observable<OrderResponse>
 
 getFilledOrders(): Order[]
 // Filter by status=FILLED
-
-getPendingOrders(): Order[]
-// Filter by status=PENDING or SUBMITTED
 
 // Bulk Operations
 loadAllClientData(clientId: string): Observable<[Client, Holding[], Order[]]>
@@ -298,7 +298,7 @@ Order {
   symbol: string;
   quantity: number;
   orderType: 'BUY' | 'SELL';
-  status: 'FILLED' | 'PENDING' | 'SUBMITTED' | 'CANCELLED' | 'REJECTED';
+  status: 'FILLED' | 'ACCEPTED' | 'SUBMITTED' | 'CANCELED' | 'REJECTED';
   executedAt?: string; // ISO 8601
 }
 

@@ -8,9 +8,11 @@ import {
     PortfolioHistory,
     PortfolioSummary,
     Order,
+    OrderTransactionResponse,
     OrderRequest,
     OrderResponse,
     OrderStatus,
+    TransactionType,
 } from '../models/trading.models';
 
 /**
@@ -79,6 +81,10 @@ export class TradingService {
      */
     getClient(clientId: string): Observable<Client> {
         return this.apiService.getClient(clientId);
+    }
+
+    getClientByEmail(clientEmail: string): Observable<Client> {
+        return this.apiService.getClientByEmail(clientEmail);
     }
 
     getPortfolioSummary(clientId: string): Observable<PortfolioSummary> {
@@ -214,6 +220,42 @@ export class TradingService {
         );
     }
 
+    getAllOrders(): Observable<Order[]> {
+        return this.apiService.getAllOrders().pipe(
+            map((orders) => orders.map((order) => this.normalizeOrder(order))),
+        );
+    }
+
+    getOrdersByClientEmail(clientEmail: string): Observable<Order[]> {
+        return this.apiService.getOrdersByClientEmail(clientEmail).pipe(
+            map((orders) => orders.map((order) => this.normalizeOrder(order))),
+        );
+    }
+
+    getOrdersByInstrument(instrument: string): Observable<Order[]> {
+        return this.apiService.getOrdersByInstrument(instrument).pipe(
+            map((orders) => orders.map((order) => this.normalizeOrder(order))),
+        );
+    }
+
+    getOrdersBySide(side: 'BUY' | 'SELL'): Observable<Order[]> {
+        return this.apiService.getOrdersBySide(side).pipe(
+            map((orders) => orders.map((order) => this.normalizeOrder(order))),
+        );
+    }
+
+    getOrdersByStatus(status: string): Observable<Order[]> {
+        return this.apiService.getOrdersByStatus(status).pipe(
+            map((orders) => orders.map((order) => this.normalizeOrder(order))),
+        );
+    }
+
+    getOrdersByDateRange(from: string, to: string): Observable<Order[]> {
+        return this.apiService.getOrdersByDateRange(from, to).pipe(
+            map((orders) => orders.map((order) => this.normalizeOrder(order))),
+        );
+    }
+
     /**
      * Submit a new buy/sell order
      */
@@ -257,6 +299,8 @@ export class TradingService {
             side?: string;
             type?: string;
             orderDate?: string;
+            executedAt?: string;
+            name?: string;
             currentStatus?: OrderStatus;
             name?: string | null;
             instrumentName?: string | null;
@@ -269,6 +313,7 @@ export class TradingService {
             limitPrice?: number | string | null;
             assetPrice?: number | string | null;
             asset?: { symbol?: string; name?: string };
+            transactionType?: TransactionType;
         };
 
         const normalizedStatus = raw.currentStatus ?? raw.status;
@@ -342,12 +387,6 @@ export class TradingService {
         return this.orders().filter((o) => o.status === 'FILLED');
     }
 
-    /**
-     * Get pending orders (awaiting execution)
-     */
-    getPendingOrders(): Order[] {
-        return this.orders().filter((o) => o.status === 'PENDING' || o.status === 'SUBMITTED');
-    }
 
     // ========================================================================
     // STATE MANAGEMENT

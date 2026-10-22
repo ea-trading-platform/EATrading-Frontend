@@ -180,7 +180,7 @@ export interface HoldingSummary extends Holding {
 /**
  * Order status enum
  */
-export type OrderStatus = 'FILLED' | 'PENDING' | 'SUBMITTED' | 'ACCEPTED' | 'CANCELLED' | 'CANCELED' | 'REJECTED';
+export type OrderStatus = 'FILLED' | 'SUBMITTED' | 'ACCEPTED' | 'CANCELED' | 'REJECTED';
 
 /**
  * Transaction type enum
@@ -196,11 +196,26 @@ export interface Order {
     clientId: string; // UUID
     symbol: string;
     name?: string;
+    instrument: string;
     quantity: number;
     orderType: TransactionType;
     status: OrderStatus;
     executedAt?: string; // ISO 8601 timestamp
     price?: number;
+}
+
+/**
+ * Response returned by the backend order read endpoints.
+ */
+export interface OrderTransactionResponse {
+    orderId: string;
+    clientId: string;
+    symbol: string;
+    instrument: string;
+    transactionType: TransactionType;
+    quantity: string;
+    status: OrderStatus;
+    orderDate: string;
 }
 
 /**
@@ -223,6 +238,9 @@ export interface OrderResponse {
     trackingId: string;
 }
 
+export interface CancelOrderResponse {
+    [key: string]: unknown;
+}
 export type OrderStatusLog = Record<string, string>;
 
 // ============================================================================
