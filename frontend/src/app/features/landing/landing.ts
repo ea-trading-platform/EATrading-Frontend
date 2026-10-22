@@ -3,7 +3,7 @@ import { FormsModule, NgForm } from '@angular/forms';
 import { Router } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
 
-type AuthMode = 'none' | 'login' | 'signup' | 'change-password';
+type AuthMode = 'none' | 'login' | 'signup';
 
 @Component({
     selector: 'app-landing',
@@ -24,8 +24,6 @@ export class Landing {
     protected readonly email = signal('');
     protected readonly password = signal('');
     protected readonly confirmPassword = signal('');
-    protected readonly newPassword = signal('');
-    protected readonly confirmNewPassword = signal('');
 
     openLogin(): void {
         this.error.set(null);
@@ -35,11 +33,6 @@ export class Landing {
     openSignup(): void {
         this.error.set(null);
         this.mode.set('signup');
-    }
-
-    openChangePassword(): void {
-        this.error.set(null);
-        this.mode.set('change-password');
     }
 
     closePanel(): void {
@@ -55,9 +48,7 @@ export class Landing {
         form.control.markAllAsTouched();
         if (
             form.invalid ||
-            (this.mode() === 'signup' && this.password() !== this.confirmPassword()) ||
-            (this.mode() === 'change-password' &&
-                (this.newPassword() !== this.confirmNewPassword() || this.password() === this.newPassword()))
+            (this.mode() === 'signup' && this.password() !== this.confirmPassword())
         ) {
             return;
         }
@@ -68,23 +59,12 @@ export class Landing {
         const { error } =
             this.mode() === 'signup'
                 ? await this.auth.signUp(this.email(), this.password(), this.name(), this.confirmPassword())
-                : this.mode() === 'change-password'
-                    ? await this.changePassword()
-                    : await this.auth.signIn(this.email(), this.password());
+                : await this.auth.signIn(this.email(), this.password());
 
         this.submitting.set(false);
 
         if (error) {
             this.error.set(typeof error === 'string' ? error : error.message || 'Authentication failed');
-            return;
-        }
-
-        if (this.mode() === 'change-password') {
-            await this.auth.signOut();
-            this.password.set('');
-            this.newPassword.set('');
-            this.confirmNewPassword.set('');
-            this.mode.set('login');
             return;
         }
 
@@ -94,12 +74,4 @@ export class Landing {
         this.router.navigateByUrl(redirectPath);
     }
 
-    private async changePassword(): Promise<{ error: string | null }> {
-        return this.auth.changePassword({
-            email: this.email(),
-            currentPassword: this.password(),
-            newPassword: this.newPassword(),
-            confirmNewPassword: this.confirmNewPassword(),
-        });
-    }
 }

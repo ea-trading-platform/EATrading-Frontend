@@ -15,9 +15,77 @@
     </nav>
     }
   </div>
-  <div class="navbar-right">
-    <button type="button" class="sign-out-btn" (click)="logout.emit()">
-      Sign out
+  <div class="navbar-right" #profileMenu>
+    <button #profileButton type="button" class="profile-button" aria-label="Account options"
+      [attr.aria-expanded]="profileOpen()" aria-controls="profile-options"
+      (click)="profileOpen.set(!profileOpen())">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true">
+        <circle cx="12" cy="8" r="4" />
+        <path d="M4 21v-2a8 8 0 0 1 16 0v2" />
+      </svg>
     </button>
+    @if (profileOpen()) {
+    <div id="profile-options" class="profile-options">
+      <button type="button" (click)="openChangePassword(passwordForm)">Change password</button>
+      <button type="button" (click)="signOut()">Logout</button>
+    </div>
+    }
   </div>
 </nav>
+
+<dialog #passwordDialog class="password-dialog" aria-labelledby="password-title"
+  (cancel)="cancelChangePassword($event)">
+  <h2 id="password-title">Change password</h2>
+  <p>You will be logged out after changing your password.</p>
+  <form #passwordForm="ngForm" (ngSubmit)="submitPassword(passwordForm)" novalidate>
+    <fieldset [disabled]="submitting()">
+      <label class="field">
+        <span>Email</span>
+        <input #emailField="ngModel" type="email" name="email" [ngModel]="email()"
+          (ngModelChange)="email.set($event)" required email autocomplete="email" />
+        @if (emailField.invalid && (emailField.touched || passwordForm.submitted)) {
+        <span class="field-error">A valid email is required</span>
+        }
+      </label>
+      <label class="field">
+        <span>Current password</span>
+        <input #currentPasswordField="ngModel" type="password" name="currentPassword"
+          [ngModel]="currentPassword()" (ngModelChange)="currentPassword.set($event)"
+          required autocomplete="current-password" />
+        @if (currentPasswordField.invalid && (currentPasswordField.touched || passwordForm.submitted)) {
+        <span class="field-error">Current password is required</span>
+        }
+      </label>
+      <label class="field">
+        <span>New password</span>
+        <input #newPasswordField="ngModel" type="password" name="newPassword" [ngModel]="newPassword()"
+          (ngModelChange)="newPassword.set($event)" required minlength="8" maxlength="128"
+          autocomplete="new-password" />
+        @if (newPasswordField.invalid && (newPasswordField.touched || passwordForm.submitted)) {
+        <span class="field-error">New password must be between 8 and 128 characters</span>
+        } @else if (passwordForm.submitted && currentPassword() === newPassword()) {
+        <span class="field-error">New password must be different from the current password</span>
+        }
+      </label>
+      <label class="field">
+        <span>Confirm new password</span>
+        <input #confirmPasswordField="ngModel" type="password" name="confirmNewPassword"
+          [ngModel]="confirmNewPassword()" (ngModelChange)="confirmNewPassword.set($event)"
+          required autocomplete="new-password" />
+        @if ((confirmPasswordField.touched || passwordForm.submitted) &&
+            (confirmPasswordField.invalid || newPassword() !== confirmNewPassword())) {
+        <span class="field-error">Password confirmation is required and must match</span>
+        }
+      </label>
+      @if (error()) {
+      <p class="field-error" role="alert">{{ error() }}</p>
+      }
+      <div class="dialog-actions">
+        <button type="button" class="cancel-button" (click)="closeChangePassword()">Cancel</button>
+        <button type="submit" class="submit-button">
+          {{ submitting() ? 'Please wait...' : 'Change password' }}
+        </button>
+      </div>
+    </fieldset>
+  </form>
+</dialog>
