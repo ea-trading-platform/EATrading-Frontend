@@ -18,11 +18,6 @@ export class PieChartComponent {
   protected totalValueAmount = '$0.00';
 
   public chartOptions: AgChartOptions = {
-    title: {
-      text: 'Pie Chart Example',
-      fontSize: 18,
-      color: 'white',
-    },
     series: [
       ({
         type: 'donut',
