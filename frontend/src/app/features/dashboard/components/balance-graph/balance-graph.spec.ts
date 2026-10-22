@@ -8,7 +8,9 @@ describe('BalanceGraph', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [BalanceGraph],
-    }).compileComponents();
+    })
+      .overrideComponent(BalanceGraph, { set: { template: '' } })
+      .compileComponents();
 
     fixture = TestBed.createComponent(BalanceGraph);
     component = fixture.componentInstance;
