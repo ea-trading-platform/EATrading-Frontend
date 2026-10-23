@@ -11,10 +11,6 @@
             <fieldset class="analytics-filters" [disabled]="loading()">
                 <legend class="visually-hidden">Order analytics filters</legend>
                 <label>
-                    Client ID
-                    <input name="clientId" type="text" placeholder="All clients (optional UUID)" [(ngModel)]="clientId">
-                </label>
-                <label>
                     From
                     <input name="from" type="date" [(ngModel)]="fromDate">
                 </label>
@@ -55,7 +51,7 @@
                 </div>
             </fieldset>
         </form>
-        <p class="filter-hint">Dates use your local timezone and include the entire To day.</p>
+        <p class="filter-hint">Dates use your local timezone and include the entire day.</p>
 
         @if (error()) {
             <p class="client-error" role="alert">{{ error() }}</p>
@@ -74,7 +70,7 @@
                 </div>
                 <div class="metric-card">
                     <span class="stat-label">Filled</span>
-                    <strong class="stat-value">{{ data.filledOrders | number: '1.0-0' }}</strong>
+                    <strong class="stat-value">{{ (data.ordersByStatus['FILLED'] ?? 0) | number: '1.0-0' }}</strong>
                 </div>
                 <div class="metric-card">
                     <span class="stat-label">Accepted</span>
@@ -82,19 +78,13 @@
                 </div>
                 <div class="metric-card">
                     <span class="stat-label">Canceled</span>
-                    <strong class="stat-value">{{ data.canceledOrders | number: '1.0-0' }}</strong>
+                    <strong class="stat-value">{{ (data.ordersByStatus['CANCELED'] ?? 0) | number: '1.0-0' }}</strong>
                 </div>
                 <div class="metric-card">
                     <span class="stat-label">Rejected</span>
-                    <strong class="stat-value">{{ data.rejectedOrders | number: '1.0-0' }}</strong>
+                    <strong class="stat-value">{{ (data.ordersByStatus['REJECTED'] ?? 0) | number: '1.0-0' }}</strong>
                 </div>
             </section>
-            <section class="quantity-summary" aria-label="Ordered quantity">
-                <span class="stat-label">Total ordered quantity</span>
-                <strong>{{ data.totalQuantity | number: '1.0-8' }}</strong>
-                <span>Combined quantity, not monetary value. Quantities across different instruments use different units.</span>
-            </section>
-
             @if (data.totalOrders === 0) {
                 <p class="empty-analytics" role="status">No orders match these filters. Adjust or clear the filters to see more activity.</p>
             } @else {

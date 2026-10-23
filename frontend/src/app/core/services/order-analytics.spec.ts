@@ -40,9 +40,9 @@ describe('Order analytics API integration', () => {
             expect(request.request.params.get(key)).toBe(value);
         }
         const response: OrderAnalyticsResponse = {
-            totalOrders: 1, totalQuantity: '0.00001234', buyOrders: 0, sellOrders: 1,
-            filledOrders: 1, pendingOrders: 0, canceledOrders: 0, rejectedOrders: 0,
-            ordersByInstrument: { CRYPTO: 1 }, ordersBySide: { SELL: 1 }, ordersByStatus: { FILLED: 1 },
+            totalOrders: 1, totalQuantity: '0.00001234',
+            ordersByInstrument: { CRYPTO: 1 }, ordersBySide: { BUY: 0, SELL: 1 },
+            ordersByStatus: { SUBMITTED: 0, ACCEPTED: 0, FILLED: 1, CANCELED: 0, REJECTED: 0 },
         };
         request.flush(response);
         expect(received).toEqual(response);
