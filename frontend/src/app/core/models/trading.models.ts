@@ -209,6 +209,7 @@ export interface Order {
  */
 export interface OrderTransactionResponse {
     orderId: string;
+    trackingId?: string;
     clientId: string;
     symbol: string;
     instrument: string;
