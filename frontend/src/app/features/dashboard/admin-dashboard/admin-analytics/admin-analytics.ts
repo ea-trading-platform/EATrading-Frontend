@@ -32,7 +32,6 @@ export class AdminAnalytics implements OnInit {
     readonly analytics = signal<OrderAnalyticsResponse | null>(null);
     readonly loading = signal(false);
     readonly error = signal<string | null>(null);
-    clientId = '';
     fromDate = '';
     toDate = '';
     instrument: NonNullable<OrderAnalyticsFilters['instrument']> | '' = '';
@@ -44,11 +43,6 @@ export class AdminAnalytics implements OnInit {
     }
 
     applyFilters(): void {
-        const clientId = this.clientId.trim();
-        if (clientId && !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(clientId)) {
-            this.error.set('Enter a valid client ID (UUID).');
-            return;
-        }
         const from = this.fromDate ? new Date(`${this.fromDate}T00:00:00`) : undefined;
         const to = this.toDate ? new Date(`${this.toDate}T00:00:00`) : undefined;
         if ((from && !Number.isFinite(from.getTime())) || (to && !Number.isFinite(to.getTime()))) {
@@ -62,7 +56,7 @@ export class AdminAnalytics implements OnInit {
         // The backend uses an exclusive upper bound; include the selected To day.
         to?.setDate(to.getDate() + 1);
         const filters: OrderAnalyticsFilters = {
-            clientId: clientId || undefined,
+            // clientId: clientId || undefined,
             from: from?.toISOString(),
             to: to?.toISOString(),
             instrument: this.instrument || undefined,
@@ -90,7 +84,6 @@ export class AdminAnalytics implements OnInit {
     }
 
     clearFilters(): void {
-        this.clientId = '';
         this.fromDate = '';
         this.toDate = '';
         this.instrument = '';
