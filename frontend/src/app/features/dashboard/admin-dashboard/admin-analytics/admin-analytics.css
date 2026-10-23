@@ -10,8 +10,7 @@
 }
 
 .analytics-heading p,
-.filter-hint,
-.quantity-summary > span:last-child {
+.filter-hint {
     color: var(--text-muted);
     font-size: 0.85rem;
 }
@@ -93,13 +92,8 @@
     border-radius: 0.5rem;
 }
 
-.quantity-summary {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: baseline;
-    gap: 0.5rem 1rem;
-    margin: 1.25rem 0 1.5rem;
-    color: var(--text-light);
+.analytics-charts {
+    margin-top: 1.5rem;
 }
 
 .status-chart {

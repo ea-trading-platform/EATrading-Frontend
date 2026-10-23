@@ -46,7 +46,8 @@ describe('AdminAnalytics', () => {
     it('loads aggregate analytics and renders all summary cards and chart breakdowns', () => {
         expect(getOrderAnalytics).toHaveBeenCalledTimes(1);
         const text: string = fixture.nativeElement.textContent;
-        expect(text).toContain('123.125');
+        expect(fixture.nativeElement.querySelector('.quantity-summary')).toBeNull();
+        expect(text).not.toContain('Total ordered quantity');
         expect(Array.from(fixture.nativeElement.querySelectorAll('.stat-value'), (element: Element) =>
             element.textContent?.trim())).toEqual(['10', '1', '5', '1', '2', '1']);
         const labels = Array.from(fixture.nativeElement.querySelectorAll('.metric-card .stat-label'),

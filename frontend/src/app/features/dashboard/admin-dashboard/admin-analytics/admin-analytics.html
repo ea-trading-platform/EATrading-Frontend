@@ -89,12 +89,6 @@
                     <strong class="stat-value">{{ data.rejectedOrders | number: '1.0-0' }}</strong>
                 </div>
             </section>
-            <section class="quantity-summary" aria-label="Ordered quantity">
-                <span class="stat-label">Total ordered quantity</span>
-                <strong>{{ data.totalQuantity | number: '1.0-8' }}</strong>
-                <span>Combined quantity, not monetary value. Quantities across different instruments use different units.</span>
-            </section>
-
             @if (data.totalOrders === 0) {
                 <p class="empty-analytics" role="status">No orders match these filters. Adjust or clear the filters to see more activity.</p>
             } @else {
