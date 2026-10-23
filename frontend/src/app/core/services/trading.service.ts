@@ -8,6 +8,8 @@ import {
     PortfolioHistory,
     PortfolioSummary,
     Order,
+    OrderAnalyticsResponse,
+    OrderAnalyticsFilters,
     OrderTransactionResponse,
     OrderRequest,
     OrderResponse,
@@ -224,6 +226,10 @@ export class TradingService {
         return this.apiService.getAllOrders().pipe(
             map((orders) => orders.map((order) => this.normalizeOrder(order))),
         );
+    }
+
+    getOrderAnalytics(filters: OrderAnalyticsFilters = {}): Observable<OrderAnalyticsResponse> {
+        return this.apiService.getOrderAnalytics(filters);
     }
 
     getOrdersByClientEmail(clientEmail: string): Observable<Order[]> {

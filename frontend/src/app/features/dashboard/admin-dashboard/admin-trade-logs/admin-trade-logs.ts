@@ -5,7 +5,8 @@ import { Router } from '@angular/router';
 import { AuthService } from '../../../../core/services/auth.service';
 import { TradingService } from '../../../../core/services/trading.service';
 import { Order } from '../../../../core/models/trading.models';
-import { TopBar, TopBarNavItem } from '../../../components/top-bar/top-bar';
+import { TopBar } from '../../../components/top-bar/top-bar';
+import { ADMIN_NAV_ITEMS } from '../admin-navigation';
 import { AdminOrdersTableComponent } from '../components/admin-orders-table/admin-orders-table';
 import { AdminOrder } from '../admin-dashboard';
 import { InstrumentType, OrderAction } from '../../interfaces/orders-table.interface';
@@ -30,10 +31,7 @@ export class AdminTradeLogs implements OnInit {
         this.auth.profile()?.name ?? this.auth.user()?.email ?? 'Admin',
     );
 
-    readonly navItems: readonly TopBarNavItem[] = [
-        { label: 'Dashboard', route: '/admin-dashboard' },
-        { label: 'Trade Logs', route: '/admin-trade-logs' },
-    ];
+    readonly navItems = ADMIN_NAV_ITEMS;
 
     readonly instruments: readonly InstrumentFilter[] = ['ALL', 'CASH', 'EQUITY', 'CRYPTO'];
     readonly sides: readonly SideFilter[] = ['ALL', 'BUY', 'SELL'];

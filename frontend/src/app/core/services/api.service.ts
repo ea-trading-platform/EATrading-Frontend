@@ -16,6 +16,8 @@ import {
     PortfolioSummary,
     Holding,
     OrderTransactionResponse,
+    OrderAnalyticsResponse,
+    OrderAnalyticsFilters,
     OrderRequest,
     OrderResponse,
     OrderStatusLog,
@@ -232,6 +234,17 @@ export class ApiService {
      */
     getAllOrders(): Observable<OrderTransactionResponse[]> {
         return this.get<OrderTransactionResponse[]>('/api/orders');
+    }
+
+    /** Admin aggregate analytics; all supplied filters are combined by the backend. */
+    getOrderAnalytics(filters: OrderAnalyticsFilters = {}): Observable<OrderAnalyticsResponse> {
+        const params: Record<string, string> = {};
+        for (const [key, value] of Object.entries(filters)) {
+            if (value !== undefined && value !== '') {
+                params[key] = value;
+            }
+        }
+        return this.get<OrderAnalyticsResponse>('/api/orders/analytics', params);
     }
 
     /**
