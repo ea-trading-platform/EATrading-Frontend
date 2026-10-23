@@ -3,6 +3,7 @@ import { Observable, catchError, tap } from 'rxjs';
 import { ApiService } from './api.service';
 import {
     StockQuote,
+    MarketMoversResponse,
     CandleResponse,
     SpreadInfo,
     PriceChange,
@@ -79,6 +80,10 @@ export class MarketDataService {
      */
     getQuote(symbol: string): Observable<StockQuote> {
         return this.apiService.getQuote(symbol);
+    }
+
+    getMarketMovers(): Observable<MarketMoversResponse> {
+        return this.apiService.getMarketMovers();
     }
 
     /**
