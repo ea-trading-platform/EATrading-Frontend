@@ -90,24 +90,43 @@
     border-bottom: 1px solid var(--border-lighter);
 }
 
-.client-tab-button {
+.client-tab {
+    display: flex;
+    align-items: center;
     flex: 0 0 auto;
-    padding: 0.75rem 1rem;
     background: var(--bg-subtle);
     border: 1px solid var(--border-lighter);
     border-bottom: 0;
     border-radius: 0.4rem 0.4rem 0 0;
     color: var(--text-muted);
+}
+
+.client-tab-button,
+.client-tab-close {
+    background: transparent;
+    border: 0;
+    color: var(--text-muted);
     cursor: pointer;
+}
+
+.client-tab-button {
+    padding: 0.75rem 1rem;
     font-weight: 600;
 }
 
+.client-tab-close {
+    padding: 0.5rem 0.75rem;
+    font-size: 1.2rem;
+}
+
+.client-tab-close:hover,
+.client-tab-close:focus-visible,
 .client-tab-button:hover,
-.client-tab-button.active {
+.client-tab.active .client-tab-button {
     color: var(--text-light);
 }
 
-.client-tab-button.active {
+.client-tab.active {
     background: var(--bg-hover);
     border-color: var(--accent);
 }
