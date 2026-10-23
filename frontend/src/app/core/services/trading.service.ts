@@ -150,11 +150,13 @@ export class TradingService {
     }
 
     /**
-     * Fetch holdings without caching
+     * Fetch holdings without caching, excluding USD cash unless explicitly requested.
      */
-    getHoldings(clientId: string): Observable<Holding[]> {
+    getHoldings(clientId: string, includeUsdCash = false): Observable<Holding[]> {
         return this.apiService.getHoldings(clientId).pipe(
-            map((holdings) => holdings.filter((holding) => !this.isUsdCashHolding(holding))),
+            map((holdings) => includeUsdCash
+                ? holdings
+                : holdings.filter((holding) => !this.isUsdCashHolding(holding))),
         );
     }
 

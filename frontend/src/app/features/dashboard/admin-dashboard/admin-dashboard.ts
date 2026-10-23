@@ -1,4 +1,4 @@
-import { Component, DestroyRef, signal, computed, inject } from '@angular/core';
+import { Component, DestroyRef, OnInit, signal, computed, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -20,7 +20,7 @@ type AdminDashboardTab = 'portfolio' | 'orders';
 type AdminClient = Client;
 type ActivityRange = '1D' | '1W' | '1M' | '3M' | '1Y';
 
-type AdminPortfolioHolding = PortfolioTable & { clientId: string };
+type AdminPortfolioHolding = PortfolioTable & { clientId: string; instrument?: string };
 export type AdminOrder = OrdersTable & { clientId: string; trackingId: string };
 
 @Component({
@@ -38,12 +38,13 @@ export type AdminOrder = OrdersTable & { clientId: string; trackingId: string };
     templateUrl: './admin-dashboard.html',
     styleUrls: ['./admin-dashboard.css', '../styles/dashboard.css'],
 })
-export class AdminDashboard {
+export class AdminDashboard implements OnInit {
     private readonly auth = inject(AuthService);
     private readonly router = inject(Router);
     private readonly trading = inject(TradingService);
     private readonly destroyRef = inject(DestroyRef);
     private activityRequest?: Subscription;
+    private clientDataRequest = 0;
 
     readonly adminName = computed(() =>
         this.auth.profile()?.name ?? this.auth.user()?.email ?? 'Admin',
@@ -104,8 +105,68 @@ export class AdminDashboard {
         [...this.orders()].sort((a, b) => b.transactionDate.getTime() - a.transactionDate.getTime()),
     );
 
+    ngOnInit(): void {
+        const key = this.tabsStorageKey();
+        if (!key) {
+            return;
+        }
+        try {
+            const saved = sessionStorage.getItem(key);
+            if (!saved) {
+                return;
+            }
+            const state: unknown = JSON.parse(saved);
+            if (!state || typeof state !== 'object' ||
+                !('clients' in state) || !Array.isArray(state.clients) ||
+                !state.clients.every((client: unknown): client is Client =>
+                    !!client && typeof client === 'object' &&
+                    'id' in client && typeof client.id === 'string' &&
+                    'name' in client && typeof client.name === 'string' &&
+                    'email' in client && typeof client.email === 'string') ||
+                !('selectedAccountId' in state) || typeof state.selectedAccountId !== 'string' ||
+                !('activeTab' in state) || (state.activeTab !== 'portfolio' && state.activeTab !== 'orders')) {
+                throw new Error('Invalid saved admin client tabs.');
+            }
+            const selected = state.clients.find(client => client.id === state.selectedAccountId);
+            if (!selected) {
+                throw new Error('Saved selected client is not in the open tabs.');
+            }
+            this.clients.set(state.clients);
+            this.activeTab.set(state.activeTab);
+            this.selectClient(selected);
+        } catch (error) {
+            console.error('Unable to restore admin client tabs:', error);
+        }
+    }
+
+    private tabsStorageKey(): string | null {
+        const adminId = this.auth.user()?.id;
+        return adminId ? `admin-client-tabs:${adminId}` : null;
+    }
+
+    private saveTabs(): void {
+        const key = this.tabsStorageKey();
+        if (!key) {
+            return;
+        }
+        try {
+            if (!this.selectedAccountId()) {
+                sessionStorage.removeItem(key);
+                return;
+            }
+            sessionStorage.setItem(key, JSON.stringify({
+                clients: this.clients().map(({ id, name, email }) => ({ id, name, email })),
+                selectedAccountId: this.selectedAccountId(),
+                activeTab: this.activeTab(),
+            }));
+        } catch (error) {
+            console.error('Unable to save admin client tabs:', error);
+        }
+    }
+
     setTab(tab: AdminDashboardTab): void {
         this.activeTab.set(tab);
+        this.saveTabs();
     }
 
     setActivityRange(range: ActivityRange): void {
@@ -162,6 +223,32 @@ export class AdminDashboard {
         }
     }
 
+    closeClient(clientId: string): void {
+        const index = this.clients().findIndex(client => client.id === clientId);
+        if (index < 0) {
+            return;
+        }
+        const remaining = this.clients().filter(client => client.id !== clientId);
+        this.clients.set(remaining);
+        if (this.selectedAccountId() !== clientId) {
+            this.saveTabs();
+            return;
+        }
+        this.searchError.set(null);
+        const next = remaining[Math.min(index, remaining.length - 1)];
+        if (next) {
+            this.selectClient(next);
+        } else {
+            this.clientDataRequest++;
+            this.selectedAccountId.set(null);
+            this.selectedAccount.set(null);
+            this.holdings.set([]);
+            this.orders.set([]);
+            this.loadingClientData.set(false);
+            this.saveTabs();
+        }
+    }
+
     absoluteValue(value: number): number {
         return Math.abs(value);
     }
@@ -193,37 +280,64 @@ export class AdminDashboard {
         });
     }
 
-    protected readonly analyticsData = computed(() =>
-        this.portfolioHoldings().map(holding => ({
-            label: holding.symbol,
-            value: holding.allocation,
-        })),
-    );
+    protected readonly analyticsData = computed(() => {
+        const byInstrument = this.portfolioHoldings().reduce<Record<string, number>>((totals, holding) => {
+            const instrument = (holding.instrument ?? 'EQUITY').toUpperCase();
+            const category = instrument === 'CASH'
+                ? holding.symbol.trim().toUpperCase() === 'USD' ? 'CASH' : 'FOREX'
+                : instrument;
+            totals[category] = (totals[category] ?? 0) + holding.value;
+            return totals;
+        }, {});
+
+        return [
+            { label: 'Equities', value: byInstrument['EQUITY'] ?? 0 },
+            { label: 'Crypto', value: byInstrument['CRYPTO'] ?? 0 },
+            { label: 'Forex', value: byInstrument['FOREX'] ?? 0 },
+            { label: 'Cash', value: byInstrument['CASH'] ?? 0 },
+        ];
+    });
 
     logout(): void {
+        const key = this.tabsStorageKey();
+        if (key) {
+            try {
+                sessionStorage.removeItem(key);
+            } catch (error) {
+                console.error('Unable to clear admin client tabs:', error);
+            }
+        }
         this.auth.signOut();
         this.router.navigate(['/']);
     }
 
     private selectClient(client: AdminClient): void {
+        const request = ++this.clientDataRequest;
         this.selectedAccountId.set(client.id);
         this.selectedAccount.set(client);
         this.loadTradingActivity();
+        this.saveTabs();
         this.loadingClientData.set(true);
         this.holdings.set([]);
         this.orders.set([]);
 
         forkJoin({
-            holdings: this.trading.getHoldings(client.id),
+            holdings: this.trading.getHoldings(client.id, true),
             orders: this.trading.getOrders(client.id),
         }).subscribe({
             next: ({ holdings, orders }) => {
+                if (request !== this.clientDataRequest) {
+                    return;
+                }
                 this.holdings.set(this.toPortfolioHoldings(holdings));
                 this.orders.set(orders.map(order => this.toAdminOrder(order)));
                 this.loadingClientData.set(false);
             },
             error: (error) => {
                 console.error(`Error fetching data for client ${client.id}:`, error);
+                if (request !== this.clientDataRequest) {
+                    return;
+                }
                 this.loadingClientData.set(false);
                 this.searchError.set('Unable to load the selected client data.');
             },
@@ -233,6 +347,7 @@ export class AdminDashboard {
     private toPortfolioHoldings(holdings: Holding[]): AdminPortfolioHolding[] {
         const rows = holdings.map(holding => ({
             clientId: holding.clientId,
+            instrument: holding.instrument,
             symbol: holding.symbol,
             name: holding.name ?? holding.symbol,
             shares: Number(holding.quantity) || 0,
@@ -252,7 +367,7 @@ export class AdminDashboard {
     private toAdminOrder(order: Order): AdminOrder {
         return {
             clientId: order.clientId,
-            trackingId: order.trackingId ?? order.id,
+            trackingId: order.trackingId ?? '',
             action: order.orderType as OrderAction,
             symbol: order.symbol,
             name: order.name ?? order.symbol,

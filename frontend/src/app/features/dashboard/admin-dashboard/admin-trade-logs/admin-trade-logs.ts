@@ -133,7 +133,7 @@ export class AdminTradeLogs implements OnInit {
     private toAdminOrder(order: Order): AdminOrder {
         return {
             clientId: order.clientId,
-            trackingId: order.trackingId ?? order.id,
+            trackingId: order.trackingId ?? '',
             action: order.orderType as OrderAction,
             symbol: order.symbol,
             name: order.name ?? order.symbol,

@@ -4,6 +4,7 @@ import { Observable, map } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import {
     StockQuote,
+    MarketMoversResponse,
     CandleResponse,
     SpreadInfo,
     PriceChange,
@@ -92,6 +93,10 @@ export class ApiService {
      */
     getQuote(symbol: string): Observable<StockQuote> {
         return this.get<StockQuote>(`/api/v1/market/quotes/${symbol}`);
+    }
+
+    getMarketMovers(): Observable<MarketMoversResponse> {
+        return this.get<MarketMoversResponse>('/api/v1/market/movers');
     }
 
     /**

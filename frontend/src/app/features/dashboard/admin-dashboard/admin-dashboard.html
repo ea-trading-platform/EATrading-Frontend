@@ -21,10 +21,15 @@
 
 	<nav class="client-tabs" aria-label="Clients">
 		@for (client of clients(); track client.id) {
-			<button type="button" class="client-tab-button" (click)="setClient(client.id)"
-				[class.active]="selectedAccountId() === client.id">
-				{{ client.email }}
-			</button>
+			<div class="client-tab" [class.active]="selectedAccountId() === client.id">
+				<button type="button" class="client-tab-button" (click)="setClient(client.id)">
+					{{ client.email }}
+				</button>
+				<button type="button" class="client-tab-close" (click)="closeClient(client.id)"
+					[attr.aria-label]="'Close client tab for ' + client.email" title="Close client tab">
+					&#215;
+				</button>
+			</div>
 		}
 	</nav>
 
@@ -69,7 +74,7 @@
 	<section class="analytics" aria-label="Portfolio analytics">
 		<h3>Analytics</h3>
 		<div class="analytics-charts">
-			<app-pie-chart [data]="analyticsData()"></app-pie-chart>
+			<app-pie-chart [data]="analyticsData()" [totalValue]="portfolioValue()"></app-pie-chart>
 			<section class="trading-activity" aria-labelledby="activity-title" [attr.aria-busy]="loadingActivity()">
 				<h4 id="activity-title">Trading Activity</h4>
 				<div class="activity-ranges" role="group" aria-label="Trading activity time range">
@@ -96,11 +101,6 @@
 				}
 			</section>
 		</div>
-	</section>
-
-	<section class="analytics" aria-label="Portfolio analytics">
-		<h3>Analytics</h3>
-		<app-pie-chart [data]="analyticsData()"></app-pie-chart>
 	</section>
 
 	<nav class="dashboard-tabs" aria-label="Client dashboard sections">
