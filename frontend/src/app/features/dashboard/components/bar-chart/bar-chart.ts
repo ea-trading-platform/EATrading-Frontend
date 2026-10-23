@@ -1,5 +1,6 @@
 import { Component, computed, input } from '@angular/core';
 import { AgCharts } from 'ag-charts-angular';
+import { TradeInterval, TradingActivityPoint } from '../../../../core/models/trading.models';
 import {
   AgBarSeriesOptions,
   AgCartesianChartOptions,
@@ -15,21 +16,6 @@ ModuleRegistry.registerModules([
   NumberAxisModule,
 ]);
 
-interface TradingVolumePoint {
-  date: string;
-  volume: number;
-}
-
-const MOCK_TRADING_VOLUME: TradingVolumePoint[] = [
-  { date: 'Jan 08', volume: 12400 },
-  { date: 'Jan 09', volume: 18200 },
-  { date: 'Jan 10', volume: 15100 },
-  { date: 'Jan 11', volume: 22800 },
-  { date: 'Jan 12', volume: 19700 },
-  { date: 'Jan 15', volume: 26400 },
-  { date: 'Jan 16', volume: 21900 },
-];
-
 @Component({
   selector: 'app-bar-chart',
   standalone: true,
@@ -38,7 +24,18 @@ const MOCK_TRADING_VOLUME: TradingVolumePoint[] = [
   templateUrl: './bar-chart.html',
 })
 export class BarChartComponent {
-  data = input<TradingVolumePoint[]>(MOCK_TRADING_VOLUME);
+  data = input.required<TradingActivityPoint[]>();
+  interval = input.required<TradeInterval>();
+
+  private formatTimestamp(timestamp: string): string {
+    return new Intl.DateTimeFormat('en-US', {
+      timeZone: 'UTC',
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+      ...(this.interval() === 'hour' ? { hour: '2-digit', minute: '2-digit' } as const : {}),
+    }).format(new Date(timestamp));
+  }
 
   options = computed<AgCartesianChartOptions>(() => ({
     background: {
@@ -51,7 +48,7 @@ export class BarChartComponent {
       left: 0,
     },
     title: {
-      text: 'Trading Volume',
+      text: 'Number of trades',
       fontSize: 16,
       fontWeight: 'bold',
       color: '#f4f6fb',
@@ -60,18 +57,22 @@ export class BarChartComponent {
       {
         type: 'bar',
         direction: 'vertical',
-        data: this.data(),
-        xKey: 'date',
-        yKey: 'volume',
-        yName: 'Volume',
+        data: [...this.data()]
+          .sort((a, b) => Date.parse(a.timestamp) - Date.parse(b.timestamp))
+          .map(point => ({ ...point, label: this.formatTimestamp(point.timestamp) })),
+        xKey: 'label',
+        yKey: 'tradeCount',
+        yName: 'Number of trades',
         fill: '#007a7a',
         stroke: '#4ecccc',
         strokeWidth: 1,
         tooltip: {
-          renderer: ({ datum }: { datum: TradingVolumePoint }) =>
-            `${datum.volume.toLocaleString()} shares`,
+          renderer: ({ datum }: { datum: TradingActivityPoint }) => ({
+            title: `${this.interval() === 'week' ? 'Week of ' : ''}${this.formatTimestamp(datum.timestamp)} UTC`,
+            content: `${datum.tradeCount.toLocaleString()} ${datum.tradeCount === 1 ? 'trade' : 'trades'}`,
+          }),
         },
-      } as AgBarSeriesOptions,
+      } satisfies AgBarSeriesOptions,
     ],
     axes: {
       x: {
@@ -83,10 +84,11 @@ export class BarChartComponent {
       },
       y: {
         type: 'number',
+        min: 0,
         label: {
           fontSize: 12,
           color: 'rgba(255, 255, 255, 0.7)',
-          formatter: ({ value }: { value: number }) => value.toLocaleString(),
+          formatter: ({ value }: { value: number }) => Number.isInteger(value) ? value.toLocaleString() : '',
         },
         gridLine: {
           style: [{ stroke: 'rgba(255, 255, 255, 0.1)', lineDash: [4, 2] }],

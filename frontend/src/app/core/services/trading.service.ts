@@ -10,6 +10,8 @@ import {
     Order,
     OrderAnalyticsResponse,
     OrderAnalyticsFilters,
+    TradingActivityQuery,
+    TradingActivityResponse,
     OrderTransactionResponse,
     OrderRequest,
     OrderResponse,
@@ -232,6 +234,10 @@ export class TradingService {
 
     getOrderAnalytics(filters: OrderAnalyticsFilters = {}): Observable<OrderAnalyticsResponse> {
         return this.apiService.getOrderAnalytics(filters);
+    }
+
+    getTradingActivity(query: TradingActivityQuery): Observable<TradingActivityResponse> {
+        return this.apiService.getTradingActivity(query);
     }
 
     getOrdersByClientEmail(clientEmail: string): Observable<Order[]> {

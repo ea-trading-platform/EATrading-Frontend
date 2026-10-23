@@ -75,7 +75,31 @@
 		<h3>Analytics</h3>
 		<div class="analytics-charts">
 			<app-pie-chart [data]="analyticsData()" [totalValue]="portfolioValue()"></app-pie-chart>
-			<app-bar-chart></app-bar-chart>
+			<section class="trading-activity" aria-labelledby="activity-title" [attr.aria-busy]="loadingActivity()">
+				<h4 id="activity-title">Trading Activity</h4>
+				<div class="activity-ranges" role="group" aria-label="Trading activity time range">
+					@for (range of activityRanges; track range) {
+						<button type="button" [attr.aria-pressed]="activityRange() === range"
+							[disabled]="!selectedAccount()" (click)="setActivityRange(range)">{{ range }}</button>
+					}
+				</div>
+				<p class="activity-hint">Trailing period ending now. Buckets and dates use UTC.</p>
+				@if (!selectedAccount()) {
+					<p class="client-status" role="status">Search for a client to view trading activity.</p>
+				} @else if (loadingActivity()) {
+					<p class="client-status" role="status">Loading trading activity...</p>
+				} @else if (activityError()) {
+					<p class="client-error" role="alert">{{ activityError() }}</p>
+					<button type="button" class="activity-retry" (click)="loadTradingActivity()">Retry</button>
+				} @else if (tradingActivity(); as activity) {
+					<p class="activity-total">{{ totalTrades() | number: '1.0-0' }} trades in this period</p>
+					@if (totalTrades() === 0) {
+						<p class="client-status" role="status">No trades in this period.</p>
+					} @else {
+						<app-bar-chart [data]="activity.points" [interval]="activity.interval"></app-bar-chart>
+					}
+				}
+			</section>
 		</div>
 	</section>
 
