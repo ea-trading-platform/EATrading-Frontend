@@ -51,7 +51,7 @@
                 </div>
             </fieldset>
         </form>
-        <p class="filter-hint">Dates use your local timezone and include the entire To day.</p>
+        <p class="filter-hint">Dates use your local timezone and include the entire day.</p>
 
         @if (error()) {
             <p class="client-error" role="alert">{{ error() }}</p>
@@ -70,7 +70,7 @@
                 </div>
                 <div class="metric-card">
                     <span class="stat-label">Filled</span>
-                    <strong class="stat-value">{{ data.filledOrders | number: '1.0-0' }}</strong>
+                    <strong class="stat-value">{{ (data.ordersByStatus['FILLED'] ?? 0) | number: '1.0-0' }}</strong>
                 </div>
                 <div class="metric-card">
                     <span class="stat-label">Accepted</span>
@@ -78,11 +78,11 @@
                 </div>
                 <div class="metric-card">
                     <span class="stat-label">Canceled</span>
-                    <strong class="stat-value">{{ data.canceledOrders | number: '1.0-0' }}</strong>
+                    <strong class="stat-value">{{ (data.ordersByStatus['CANCELED'] ?? 0) | number: '1.0-0' }}</strong>
                 </div>
                 <div class="metric-card">
                     <span class="stat-label">Rejected</span>
-                    <strong class="stat-value">{{ data.rejectedOrders | number: '1.0-0' }}</strong>
+                    <strong class="stat-value">{{ (data.ordersByStatus['REJECTED'] ?? 0) | number: '1.0-0' }}</strong>
                 </div>
             </section>
             @if (data.totalOrders === 0) {

@@ -12,12 +12,6 @@ import { AdminAnalytics } from './admin-analytics';
 const ANALYTICS: OrderAnalyticsResponse = {
     totalOrders: 10,
     totalQuantity: '123.125',
-    buyOrders: 7,
-    sellOrders: 3,
-    filledOrders: 5,
-    pendingOrders: 2,
-    canceledOrders: 2,
-    rejectedOrders: 1,
     ordersByInstrument: { EQUITY: 6, CRYPTO: 3, CASH: 1 },
     ordersBySide: { BUY: 7, SELL: 3 },
     ordersByStatus: { FILLED: 5, SUBMITTED: 1, ACCEPTED: 1, CANCELED: 2, REJECTED: 1 },
@@ -90,7 +84,6 @@ describe('AdminAnalytics', () => {
     });
 
     it('combines every selected filter into a single request with inclusive local calendar dates', () => {
-        component.clientId = ' 12345678-1234-1234-1234-123456789abc ';
         component.fromDate = '2026-10-01';
         component.toDate = '2026-10-22';
         component.instrument = 'CRYPTO';
@@ -98,7 +91,6 @@ describe('AdminAnalytics', () => {
         component.status = 'FILLED';
         component.applyFilters();
         expect(getOrderAnalytics).toHaveBeenLastCalledWith({
-            clientId: '12345678-1234-1234-1234-123456789abc',
             from: new Date(2026, 9, 1).toISOString(),
             to: new Date(2026, 9, 23).toISOString(),
             instrument: 'CRYPTO',
@@ -126,29 +118,24 @@ describe('AdminAnalytics', () => {
         expect(getOrderAnalytics).toHaveBeenCalledTimes(1);
     });
 
-    it('rejects invalid dates and client IDs visibly', () => {
+    it('rejects invalid dates visibly', () => {
         component.fromDate = 'not-a-date';
         component.applyFilters();
         expect(component.error()).toBe('Enter valid dates.');
-        component.fromDate = '';
-        component.clientId = 'not-a-uuid';
-        component.applyFilters();
-        expect(component.error()).toContain('UUID');
         expect(getOrderAnalytics).toHaveBeenCalledTimes(1);
     });
 
     it('clears all filters and reloads unfiltered analytics', () => {
-        component.clientId = '12345678-1234-1234-1234-123456789abc';
         component.fromDate = '2026-10-01';
         component.toDate = '2026-10-22';
         component.instrument = 'EQUITY';
         component.side = 'BUY';
         component.status = 'ACCEPTED';
         component.clearFilters();
-        expect([component.clientId, component.fromDate, component.toDate,
-            component.instrument, component.side, component.status]).toEqual(['', '', '', '', '', '']);
+        expect([component.fromDate, component.toDate,
+            component.instrument, component.side, component.status]).toEqual(['', '', '', '', '']);
         expect(getOrderAnalytics).toHaveBeenLastCalledWith({
-            clientId: undefined, from: undefined, to: undefined,
+            from: undefined, to: undefined,
             instrument: undefined, side: undefined, status: undefined,
         });
     });
@@ -161,7 +148,7 @@ describe('AdminAnalytics', () => {
         fixture.detectChanges();
         expect(component.analytics()).toBeNull();
         expect(fixture.nativeElement.textContent).toContain('Loading order analytics');
-        expect(fixture.nativeElement.querySelector('fieldset').disabled).toBe(true);
+        expect(fixture.nativeElement.querySelector('.analytics-filters').disabled).toBe(true);
         component.applyFilters();
         first.next(ANALYTICS);
         expect(component.analytics()).toBeNull();
@@ -188,8 +175,7 @@ describe('AdminAnalytics', () => {
 
     it('shows an empty result without misleading charts', () => {
         getOrderAnalytics.mockReturnValueOnce(of({
-            ...ANALYTICS, totalOrders: 0, totalQuantity: 0, filledOrders: 0, pendingOrders: 0,
-            canceledOrders: 0, rejectedOrders: 0, buyOrders: 0, sellOrders: 0,
+            ...ANALYTICS, totalOrders: 0, totalQuantity: 0,
             ordersByInstrument: {}, ordersBySide: {}, ordersByStatus: {},
         }));
         component.applyFilters();
