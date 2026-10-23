@@ -235,6 +235,27 @@ export interface OrderAnalyticsFilters {
     status?: OrderStatus;
 }
 
+export type TradeInterval = 'hour' | 'day' | 'week';
+
+export interface TradingActivityPoint {
+    timestamp: string;
+    tradeCount: number;
+}
+
+export interface TradingActivityResponse {
+    from: string;
+    to: string;
+    interval: TradeInterval;
+    points: TradingActivityPoint[];
+}
+
+export interface TradingActivityQuery {
+    clientEmail: string;
+    from: string;
+    to: string;
+    interval: TradeInterval;
+}
+
 /**
  * Request body for creating an order
  */

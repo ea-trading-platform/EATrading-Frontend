@@ -1,4 +1,5 @@
-import { Component, signal, computed, inject } from '@angular/core';
+import { Component, DestroyRef, signal, computed, inject } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -11,12 +12,13 @@ import { BarChartComponent } from '../components/bar-chart/bar-chart';
 import { AdminOrdersTableComponent } from './components/admin-orders-table/admin-orders-table';
 import { AuthService } from '../../../core/services/auth.service';
 import { TradingService } from '../../../core/services/trading.service';
-import { Client, Holding, Order } from '../../../core/models/trading.models';
+import { Client, Holding, Order, TradingActivityResponse } from '../../../core/models/trading.models';
 import { ADMIN_NAV_ITEMS } from './admin-navigation';
-import { forkJoin } from 'rxjs';
+import { forkJoin, Subscription } from 'rxjs';
 
 type AdminDashboardTab = 'portfolio' | 'orders';
 type AdminClient = Client;
+type ActivityRange = '1D' | '1W' | '1M' | '3M' | '1Y';
 
 type AdminPortfolioHolding = PortfolioTable & { clientId: string };
 export type AdminOrder = OrdersTable & { clientId: string; trackingId: string };
@@ -40,6 +42,8 @@ export class AdminDashboard {
     private readonly auth = inject(AuthService);
     private readonly router = inject(Router);
     private readonly trading = inject(TradingService);
+    private readonly destroyRef = inject(DestroyRef);
+    private activityRequest?: Subscription;
 
     readonly adminName = computed(() =>
         this.auth.profile()?.name ?? this.auth.user()?.email ?? 'Admin',
@@ -57,6 +61,14 @@ export class AdminDashboard {
     readonly loadingClientData = signal(false);
     readonly searchError = signal<string | null>(null);
     readonly activeTab = signal<AdminDashboardTab>('portfolio');
+    readonly activityRanges: readonly ActivityRange[] = ['1D', '1W', '1M', '3M', '1Y'];
+    readonly activityRange = signal<ActivityRange>('1D');
+    readonly tradingActivity = signal<TradingActivityResponse | null>(null);
+    readonly loadingActivity = signal(false);
+    readonly activityError = signal<string | null>(null);
+    readonly totalTrades = computed(() =>
+        this.tradingActivity()?.points.reduce((total, point) => total + point.tradeCount, 0) ?? 0,
+    );
 
     readonly portfolioHoldings = computed(() =>
         [...this.holdings()].sort((a, b) => a.symbol.localeCompare(b.symbol)),
@@ -94,6 +106,53 @@ export class AdminDashboard {
 
     setTab(tab: AdminDashboardTab): void {
         this.activeTab.set(tab);
+    }
+
+    setActivityRange(range: ActivityRange): void {
+        this.activityRange.set(range);
+        this.loadTradingActivity();
+    }
+
+    loadTradingActivity(): void {
+        this.activityRequest?.unsubscribe();
+        this.tradingActivity.set(null);
+        this.activityError.set(null);
+        this.loadingActivity.set(false);
+        const client = this.selectedAccount();
+        if (!client) {
+            return;
+        }
+
+        const range = this.activityRange();
+        const to = new Date();
+        const from = new Date(to);
+        if (range === '1D' || range === '1W') {
+            from.setUTCDate(from.getUTCDate() - (range === '1D' ? 1 : 7));
+        } else {
+            const day = from.getUTCDate();
+            from.setUTCDate(1);
+            from.setUTCMonth(from.getUTCMonth() - (range === '1M' ? 1 : range === '3M' ? 3 : 12));
+            const lastDay = new Date(Date.UTC(from.getUTCFullYear(), from.getUTCMonth() + 1, 0)).getUTCDate();
+            from.setUTCDate(Math.min(day, lastDay));
+        }
+
+        this.loadingActivity.set(true);
+        this.activityRequest = this.trading.getTradingActivity({
+            clientEmail: client.email,
+            from: from.toISOString(),
+            to: to.toISOString(),
+            interval: range === '1D' ? 'hour' : range === '1Y' ? 'week' : 'day',
+        }).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+            next: activity => {
+                this.tradingActivity.set(activity);
+                this.loadingActivity.set(false);
+            },
+            error: error => {
+                console.error('Error fetching client trading activity:', error);
+                this.loadingActivity.set(false);
+                this.activityError.set('Unable to load trading activity. Please try again.');
+            },
+        });
     }
 
     setClient(clientId: string): void {
@@ -149,6 +208,7 @@ export class AdminDashboard {
     private selectClient(client: AdminClient): void {
         this.selectedAccountId.set(client.id);
         this.selectedAccount.set(client);
+        this.loadTradingActivity();
         this.loadingClientData.set(true);
         this.holdings.set([]);
         this.orders.set([]);

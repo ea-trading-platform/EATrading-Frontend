@@ -200,6 +200,48 @@
     gap: 1.5rem;
 }
 
+.trading-activity {
+    min-width: 0;
+}
+
+.trading-activity h4 {
+    color: var(--text-light);
+}
+
+.activity-ranges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.activity-ranges button,
+.activity-retry {
+    padding: 0.5rem 0.75rem;
+    border: 1px solid var(--border-lighter);
+    border-radius: 0.3rem;
+    background: var(--bg-subtle);
+    color: var(--text-light);
+    cursor: pointer;
+}
+
+.activity-ranges button[aria-pressed="true"] {
+    background: var(--accent);
+}
+
+.activity-ranges button:disabled {
+    opacity: 0.5;
+    cursor: default;
+}
+
+.activity-hint {
+    color: var(--text-muted);
+    font-size: 0.8rem;
+}
+
+.activity-total {
+    color: var(--text-light);
+}
+
 @media (max-width: 768px) {
     .portfolio-summary {
         grid-template-columns: 1fr;

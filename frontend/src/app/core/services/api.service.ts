@@ -18,6 +18,8 @@ import {
     OrderTransactionResponse,
     OrderAnalyticsResponse,
     OrderAnalyticsFilters,
+    TradingActivityQuery,
+    TradingActivityResponse,
     OrderRequest,
     OrderResponse,
     OrderStatusLog,
@@ -245,6 +247,15 @@ export class ApiService {
             }
         }
         return this.get<OrderAnalyticsResponse>('/api/orders/analytics', params);
+    }
+
+    getTradingActivity(query: TradingActivityQuery): Observable<TradingActivityResponse> {
+        return this.get<TradingActivityResponse>('/api/orders/trading-activity', {
+            clientEmail: query.clientEmail,
+            from: query.from,
+            to: query.to,
+            interval: query.interval,
+        });
     }
 
     /**
