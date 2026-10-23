@@ -24,6 +24,29 @@ export interface StockQuote {
     spreadBps: number; // basis points
 }
 
+/** Daily candle comparison for one stock in the curated movers watchlist. */
+export interface MarketMover {
+    symbol: string;
+    currency: string;
+    close: number;
+    adjustedClose: number;
+    previousAdjustedClose: number;
+    date: string;
+    previousDate: string;
+    changePercent: number;
+    synthetic: boolean;
+    stale: boolean | null;
+    partial: boolean | null;
+}
+
+export interface MarketMoversResponse {
+    symbols: string[];
+    stocks: MarketMover[];
+    gainers: MarketMover[];
+    losers: MarketMover[];
+    unavailableSymbols: string[];
+}
+
 /**
  * Single candlestick OHLCV data point
  */
@@ -209,6 +232,7 @@ export interface Order {
  */
 export interface OrderTransactionResponse {
     orderId: string;
+    trackingId: string;
     clientId: string;
     symbol: string;
     instrument: string;
