@@ -238,6 +238,7 @@ export interface OrderTransactionResponse {
     instrument: string;
     transactionType: TransactionType;
     quantity: string;
+    price: number;
     status: OrderStatus;
     orderDate: string;
 }
