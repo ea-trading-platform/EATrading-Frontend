@@ -32,6 +32,11 @@ export class AdminAnalytics implements OnInit {
     readonly instruments = ['CASH', 'EQUITY', 'CRYPTO'] as const;
     readonly sides: readonly TransactionType[] = ['BUY', 'SELL'];
     readonly statuses: readonly OrderStatus[] = ['SUBMITTED', 'ACCEPTED', 'FILLED', 'CANCELED', 'REJECTED'];
+    readonly customIntervals: readonly { value: TradeInterval; label: string }[] = [
+        { value: 'hour', label: 'Hourly' },
+        { value: 'day', label: 'Daily' },
+        { value: 'week', label: 'Weekly' },
+    ];
     readonly ranges: readonly { value: AnalyticsRange; label: string }[] = [
         { value: '1D', label: '24 hours (1 day)' },
         { value: '1W', label: '1 week' },
@@ -45,6 +50,7 @@ export class AdminAnalytics implements OnInit {
     readonly error = signal<string | null>(null);
     readonly chartInterval = signal<TradeInterval>('hour');
     range: AnalyticsRange = '1D';
+    customInterval: TradeInterval = 'day';
     fromDate = '';
     toDate = '';
     instrument: NonNullable<OrderAnalyticsFilters['instrument']> | '' = '';
@@ -89,17 +95,16 @@ export class AdminAnalytics implements OnInit {
                 from = new Date('1970-01-01T00:00:00.000Z');
                 break;
             case 'CUSTOM':
-                from = this.fromDate ? new Date(`${this.fromDate}T00:00:00`) : new Date(NaN);
-                const customTo = this.toDate ? new Date(`${this.toDate}T00:00:00`) : new Date(NaN);
+                from = this.fromDate ? new Date(this.fromDate) : new Date(NaN);
+                const customTo = this.toDate ? new Date(this.toDate) : new Date(NaN);
                 if (!Number.isFinite(from.getTime()) || !Number.isFinite(customTo.getTime())) {
-                    this.error.set('Enter valid From and To dates for a custom range.');
+                    this.error.set('Enter valid start and end date-times for a custom range.');
                     return;
                 }
-                if (from > customTo) {
-                    this.error.set('The From date must be on or before the To date.');
+                if (from >= customTo) {
+                    this.error.set('The start date-time must be before the end date-time.');
                     return;
                 }
-                customTo.setDate(customTo.getDate() + 1);
                 to.setTime(customTo.getTime());
                 break;
         }
@@ -139,6 +144,7 @@ export class AdminAnalytics implements OnInit {
 
     clearFilters(): void {
         this.range = '1D';
+        this.customInterval = 'day';
         this.fromDate = '';
         this.toDate = '';
         this.instrument = '';
@@ -162,9 +168,10 @@ export class AdminAnalytics implements OnInit {
             case '1D': return 'hour';
             case '1W':
             case '1M':
-            case 'CUSTOM': return 'day';
+                return 'day';
             case '1Y':
             case 'ALL': return 'week';
+            case 'CUSTOM': return this.customInterval;
         }
     }
 

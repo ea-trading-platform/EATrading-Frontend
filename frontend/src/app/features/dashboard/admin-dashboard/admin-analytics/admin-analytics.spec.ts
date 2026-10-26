@@ -99,33 +99,34 @@ describe('AdminAnalytics', () => {
         expect(acceptedCard?.querySelector('.stat-value')?.textContent?.trim()).toBe('0');
     });
 
-    it('combines every selected filter into a single request with inclusive local calendar dates', () => {
+    it('combines custom date-times and filters in one request using the selected bucket interval', () => {
         component.range = 'CUSTOM';
-        component.fromDate = '2026-10-01';
-        component.toDate = '2026-10-22';
+        component.fromDate = '2026-10-01T09:15';
+        component.toDate = '2026-10-22T15:30';
+        component.customInterval = 'week';
         component.instrument = 'CRYPTO';
         component.side = 'SELL';
         component.status = 'FILLED';
         component.applyFilters();
         expect(getOrderAnalytics).toHaveBeenLastCalledWith({
-            from: new Date(2026, 9, 1).toISOString(),
-            to: new Date(2026, 9, 23).toISOString(),
-            interval: 'day',
+            from: new Date('2026-10-01T09:15').toISOString(),
+            to: new Date('2026-10-22T15:30').toISOString(),
+            interval: 'week',
             instrument: 'CRYPTO',
             side: 'SELL',
             status: 'FILLED',
         });
     });
 
-    it('allows a single-day range', () => {
+    it('allows a same-day custom range when the start time is before the end time', () => {
         component.range = 'CUSTOM';
-        component.fromDate = '2026-10-22';
-        component.toDate = '2026-10-22';
+        component.fromDate = '2026-10-22T08:00';
+        component.toDate = '2026-10-22T17:00';
         component.applyFilters();
         expect(component.error()).toBeNull();
         expect(getOrderAnalytics).toHaveBeenLastCalledWith(expect.objectContaining({
-            from: new Date(2026, 9, 22).toISOString(),
-            to: new Date(2026, 9, 23).toISOString(),
+            from: new Date('2026-10-22T08:00').toISOString(),
+            to: new Date('2026-10-22T17:00').toISOString(),
             interval: 'day',
         }));
     });
@@ -169,24 +170,25 @@ describe('AdminAnalytics', () => {
 
     it('rejects an inverted date range without requesting data', () => {
         component.range = 'CUSTOM';
-        component.fromDate = '2026-10-23';
-        component.toDate = '2026-10-22';
+        component.fromDate = '2026-10-23T12:00';
+        component.toDate = '2026-10-22T12:00';
         component.applyFilters();
-        expect(component.error()).toContain('From date');
+        expect(component.error()).toContain('start date-time');
         expect(getOrderAnalytics).toHaveBeenCalledTimes(1);
     });
 
     it('rejects invalid dates visibly', () => {
         component.range = 'CUSTOM';
         component.fromDate = 'not-a-date';
+        component.toDate = '2026-10-22T12:00';
         component.applyFilters();
-        expect(component.error()).toBe('Enter valid From and To dates for a custom range.');
+        expect(component.error()).toBe('Enter valid start and end date-times for a custom range.');
         expect(getOrderAnalytics).toHaveBeenCalledTimes(1);
     });
 
     it('clears all filters and reloads unfiltered analytics', () => {
-        component.fromDate = '2026-10-01';
-        component.toDate = '2026-10-22';
+        component.fromDate = '2026-10-01T10:00';
+        component.toDate = '2026-10-22T16:30';
         component.instrument = 'EQUITY';
         component.side = 'BUY';
         component.status = 'ACCEPTED';
