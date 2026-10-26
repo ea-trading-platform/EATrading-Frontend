@@ -48,10 +48,10 @@ describe('Admin order history expansion', () => {
 
     it('loads recorded states on demand, sorts them by time and collapses them', async () => {
         getOrderStatusLog.mockReturnValue(of({
-            FILLED: '2026-10-23T12:02:00Z',
-            SUBMITTED: '2026-10-23T12:00:00Z',
-            ACCEPTED: '2026-10-23T12:01:00Z',
-        }));
+            FILLED: { statusChangeTime: '2026-10-23T12:02:00Z' },
+            SUBMITTED: { statusChangeTime: '2026-10-23T12:00:00Z' },
+            ACCEPTED: { statusChangeTime: '2026-10-23T12:01:00Z' },
+        } satisfies OrderStatusLog));
         const fixture = await setup();
         expect(getOrderStatusLog).not.toHaveBeenCalled();
         fixture.componentInstance.toggleHistory(order.trackingId);
@@ -96,7 +96,9 @@ describe('Admin order history expansion', () => {
             expect(fixture.nativeElement.textContent).toContain('Unable to load status history');
             expect(log).toHaveBeenCalled();
             fixture.componentInstance.toggleHistory(order.trackingId);
-            getOrderStatusLog.mockReturnValue(of({ SUBMITTED: '2026-10-23T12:00:00Z' }));
+            getOrderStatusLog.mockReturnValue(of({
+                SUBMITTED: { statusChangeTime: '2026-10-23T12:00:00Z' },
+            } satisfies OrderStatusLog));
             fixture.componentInstance.toggleHistory(order.trackingId);
             await fixture.whenStable();
             expect(getOrderStatusLog).toHaveBeenCalledTimes(2);
