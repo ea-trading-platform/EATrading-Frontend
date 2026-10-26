@@ -100,7 +100,7 @@ export class AdminOrdersTableComponent {
         this.api.getOrderStatusLog(trackingId).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
             next: log => {
                 const entries = Object.entries(log)
-                    .map(([status, timestamp]) => ({ status, timestamp }))
+                    .map(([status, entry]) => ({ status, timestamp: entry.statusChangeTime }))
                     .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
                 this.history.update(history => ({
                     ...history, [trackingId]: { loading: false, entries, error: null },
