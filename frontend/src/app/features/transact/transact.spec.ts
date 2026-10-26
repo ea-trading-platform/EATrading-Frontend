@@ -18,6 +18,8 @@ class TransactHarness extends Transact {
         error: this.error,
         suggestions: this.filteredSuggestions,
         validation: this.quantityValidationError,
+        statusLog: this.statusLog,
+        timeline: this.statusTimeline,
     };
 }
 
@@ -138,5 +140,24 @@ describe('Transact currency and crypto symbols', () => {
         expect(submitOrder).toHaveBeenCalledWith(expect.objectContaining({
             symbol: 'AAPL', transactionType: 'BUY', instrumentType: 'EQUITY',
         }));
+    });
+
+    it('adds a rejection reason to the rejected timeline entry', () => {
+        component.state.statusLog.set({
+            SUBMITTED: { statusChangeTime: '2026-10-26T14:23:24.907875Z' },
+            REJECTED: {
+                statusChangeTime: '2026-10-26T14:23:24.926473Z',
+                rejectionReason: 'Client does not own TSLA',
+            },
+        });
+
+        expect(component.state.timeline()).toEqual(expect.arrayContaining([
+            expect.objectContaining({
+                status: 'REJECTED',
+                detail: 'Client does not own TSLA',
+                reached: true,
+            }),
+        ]));
+        expect(component.state.timeline().some((entry) => entry.status === 'REJECTIONREASON')).toBe(false);
     });
 });

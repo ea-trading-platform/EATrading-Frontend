@@ -33,6 +33,7 @@ type OrderStatusTimelineStep = {
     label: string;
     rawTimestamp: string | null;
     timestamp: string | null;
+    detail: string | null;
     reached: boolean;
     isCurrent: boolean;
 };
@@ -87,16 +88,17 @@ export class Transact implements OnInit {
     protected readonly statusLog = signal<OrderStatusLog>({});
     protected readonly statusTimeline = computed<OrderStatusTimelineStep[]>(() => {
         const statusEntries = Object.entries(this.statusLog())
-            .map(([status, timestamp]) => ({
+            .map(([status, entry]) => ({
                 status: this.normalizeStatus(status),
-                rawTimestamp: timestamp,
-                parsedTimestamp: new Date(timestamp).getTime(),
+                rawTimestamp: entry.statusChangeTime,
+                detail: entry.rejectionReason ?? null,
+                parsedTimestamp: new Date(entry.statusChangeTime).getTime(),
             }))
             .sort((first, second) => first.parsedTimestamp - second.parsedTimestamp);
 
-        const statusTimestampMap = new Map<string, string>();
+        const statusDetailMap = new Map<string, { timestamp: string; detail: string | null }>();
         statusEntries.forEach((entry) => {
-            statusTimestampMap.set(entry.status, entry.rawTimestamp);
+            statusDetailMap.set(entry.status, { timestamp: entry.rawTimestamp, detail: entry.detail });
         });
 
         const reachedStatuses = new Set(statusEntries.map((entry) => entry.status));
@@ -113,12 +115,14 @@ export class Transact implements OnInit {
         });
 
         return statusesInTimeline.map((status) => {
-            const rawTimestamp = statusTimestampMap.get(status) ?? null;
+            const statusDetails = statusDetailMap.get(status);
+            const rawTimestamp = statusDetails?.timestamp ?? null;
             return {
                 status,
                 label: this.formatStatusLabel(status),
                 rawTimestamp,
                 timestamp: rawTimestamp ? this.formatStatusTimestamp(rawTimestamp) : null,
+                detail: statusDetails?.detail ?? null,
                 reached: reachedStatuses.has(status),
                 isCurrent: reachedStatuses.has(status) && lastReachedStatus === status,
             };
@@ -526,7 +530,7 @@ export class Transact implements OnInit {
         const input = symbol.trim().toUpperCase();
         const market = instrument === 'CASH' || input.startsWith('FX:') ? 'Forex'
             : instrument === 'CRYPTO' || input.startsWith('X:') ? 'Crypto'
-            : instrument === 'EQUITY' ? 'Equities' : this.activeMarket();
+                : instrument === 'EQUITY' ? 'Equities' : this.activeMarket();
         if (market !== this.activeMarket()) {
             this.selectMarket(market);
         }
