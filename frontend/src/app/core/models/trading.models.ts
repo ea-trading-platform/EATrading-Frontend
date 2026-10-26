@@ -223,6 +223,7 @@ export interface Order {
     quantity: number;
     orderType: TransactionType;
     status: OrderStatus;
+    rejectionReason?: string;
     executedAt?: string; // ISO 8601 timestamp
     price?: number;
 }
@@ -304,7 +305,11 @@ export interface OrderResponse {
 export interface CancelOrderResponse {
     [key: string]: unknown;
 }
-export type OrderStatusLog = Record<string, string>;
+export interface OrderStatusLogEntry {
+    statusChangeTime: string;
+    rejectionReason?: string;
+}
+export type OrderStatusLog = Record<string, OrderStatusLogEntry>;
 
 // ============================================================================
 // WATCHLIST MODELS

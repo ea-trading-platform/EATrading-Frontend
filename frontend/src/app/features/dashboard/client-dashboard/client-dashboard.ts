@@ -236,7 +236,6 @@ export class ClientDashboard implements OnInit {
         },
         { field: 'orderType', headerName: 'Action', minWidth: 100 },
         { field: 'symbol', headerName: 'Symbol', minWidth: 115 },
-        { field: 'name', headerName: 'Name', minWidth: 160 },
         {
             field: 'quantity',
             headerName: 'Quantity',
@@ -245,6 +244,7 @@ export class ClientDashboard implements OnInit {
         },
         { field: 'price', headerName: 'Price', minWidth: 110 },
         { field: 'status', headerName: 'Status', minWidth: 125 },
+        { field: 'rejectionReason', headerName: 'Rejection Reason', minWidth: 180 },
         {
             field: 'executedAt', headerName: 'Change log time', minWidth: 190,
             valueFormatter: (params) => params.value || 'Pending'
