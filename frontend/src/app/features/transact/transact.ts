@@ -105,10 +105,16 @@ export class Transact implements OnInit {
         const lastReachedStatus = statusEntries.length > 0
             ? statusEntries[statusEntries.length - 1].status
             : null;
+        const hasFailureOutcome = reachedStatuses.has('REJECTED') || reachedStatuses.has('FAILED');
 
-        const statusesInTimeline: string[] = [...ORDER_TIMELINE_BASE_STATUSES];
+        const statusesInTimeline: string[] = hasFailureOutcome
+            ? ['SUBMITTED']
+            : [...ORDER_TIMELINE_BASE_STATUSES];
 
         statusEntries.forEach((entry) => {
+            if (hasFailureOutcome && (entry.status === 'ACCEPTED' || entry.status === 'FILLED')) {
+                return;
+            }
             if (!statusesInTimeline.includes(entry.status)) {
                 statusesInTimeline.push(entry.status);
             }
