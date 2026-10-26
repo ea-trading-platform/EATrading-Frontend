@@ -93,19 +93,38 @@
 }
 
 .analytics-charts {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1.5rem;
     margin-top: 1.5rem;
 }
 
 .trade-counts-chart {
-    margin-bottom: 1.5rem;
+    grid-column: 2;
+    grid-row: 2;
+    min-width: 0;
     padding: 1.25rem;
     border: 1px solid var(--border-lighter);
     border-radius: 0.5rem;
     background: var(--bg-subtle);
 }
 
+.instrument-chart {
+    grid-column: 1;
+    grid-row: 2;
+}
+
+.trade-counts-empty {
+    grid-column: 2;
+    grid-row: 2;
+    display: grid;
+    min-height: 17rem;
+    place-content: center;
+}
+
 .status-chart {
-    grid-column: 1 / -1;
+    grid-column: 2;
+    grid-row: 1;
 }
 
 .empty-analytics {
@@ -117,6 +136,19 @@
 }
 
 @media (max-width: 900px) {
+    .analytics-charts {
+        grid-template-columns: 1fr;
+    }
+
+    .side-chart,
+    .instrument-chart,
+    .trade-counts-chart,
+    .trade-counts-empty,
+    .status-chart {
+        grid-column: 1;
+        grid-row: auto;
+    }
+
     .analytics-summary {
         grid-template-columns: repeat(3, minmax(0, 1fr));
     }
