@@ -5,9 +5,36 @@
     margin: 0 auto;
 }
 
+.admin-welcome {
+    display: flex;
+    align-items: end;
+    justify-content: space-between;
+    gap: 2rem;
+    padding: 2rem 0;
+}
+
+.admin-greeting {
+    flex: 1;
+}
+
+.admin-greeting p,
+.admin-greeting h1 {
+    margin: 0;
+}
+
+.admin-greeting p {
+    color: var(--text-muted);
+    font-size: 0.95rem;
+}
+
+.admin-greeting h1 {
+    color: var(--text-light);
+    font-size: 2rem;
+    font-weight: 600;
+}
+
 .client-search {
-    max-width: 36rem;
-    margin-top: 1rem;
+    width: min(36rem, 100%);
 }
 
 .client-search label {
@@ -46,6 +73,15 @@
     background: var(--accent-secondary);
 }
 
+@media (max-width: 768px) {
+    .admin-welcome {
+        align-items: stretch;
+        flex-direction: column;
+        gap: 1.25rem;
+        padding: 1.5rem 0;
+    }
+}
+
 .client-tabs {
     display: flex;
     gap: 0.5rem;
@@ -54,24 +90,43 @@
     border-bottom: 1px solid var(--border-lighter);
 }
 
-.client-tab-button {
+.client-tab {
+    display: flex;
+    align-items: center;
     flex: 0 0 auto;
-    padding: 0.75rem 1rem;
     background: var(--bg-subtle);
     border: 1px solid var(--border-lighter);
     border-bottom: 0;
     border-radius: 0.4rem 0.4rem 0 0;
     color: var(--text-muted);
+}
+
+.client-tab-button,
+.client-tab-close {
+    background: transparent;
+    border: 0;
+    color: var(--text-muted);
     cursor: pointer;
+}
+
+.client-tab-button {
+    padding: 0.75rem 1rem;
     font-weight: 600;
 }
 
+.client-tab-close {
+    padding: 0.5rem 0.75rem;
+    font-size: 1.2rem;
+}
+
+.client-tab-close:hover,
+.client-tab-close:focus-visible,
 .client-tab-button:hover,
-.client-tab-button.active {
+.client-tab.active .client-tab-button {
     color: var(--text-light);
 }
 
-.client-tab-button.active {
+.client-tab.active {
     background: var(--bg-hover);
     border-color: var(--accent);
 }
@@ -89,6 +144,16 @@
     margin: 0;
 }
 
+.client-status,
+.client-error {
+    margin: 1rem 0 0;
+    color: var(--text-muted);
+}
+
+.client-error {
+    color: var(--neg-accent);
+}
+
 .client-details h3 {
     color: var(--text-light);
     font-size: 1.1rem;
@@ -97,4 +162,123 @@
 .client-details p {
     color: var(--text-muted);
     margin-top: 0.25rem;
+}
+
+.portfolio-summary {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1rem;
+    padding: 1.5rem 0;
+}
+
+.summary-stat {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    min-width: 0;
+    padding-left: 2rem;
+    border-left: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.summary-stat:first-child {
+    padding-left: 0;
+    border-left: 0;
+}
+
+.stat-label {
+    color: var(--text-muted);
+    font-size: 0.8rem;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+}
+
+.stat-value {
+    color: var(--text-light);
+    font-size: clamp(1.1rem, 1.6vw, 1.75rem);
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.summary-change {
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.change-positive {
+    color: var(--accent-secondary);
+}
+
+.change-negative {
+    color: var(--neg-accent);
+}
+
+.analytics-charts {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1.5rem;
+}
+
+.trading-activity {
+    min-width: 0;
+}
+
+.trading-activity h4 {
+    color: var(--text-light);
+}
+
+.activity-ranges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.activity-ranges button,
+.activity-retry {
+    padding: 0.5rem 0.75rem;
+    border: 1px solid var(--border-lighter);
+    border-radius: 0.3rem;
+    background: var(--bg-subtle);
+    color: var(--text-light);
+    cursor: pointer;
+}
+
+.activity-ranges button[aria-pressed="true"] {
+    background: var(--accent);
+}
+
+.activity-ranges button:disabled {
+    opacity: 0.5;
+    cursor: default;
+}
+
+.activity-hint {
+    color: var(--text-muted);
+    font-size: 0.8rem;
+}
+
+.activity-total {
+    color: var(--text-light);
+}
+
+@media (max-width: 768px) {
+    .portfolio-summary {
+        grid-template-columns: 1fr;
+        gap: 0.75rem;
+    }
+
+    .summary-stat,
+    .summary-stat:first-child {
+        padding: 0.85rem 0;
+        border-left: 0;
+        border-top: 1px solid var(--border-lighter);
+    }
+
+    .summary-stat:first-child {
+        border-top: 0;
+    }
+
+    .analytics-charts {
+        grid-template-columns: 1fr;
+    }
 }

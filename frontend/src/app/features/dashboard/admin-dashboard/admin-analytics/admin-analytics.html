@@ -1,0 +1,99 @@
+<main class="admin-dashboard">
+    <app-top-bar [navItems]="navItems" dashboardRoute="/admin-dashboard" (logout)="logout()"></app-top-bar>
+
+    <section class="analytics-content" aria-labelledby="analytics-title" [attr.aria-busy]="loading()">
+        <header class="analytics-heading">
+            <h1 id="analytics-title">Order Analytics</h1>
+            <p>Aggregate order activity across clients. Apply filters to update all statistics and charts.</p>
+        </header>
+
+        <form (ngSubmit)="applyFilters()">
+            <fieldset class="analytics-filters" [disabled]="loading()">
+                <legend class="visually-hidden">Order analytics filters</legend>
+                <label>
+                    From
+                    <input name="from" type="date" [(ngModel)]="fromDate">
+                </label>
+                <label>
+                    To
+                    <input name="to" type="date" [(ngModel)]="toDate">
+                </label>
+                <label>
+                    Instrument
+                    <select name="instrument" [(ngModel)]="instrument">
+                        <option value="">All instruments</option>
+                        @for (value of instruments; track value) {
+                            <option [value]="value">{{ value }}</option>
+                        }
+                    </select>
+                </label>
+                <label>
+                    Side
+                    <select name="side" [(ngModel)]="side">
+                        <option value="">All sides</option>
+                        @for (value of sides; track value) {
+                            <option [value]="value">{{ value }}</option>
+                        }
+                    </select>
+                </label>
+                <label>
+                    Status
+                    <select name="status" [(ngModel)]="status">
+                        <option value="">All statuses</option>
+                        @for (value of statuses; track value) {
+                            <option [value]="value">{{ value }}</option>
+                        }
+                    </select>
+                </label>
+                <div class="filter-actions">
+                    <button type="submit" class="apply-button">Apply filters</button>
+                    <button type="button" (click)="clearFilters()">Clear filters</button>
+                </div>
+            </fieldset>
+        </form>
+        <p class="filter-hint">Dates use your local timezone and include the entire day.</p>
+
+        @if (error()) {
+            <p class="client-error" role="alert">{{ error() }}</p>
+        }
+        @if (loading()) {
+            <p class="client-status" role="status">Loading order analytics...</p>
+        } @else if (analytics(); as data) {
+            <section class="analytics-summary" aria-label="Order summary">
+                <div class="metric-card">
+                    <span class="stat-label">Total orders</span>
+                    <strong class="stat-value">{{ data.totalOrders | number: '1.0-0' }}</strong>
+                </div>
+                <div class="metric-card">
+                    <span class="stat-label">Submitted</span>
+                    <strong class="stat-value">{{ (data.ordersByStatus['SUBMITTED'] ?? 0) | number: '1.0-0' }}</strong>
+                </div>
+                <div class="metric-card">
+                    <span class="stat-label">Filled</span>
+                    <strong class="stat-value">{{ (data.ordersByStatus['FILLED'] ?? 0) | number: '1.0-0' }}</strong>
+                </div>
+                <div class="metric-card">
+                    <span class="stat-label">Accepted</span>
+                    <strong class="stat-value">{{ (data.ordersByStatus['ACCEPTED'] ?? 0) | number: '1.0-0' }}</strong>
+                </div>
+                <div class="metric-card">
+                    <span class="stat-label">Canceled</span>
+                    <strong class="stat-value">{{ (data.ordersByStatus['CANCELED'] ?? 0) | number: '1.0-0' }}</strong>
+                </div>
+                <div class="metric-card">
+                    <span class="stat-label">Rejected</span>
+                    <strong class="stat-value">{{ (data.ordersByStatus['REJECTED'] ?? 0) | number: '1.0-0' }}</strong>
+                </div>
+            </section>
+            @if (data.totalOrders === 0) {
+                <p class="empty-analytics" role="status">No orders match these filters. Adjust or clear the filters to see more activity.</p>
+            } @else {
+                <div class="analytics-charts">
+                    <app-order-analytics-chart title="Buy vs Sell" kind="donut" [counts]="data.ordersBySide"></app-order-analytics-chart>
+                    <app-order-analytics-chart title="Orders by instrument" [counts]="data.ordersByInstrument"></app-order-analytics-chart>
+                    <app-order-analytics-chart class="status-chart" title="Orders by status" direction="horizontal" [counts]="data.ordersByStatus"></app-order-analytics-chart>
+                </div>
+            }
+        }
+    </section>
+</main>

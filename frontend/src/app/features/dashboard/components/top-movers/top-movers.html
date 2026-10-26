@@ -34,11 +34,35 @@
         </h3>
     </div>
 
-    <div class="movers-list">
-        @for (mover of movers(); track mover.symbol) {
-            <app-stock-card 
-                [stock]="{symbol: mover.symbol, name: mover.name, price: mover.price, changePercent: mover.changePercent, sparklineData: mover.sparklineData}">
-            </app-stock-card>
+    <p class="movers-note">Daily adjusted returns from a curated US stock watchlist, not intraday quotes.</p>
+
+    <div class="movers-list" [attr.aria-busy]="isLoading()">
+        @if (isLoading()) {
+            <p role="status">Loading daily movers...</p>
+        } @else if (error()) {
+            <div role="alert">
+                <p>{{ error() }}</p>
+                <button type="button" class="btn btn-outline-light btn-sm" (click)="loadMovers()">Retry</button>
+            </div>
+        } @else {
+            @if (unavailableSymbols().length > 0) {
+                <p class="movers-note" role="status">Data unavailable for: {{ unavailableSymbols().join(', ') }}</p>
+            }
+            @for (mover of movers(); track mover.symbol) {
+                <div class="mover-entry">
+                    <app-stock-card
+                        [stock]="{symbol: mover.symbol, price: mover.close, changePercent: mover.changePercent}">
+                    </app-stock-card>
+                    <p class="mover-details">
+                        {{ mover.currency }} close &middot; {{ mover.previousDate }} to {{ mover.date }}
+                        @if (mover.synthetic) { <span> &middot; Synthetic</span> }
+                        @if (mover.stale) { <span> &middot; Stale</span> }
+                        @if (mover.partial) { <span> &middot; Partial</span> }
+                    </p>
+                </div>
+            } @empty {
+                <p role="status">No {{ isShowingGainers() ? 'gainers' : 'losers' }} available for this daily comparison.</p>
+            }
         }
     </div>
 </section>

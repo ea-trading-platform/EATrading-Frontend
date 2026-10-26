@@ -4,6 +4,7 @@ import { Observable, map } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import {
     StockQuote,
+    MarketMoversResponse,
     CandleResponse,
     SpreadInfo,
     PriceChange,
@@ -15,7 +16,11 @@ import {
     PortfolioHistory,
     PortfolioSummary,
     Holding,
-    Order,
+    OrderTransactionResponse,
+    OrderAnalyticsResponse,
+    OrderAnalyticsFilters,
+    TradingActivityQuery,
+    TradingActivityResponse,
     OrderRequest,
     OrderResponse,
     OrderStatusLog,
@@ -88,6 +93,10 @@ export class ApiService {
      */
     getQuote(symbol: string): Observable<StockQuote> {
         return this.get<StockQuote>(`/api/v1/market/quotes/${symbol}`);
+    }
+
+    getMarketMovers(): Observable<MarketMoversResponse> {
+        return this.get<MarketMoversResponse>('/api/v1/market/movers');
     }
 
     /**
@@ -178,6 +187,14 @@ export class ApiService {
     }
 
     /**
+     * Get a single client by email
+     * GET /api/clients?clientEmail={clientEmail}
+     */
+    getClientByEmail(clientEmail: string): Observable<Client> {
+        return this.get<Client>(`/api/clients`, { clientEmail });
+    }
+
+    /**
      * Update a client
      * PUT /api/clients?clientId={clientId}
      */
@@ -214,8 +231,76 @@ export class ApiService {
      * Get all orders for a client
      * GET /api/orders?clientId={clientId}
      */
-    getOrders(clientId: string): Observable<Order[]> {
-        return this.get<Order[]>(`/api/orders`, { clientId });
+    getOrders(clientId: string): Observable<OrderTransactionResponse[]> {
+        return this.get<OrderTransactionResponse[]>(`/api/orders`, { clientId });
+    }
+
+    /**
+     * Get all orders. Administrators only.
+     * GET /api/orders
+     */
+    getAllOrders(): Observable<OrderTransactionResponse[]> {
+        return this.get<OrderTransactionResponse[]>('/api/orders');
+    }
+
+    /** Admin aggregate analytics; all supplied filters are combined by the backend. */
+    getOrderAnalytics(filters: OrderAnalyticsFilters = {}): Observable<OrderAnalyticsResponse> {
+        const params: Record<string, string> = {};
+        for (const [key, value] of Object.entries(filters)) {
+            if (value !== undefined && value !== '') {
+                params[key] = value;
+            }
+        }
+        return this.get<OrderAnalyticsResponse>('/api/orders/analytics', params);
+    }
+
+    getTradingActivity(query: TradingActivityQuery): Observable<TradingActivityResponse> {
+        return this.get<TradingActivityResponse>('/api/orders/trading-activity', {
+            clientEmail: query.clientEmail,
+            from: query.from,
+            to: query.to,
+            interval: query.interval,
+        });
+    }
+
+    /**
+     * Get all orders for a client by email. Administrators only.
+     * GET /api/orders?clientEmail={clientEmail}
+     */
+    getOrdersByClientEmail(clientEmail: string): Observable<OrderTransactionResponse[]> {
+        return this.get<OrderTransactionResponse[]>('/api/orders', { clientEmail });
+    }
+
+    /**
+     * Get all orders for an instrument. Administrators only.
+     * GET /api/orders?instrument={instrument}
+     */
+    getOrdersByInstrument(instrument: string): Observable<OrderTransactionResponse[]> {
+        return this.get<OrderTransactionResponse[]>(`/api/orders`, { instrument });
+    }
+
+    /**
+     * Get all BUY or SELL orders. Administrators only.
+     * GET /api/orders?side={side}
+     */
+    getOrdersBySide(side: 'BUY' | 'SELL'): Observable<OrderTransactionResponse[]> {
+        return this.get<OrderTransactionResponse[]>(`/api/orders`, { side });
+    }
+
+    /**
+     * Get all orders with a status. Administrators only.
+     * GET /api/orders?status={status}
+     */
+    getOrdersByStatus(status: string): Observable<OrderTransactionResponse[]> {
+        return this.get<OrderTransactionResponse[]>(`/api/orders`, { status });
+    }
+
+    /**
+     * Get orders in a half-open date range. Administrators only.
+     * GET /api/orders?from={from}&to={to}
+     */
+    getOrdersByDateRange(from: string, to: string): Observable<OrderTransactionResponse[]> {
+        return this.get<OrderTransactionResponse[]>(`/api/orders`, { from, to });
     }
 
     /** Create an asynchronous order and return its tracking ID. */
@@ -234,6 +319,7 @@ export class ApiService {
         return this.get<OrderStatusLog>(`/api/orders/${encodeURIComponent(trackingId)}/status-log`);
     }
 
+    /** Cancel an existing order by its tracking ID. */
     cancelOrder(trackingId: string): Observable<void> {
         return this.patch<void>(`/api/orders/${encodeURIComponent(trackingId)}`);
     }

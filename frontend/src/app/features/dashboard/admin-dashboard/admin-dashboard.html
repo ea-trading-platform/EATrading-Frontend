@@ -1,35 +1,106 @@
 <main class="admin-dashboard">
-	<app-top-bar dashboardRoute="/admin-dashboard" (logout)="logout()"></app-top-bar>
+	<app-top-bar [navItems]="navItems" dashboardRoute="/admin-dashboard" (logout)="logout()"></app-top-bar>
 
-	<h1>Hello {{ adminName() }}</h1>
-
-	<form class="client-search" (ngSubmit)="searchClient()">
-		<label for="client-search-input">Search clients</label>
-		<div class="client-search-controls">
-			<input id="client-search-input" name="clientSearch" type="search"
-			placeholder="Search by client ID"
-			[ngModel]="searchQuery()" (ngModelChange)="searchQuery.set($event)">
-			<button type="submit">Search</button>
+	<section class="admin-welcome">
+		<div class="admin-greeting">
+			<p>Welcome back,</p>
+			<h1>{{ adminName() }}</h1>
 		</div>
-	</form>
+		<form class="client-search" (ngSubmit)="searchClient()">
+			<label for="client-search-input">Search clients by email</label>
+			<div class="client-search-controls">
+				<input id="client-search-input" name="clientSearch" type="search"
+				placeholder="Enter client email"
+				[ngModel]="searchQuery()" (ngModelChange)="searchQuery.set($event)">
+				<button type="submit" [disabled]="loadingClientSearch()">
+					{{ loadingClientSearch() ? 'Searching...' : 'Search' }}
+				</button>
+			</div>
+		</form>
+	</section>
 
 	<nav class="client-tabs" aria-label="Clients">
 		@for (client of clients(); track client.id) {
-			<button type="button" class="client-tab-button" (click)="setClient(client.id)"
-				[class.active]="selectedAccountId() === client.id">
-				{{ client.id }}
-			</button>
+			<div class="client-tab" [class.active]="selectedAccountId() === client.id">
+				<button type="button" class="client-tab-button" (click)="setClient(client.id)">
+					{{ client.email }}
+				</button>
+				<button type="button" class="client-tab-close" (click)="closeClient(client.id)"
+					[attr.aria-label]="'Close client tab for ' + client.email" title="Close client tab">
+					&#215;
+				</button>
+			</div>
 		}
 	</nav>
 
-	<section class="client-details" aria-label="Selected client">
-		<h3>{{ selectedAccount().name }}</h3>
-		<p>{{ selectedAccount().email }}</p>
+	@if (selectedAccount(); as account) {
+		<section class="client-details" aria-label="Selected client">
+			<h3>{{ account.name }}</h3>
+			<p>{{ account.email }}</p>
+		</section>
+	}
+
+	@if (searchError()) {
+		<p class="client-error" role="alert">{{ searchError() }}</p>
+	}
+
+	<section class="portfolio-summary" aria-label="Portfolio summary">
+		<div class="summary-stat">
+			<span class="stat-label">Portfolio value</span>
+			<span class="stat-value">${{ portfolioValue() | number: '1.2-2' }} USD</span>
+		</div>
+
+		<div class="summary-stat">
+			<span class="stat-label">Total gain/loss</span>
+			<span class="stat-value" [class.change-positive]="totalGainLoss() >= 0"
+				[class.change-negative]="totalGainLoss() < 0">
+				{{ totalGainLoss() >= 0 ? '+' : '-' }}${{ absoluteValue(totalGainLoss()) | number: '1.2-2' }}
+			</span>
+			<span class="summary-change" [class.change-positive]="totalGainLoss() >= 0"
+				[class.change-negative]="totalGainLoss() < 0">
+				{{ gainLossPercentage() | number: '1.2-2' }}%
+			</span>
+		</div>
+
+		<div class="summary-stat">
+			<span class="stat-label">Day change</span>
+			<span class="stat-value" [class.change-positive]="dayChange() >= 0"
+				[class.change-negative]="dayChange() < 0">
+				{{ dayChange() >= 0 ? '+' : '' }}{{ dayChange() | number: '1.2-2' }}%
+			</span>
+		</div>
 	</section>
 
 	<section class="analytics" aria-label="Portfolio analytics">
 		<h3>Analytics</h3>
-		<app-pie-chart [data]="analyticsData()"></app-pie-chart>
+		<div class="analytics-charts">
+			<app-pie-chart [data]="analyticsData()" [totalValue]="portfolioValue()"></app-pie-chart>
+			<section class="trading-activity" aria-labelledby="activity-title" [attr.aria-busy]="loadingActivity()">
+				<h4 id="activity-title">Trading Activity</h4>
+				<div class="activity-ranges" role="group" aria-label="Trading activity time range">
+					@for (range of activityRanges; track range) {
+						<button type="button" [attr.aria-pressed]="activityRange() === range"
+							[disabled]="!selectedAccount()" (click)="setActivityRange(range)">{{ range }}</button>
+					}
+				</div>
+				<p class="activity-hint">Trailing period ending now. Buckets and dates use UTC.</p>
+				@if (!selectedAccount()) {
+					<p class="client-status" role="status">Search for a client to view trading activity.</p>
+				} @else if (loadingActivity()) {
+					<p class="client-status" role="status">Loading trading activity...</p>
+				} @else if (activityError()) {
+					<p class="client-error" role="alert">{{ activityError() }}</p>
+					<button type="button" class="activity-retry" (click)="loadTradingActivity()">Retry</button>
+				} @else if (tradingActivity(); as activity) {
+					<p class="activity-total">{{ totalTrades() | number: '1.0-0' }} trades in this period</p>
+					@if (totalTrades() === 0) {
+						<p class="client-status" role="status">No trades in this period.</p>
+					} @else {
+						<app-bar-chart [data]="activity.points" [interval]="activity.interval"></app-bar-chart>
+					}
+				}
+			</section>
+		</div>
 	</section>
 
 	<nav class="dashboard-tabs" aria-label="Client dashboard sections">
@@ -37,16 +108,22 @@
 			[class.active]="activeTab() === 'portfolio'">Portfolio</button>
 		<button type="button" class="tab-button" (click)="setTab('orders')"
 			[class.active]="activeTab() === 'orders'">Orders</button>
-		<button type="button" class="tab-button" (click)="setTab('analytics')"
-			[class.active]="activeTab() === 'analytics'">Analytics</button>
 	</nav>
 
 	<div class="tab-content">
 		<div *ngIf="activeTab() === 'portfolio'">
-			<app-portfolio-table [rowData]="portfolioHoldings()"></app-portfolio-table>
+			@if (loadingClientData()) {
+				<p class="client-status">Loading portfolio...</p>
+			} @else {
+				<app-portfolio-table [rowData]="portfolioHoldings()"></app-portfolio-table>
+			}
 		</div>
 		<div *ngIf="activeTab() === 'orders'">
-			<app-orders-table [rowData]="orderHistory()"></app-orders-table>
+			@if (loadingClientData()) {
+				<p class="client-status">Loading orders...</p>
+			} @else {
+				<app-admin-orders-table [rowData]="orderHistory()"></app-admin-orders-table>
+			}
 		</div>
 	</div>
 </main>

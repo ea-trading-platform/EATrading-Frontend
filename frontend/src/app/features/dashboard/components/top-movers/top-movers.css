@@ -28,6 +28,17 @@
     gap: 0.25rem;
 }
 
+.movers-note,
+.mover-details {
+    color: var(--text-light);
+    opacity: 0.7;
+    font-size: 0.75rem;
+}
+
+.mover-details {
+    margin: 0 0 0.75rem;
+}
+
 
 .empty-state p {
     margin: 0;

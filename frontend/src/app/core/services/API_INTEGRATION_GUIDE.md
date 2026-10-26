@@ -154,6 +154,42 @@ totalValue = this.trading.getTotalPortfolioValue();
 totalGain = this.trading.getTotalUnrealizedGain();
 ```
 
+#### Admin client tabs
+
+Admin order tables support on-demand expansion by tracking ID using
+`GET /api/orders/{trackingId}/status-log`, using only the API's `trackingId`,
+never an `orderId` fallback. If a tracking ID
+is missing, its table cell remains blank and history expansion is disabled.
+Expanded rows show recorded statuses
+and timestamps in chronological order beneath the current order. All other
+history-row fields are blank because the API does not return historical order
+snapshots. History rows use blue for submitted, purple for accepted, green for
+filled, amber for canceled, and pink for rejected, alongside explicit status text.
+
+The admin dashboard stores open client tabs, the selected client, and the active
+portfolio/orders section in browser `sessionStorage`, scoped to the signed-in
+admin ID. Refreshing restores those tabs and reloads the selected client's
+holdings and orders from the API; portfolio data is not cached in storage.
+Dashboard logout clears the saved tabs. Closing the browser tab ends this
+session-only persistence.
+Each client tab has a close button. Closing the selected tab selects a neighbor;
+closing the last tab clears the selection and saved tabs.
+
+#### Transact symbol conventions
+
+The transact page presents forex as currency holdings, not selectable inverse pairs:
+
+| Input | Displayed holding | Quote/candles | BUY order symbol | SELL order symbol |
+|---|---|---|---|---|
+| `EUR` or `EURUSD` | `EUR` | `FX:EURUSD` | `FX:EURUSD` | `FX:EURUSD` |
+| `BTC` or `X:BTC-USD` | `BTC` | `X:BTC-USD` | `X:BTC-USD` | `X:BTC-USD` |
+
+Forex uses instrument type `CASH`; crypto uses `CRYPTO`. Order direction is also
+sent in `transactionType`; selling does not reverse the symbol. Currency quantities refer to the selected currency
+holding. Legacy USD-first forex symbols are normalized to the non-USD currency
+before display or quote lookup. USD itself and non-USD cross pairs are not
+supported by this ticket. Equity symbols and instrument types are unchanged.
+
 #### Submit an Order
 ```typescript
 submitBuyOrder(symbol: string, quantity: number) {

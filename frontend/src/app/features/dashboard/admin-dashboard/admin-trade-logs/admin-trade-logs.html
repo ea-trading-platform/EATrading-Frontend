@@ -1,0 +1,59 @@
+<main class="admin-trade-logs">
+    <app-top-bar [navItems]="navItems" dashboardRoute="/admin-dashboard" (logout)="logout()"></app-top-bar>
+
+    <section class="trade-logs-content" aria-label="Trade logs">
+        <h2>Trade Logs</h2>
+        <div class="trade-log-filters" aria-label="Trade log filters">
+            <label>
+                Instrument
+                <select [ngModel]="selectedInstrument()" (ngModelChange)="selectedInstrument.set($event)">
+                    @for (instrument of instruments; track instrument) {
+                        <option [value]="instrument">{{ instrument === 'ALL' ? 'All instruments' : instrument }}</option>
+                    }
+                </select>
+            </label>
+            <label>
+                From
+                <input type="date" [ngModel]="fromDate()" (ngModelChange)="fromDate.set($event)">
+            </label>
+            <label>
+                To
+                <input type="date" [ngModel]="toDate()" (ngModelChange)="toDate.set($event)">
+            </label>
+            <label>
+                Client email
+                <input
+                    type="email"
+                    placeholder="Press Enter to filter"
+                    [ngModel]="clientEmailQuery()"
+                    (ngModelChange)="clientEmailQuery.set($event)"
+                    (keydown.enter)="applyClientEmailFilter($event)">
+            </label>
+            <label>
+                Side
+                <select [ngModel]="selectedSide()" (ngModelChange)="selectedSide.set($event)">
+                    @for (side of sides; track side) {
+                        <option [value]="side">{{ side === 'ALL' ? 'All sides' : side }}</option>
+                    }
+                </select>
+            </label>
+            <label>
+                Status
+                <select [ngModel]="selectedStatus()" (ngModelChange)="selectedStatus.set($event)">
+                    @for (status of statuses; track status) {
+                        <option [value]="status">{{ status === 'ALL' ? 'All statuses' : status }}</option>
+                    }
+                </select>
+            </label>
+            <button type="button" class="clear-filters-button" (click)="clearFilters()">Clear filters</button>
+        </div>
+        @if (loadError()) {
+            <p class="client-error" role="alert">{{ loadError() }}</p>
+        }
+        @if (loadingOrders()) {
+            <p class="client-status">Loading trade logs...</p>
+        } @else {
+            <app-admin-orders-table [rowData]="orderHistory()"></app-admin-orders-table>
+        }
+    </section>
+</main>

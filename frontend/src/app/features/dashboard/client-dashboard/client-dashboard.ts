@@ -8,6 +8,7 @@ import { Client, Holding, Order, PortfolioHistory, PortfolioSummary } from '../.
 import { StockSearch } from './components/stock-search/stock-search';
 import { PortfolioTableComponent } from '../components/portfolio-table/portfolio-table';
 import { PortfolioTable } from '../interfaces/portfolio-table.interface';
+import { OrdersTable } from '../interfaces/orders-table.interface';
 import { DataGrid } from '../components/data-grid/data-grid';
 import { ColDef, GridOptions } from 'ag-grid-community';
 import { BalanceGraphInterface } from '../interfaces/balances-graph.interface';
@@ -45,6 +46,49 @@ const MOCK_TICKER: StockTickerData[] = [
         percentChange: 2.5,
         priceHistory: [150, 152, 151, 153, 155, 154, 156, 158]
     },
+];
+
+const MOCK_ORDERS: OrdersTable[] = [
+    {
+        action: 'BUY',
+        symbol: 'AAPL',
+        name: 'Apple Inc.',
+        transactionDate: new Date('2024-01-15'),
+        shares: 10,
+        price: 190.5,
+        instrument: 'EQUITY',
+        status: 'ACCEPTED',
+    },
+    {
+        action: 'SELL',
+        symbol: 'TSLA',
+        name: 'Tesla Inc.',
+        transactionDate: new Date('2024-01-20'),
+        shares: 2,
+        price: 238.9,
+        instrument: 'EQUITY',
+        status: 'ACCEPTED',
+    },
+    {
+        action: 'BUY',
+        symbol: 'AMZN',
+        name: 'Amazon.com Inc.',
+        transactionDate: new Date('2024-01-25'),
+        shares: 3,
+        price: 3200.0,
+        instrument: 'EQUITY',
+        status: 'ACCEPTED',
+    },
+    {
+        action: 'SELL',
+        symbol: 'MSFT',
+        name: 'Microsoft Corp.',
+        transactionDate: new Date('2024-01-30'),
+        shares: 1,
+        price: 415.0,
+        instrument: 'EQUITY',
+        status: 'ACCEPTED',
+    }
 ];
 
 @Component({
@@ -192,7 +236,6 @@ export class ClientDashboard implements OnInit {
         },
         { field: 'orderType', headerName: 'Action', minWidth: 100 },
         { field: 'symbol', headerName: 'Symbol', minWidth: 115 },
-        { field: 'name', headerName: 'Name', minWidth: 160 },
         {
             field: 'quantity',
             headerName: 'Quantity',
@@ -201,6 +244,7 @@ export class ClientDashboard implements OnInit {
         },
         { field: 'price', headerName: 'Price', minWidth: 110 },
         { field: 'status', headerName: 'Status', minWidth: 125 },
+        { field: 'rejectionReason', headerName: 'Rejection Reason', minWidth: 180 },
         {
             field: 'executedAt', headerName: 'Change log time', minWidth: 190,
             valueFormatter: (params) => params.value || 'Pending'

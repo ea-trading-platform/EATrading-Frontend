@@ -1,0 +1,10 @@
+:host {
+    display: block;
+    width: 100%;
+}
+
+.history-note {
+    margin: 0.75rem 0 0;
+    color: var(--text-muted);
+    font-size: 0.8rem;
+}

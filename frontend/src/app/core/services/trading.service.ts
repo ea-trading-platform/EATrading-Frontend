@@ -8,9 +8,15 @@ import {
     PortfolioHistory,
     PortfolioSummary,
     Order,
+    OrderAnalyticsResponse,
+    OrderAnalyticsFilters,
+    TradingActivityQuery,
+    TradingActivityResponse,
+    OrderTransactionResponse,
     OrderRequest,
     OrderResponse,
     OrderStatus,
+    TransactionType,
 } from '../models/trading.models';
 
 /**
@@ -81,6 +87,10 @@ export class TradingService {
         return this.apiService.getClient(clientId);
     }
 
+    getClientByEmail(clientEmail: string): Observable<Client> {
+        return this.apiService.getClientByEmail(clientEmail);
+    }
+
     getPortfolioSummary(clientId: string): Observable<PortfolioSummary> {
         return this.apiService.getPortfolioSummary(clientId);
     }
@@ -140,11 +150,13 @@ export class TradingService {
     }
 
     /**
-     * Fetch holdings without caching
+     * Fetch holdings without caching, excluding USD cash unless explicitly requested.
      */
-    getHoldings(clientId: string): Observable<Holding[]> {
+    getHoldings(clientId: string, includeUsdCash = false): Observable<Holding[]> {
         return this.apiService.getHoldings(clientId).pipe(
-            map((holdings) => holdings.filter((holding) => !this.isUsdCashHolding(holding))),
+            map((holdings) => includeUsdCash
+                ? holdings
+                : holdings.filter((holding) => !this.isUsdCashHolding(holding))),
         );
     }
 
@@ -214,6 +226,50 @@ export class TradingService {
         );
     }
 
+    getAllOrders(): Observable<Order[]> {
+        return this.apiService.getAllOrders().pipe(
+            map((orders) => orders.map((order) => this.normalizeOrder(order))),
+        );
+    }
+
+    getOrderAnalytics(filters: OrderAnalyticsFilters = {}): Observable<OrderAnalyticsResponse> {
+        return this.apiService.getOrderAnalytics(filters);
+    }
+
+    getTradingActivity(query: TradingActivityQuery): Observable<TradingActivityResponse> {
+        return this.apiService.getTradingActivity(query);
+    }
+
+    getOrdersByClientEmail(clientEmail: string): Observable<Order[]> {
+        return this.apiService.getOrdersByClientEmail(clientEmail).pipe(
+            map((orders) => orders.map((order) => this.normalizeOrder(order))),
+        );
+    }
+
+    getOrdersByInstrument(instrument: string): Observable<Order[]> {
+        return this.apiService.getOrdersByInstrument(instrument).pipe(
+            map((orders) => orders.map((order) => this.normalizeOrder(order))),
+        );
+    }
+
+    getOrdersBySide(side: 'BUY' | 'SELL'): Observable<Order[]> {
+        return this.apiService.getOrdersBySide(side).pipe(
+            map((orders) => orders.map((order) => this.normalizeOrder(order))),
+        );
+    }
+
+    getOrdersByStatus(status: string): Observable<Order[]> {
+        return this.apiService.getOrdersByStatus(status).pipe(
+            map((orders) => orders.map((order) => this.normalizeOrder(order))),
+        );
+    }
+
+    getOrdersByDateRange(from: string, to: string): Observable<Order[]> {
+        return this.apiService.getOrdersByDateRange(from, to).pipe(
+            map((orders) => orders.map((order) => this.normalizeOrder(order))),
+        );
+    }
+
     /**
      * Submit a new buy/sell order
      */
@@ -247,16 +303,16 @@ export class TradingService {
         );
     }
 
-    private normalizeOrder(order: Order): Order {
-        const raw = order as Order & {
+    private normalizeOrder(order: Order | OrderTransactionResponse): Order {
+        const raw = order as OrderTransactionResponse & Partial<Order> & {
             orderId?: string;
             trackingId?: string;
             buy?: boolean;
             action?: string;
-            transactionType?: string;
             side?: string;
             type?: string;
             orderDate?: string;
+            executedAt?: string;
             currentStatus?: OrderStatus;
             name?: string | null;
             instrumentName?: string | null;
@@ -297,6 +353,7 @@ export class TradingService {
             trackingId: raw.trackingId,
             symbol: raw.asset?.symbol ?? raw.symbol,
             name: normalizedName,
+            quantity: this.coerceQuantity(raw.quantity),
             orderType: normalizedAction ?? 'BUY',
             status: normalizedStatus,
             executedAt: raw.executedAt ?? raw.orderDate,
@@ -331,6 +388,19 @@ export class TradingService {
         return undefined;
     }
 
+    private coerceQuantity(value: number | string | null | undefined): number {
+        if (typeof value === 'number' && Number.isFinite(value)) {
+            return value;
+        }
+        if (typeof value === 'string') {
+            const parsed = Number(value);
+            if (Number.isFinite(parsed)) {
+                return parsed;
+            }
+        }
+        return 0;
+    }
+
     private isUsdCashHolding(holding: Holding): boolean {
         return holding.symbol.trim().toUpperCase() === 'USD';
     }
@@ -342,12 +412,6 @@ export class TradingService {
         return this.orders().filter((o) => o.status === 'FILLED');
     }
 
-    /**
-     * Get pending orders (awaiting execution)
-     */
-    getPendingOrders(): Order[] {
-        return this.orders().filter((o) => o.status === 'PENDING' || o.status === 'SUBMITTED');
-    }
 
     // ========================================================================
     // STATE MANAGEMENT
