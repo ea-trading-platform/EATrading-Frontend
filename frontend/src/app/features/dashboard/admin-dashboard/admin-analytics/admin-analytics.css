@@ -96,6 +96,14 @@
     margin-top: 1.5rem;
 }
 
+.trade-counts-chart {
+    margin-bottom: 1.5rem;
+    padding: 1.25rem;
+    border: 1px solid var(--border-lighter);
+    border-radius: 0.5rem;
+    background: var(--bg-subtle);
+}
+
 .status-chart {
     grid-column: 1 / -1;
 }

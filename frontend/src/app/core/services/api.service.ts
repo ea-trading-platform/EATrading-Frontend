@@ -244,7 +244,7 @@ export class ApiService {
     }
 
     /** Admin aggregate analytics; all supplied filters are combined by the backend. */
-    getOrderAnalytics(filters: OrderAnalyticsFilters = {}): Observable<OrderAnalyticsResponse> {
+    getOrderAnalytics(filters: OrderAnalyticsFilters): Observable<OrderAnalyticsResponse> {
         const params: Record<string, string> = {};
         for (const [key, value] of Object.entries(filters)) {
             if (value !== undefined && value !== '') {
