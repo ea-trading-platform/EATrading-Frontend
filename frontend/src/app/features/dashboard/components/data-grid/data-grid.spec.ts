@@ -11,6 +11,7 @@ describe('DataGrid', () => {
     }).compileComponents();
 
     fixture = TestBed.createComponent(DataGrid);
+    fixture.componentRef.setInput('columnDefs', []);
     component = fixture.componentInstance;
     await fixture.whenStable();
   });

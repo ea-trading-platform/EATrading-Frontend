@@ -1,4 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
+import { of } from 'rxjs';
+import { ApiService } from '../../../core/services/api.service';
 import { ClientDashboard } from './client-dashboard';
 
 describe('ClientDashboard', () => {
@@ -8,7 +11,16 @@ describe('ClientDashboard', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [ClientDashboard],
-    }).compileComponents();
+      providers: [provideRouter([])],
+    })
+      .overrideProvider(ApiService, {
+        useValue: {
+          getCandles: () => of({ candles: [] }),
+          getQuote: (symbol: string) => of({ symbol, price: 0, previousClose: 0, change: 0, changePercent: 0 }),
+        },
+      })
+      .overrideComponent(ClientDashboard, { set: { template: '' } })
+      .compileComponents();
 
     fixture = TestBed.createComponent(ClientDashboard);
     component = fixture.componentInstance;

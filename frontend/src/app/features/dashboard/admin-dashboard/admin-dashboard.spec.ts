@@ -1,4 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
 import { AdminDashboard } from './admin-dashboard';
 import { AuthService } from '../../../core/services/auth.service';
 import { TradingService } from '../../../core/services/trading.service';
