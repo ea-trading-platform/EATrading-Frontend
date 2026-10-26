@@ -61,6 +61,7 @@ export class OrderAnalyticsChart {
         const numberAxis = {
             type: 'number' as const,
             min: 0,
+            interval: { step: 1 },
             label: { color: 'rgba(255, 255, 255, 0.7)', format: ',.0f' },
             gridLine: { style: [{ stroke: 'rgba(255, 255, 255, 0.1)', lineDash: [4, 2] }] },
         };
