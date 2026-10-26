@@ -44,10 +44,18 @@ describe('OrderAnalyticsChart', () => {
         });
         expect(options.axes?.x?.type).toBe('category');
         expect(options.axes?.y?.type).toBe('number');
+        expect(options.axes?.y).toMatchObject({
+            min: 0,
+            interval: { step: 1 },
+        });
         fixture.componentRef.setInput('direction', 'horizontal');
         options = chart.options() as AgCartesianChartOptions;
         expect(options.series?.[0]).toMatchObject({ direction: 'horizontal' });
         expect(options.axes?.x?.type).toBe('number');
         expect(options.axes?.y?.type).toBe('category');
+        expect(options.axes?.x).toMatchObject({
+            min: 0,
+            interval: { step: 1 },
+        });
     });
 });

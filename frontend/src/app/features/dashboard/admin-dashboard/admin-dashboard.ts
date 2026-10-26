@@ -79,28 +79,6 @@ export class AdminDashboard implements OnInit {
         this.portfolioHoldings().reduce((total, holding) => total + holding.value, 0),
     );
 
-    readonly totalGainLoss = computed(() =>
-        this.portfolioHoldings().reduce(
-            (total, holding) => total + holding.value * (holding.overallReturn ?? 0) / 100,
-            0,
-        ),
-    );
-
-    readonly gainLossPercentage = computed(() => {
-        const value = this.portfolioValue();
-        return value > 0 ? (this.totalGainLoss() / value) * 100 : 0;
-    });
-
-    readonly dayChange = computed(() => {
-        const value = this.portfolioValue();
-        return value > 0
-            ? this.portfolioHoldings().reduce(
-                (total, holding) => total + holding.value * (holding.dayChange ?? 0),
-                0,
-            ) / value
-            : 0;
-    });
-
     readonly orderHistory = computed(() =>
         [...this.orders()].sort((a, b) => b.transactionDate.getTime() - a.transactionDate.getTime()),
     );
@@ -247,10 +225,6 @@ export class AdminDashboard implements OnInit {
             this.loadingClientData.set(false);
             this.saveTabs();
         }
-    }
-
-    absoluteValue(value: number): number {
-        return Math.abs(value);
     }
 
     searchClient(): void {

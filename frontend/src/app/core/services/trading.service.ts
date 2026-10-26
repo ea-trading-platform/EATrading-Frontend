@@ -232,7 +232,7 @@ export class TradingService {
         );
     }
 
-    getOrderAnalytics(filters: OrderAnalyticsFilters = {}): Observable<OrderAnalyticsResponse> {
+    getOrderAnalytics(filters: OrderAnalyticsFilters): Observable<OrderAnalyticsResponse> {
         return this.apiService.getOrderAnalytics(filters);
     }
 

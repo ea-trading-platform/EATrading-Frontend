@@ -11,13 +11,31 @@
             <fieldset class="analytics-filters" [disabled]="loading()">
                 <legend class="visually-hidden">Order analytics filters</legend>
                 <label>
-                    From
-                    <input name="from" type="date" [(ngModel)]="fromDate">
+                    Time range
+                    <select name="range" [ngModel]="range" (ngModelChange)="onRangeChange($event)">
+                        @for (option of ranges; track option.value) {
+                            <option [value]="option.value">{{ option.label }}</option>
+                        }
+                    </select>
                 </label>
-                <label>
-                    To
-                    <input name="to" type="date" [(ngModel)]="toDate">
-                </label>
+                @if (range === 'CUSTOM') {
+                    <label>
+                        Start date and time
+                        <input name="from" type="datetime-local" step="60" [(ngModel)]="fromDate">
+                    </label>
+                    <label>
+                        End date and time
+                        <input name="to" type="datetime-local" step="60" [(ngModel)]="toDate">
+                    </label>
+                    <label>
+                        Chart buckets
+                        <select name="customInterval" [(ngModel)]="customInterval">
+                            @for (option of customIntervals; track option.value) {
+                                <option [value]="option.value">{{ option.label }}</option>
+                            }
+                        </select>
+                    </label>
+                }
                 <label>
                     Instrument
                     <select name="instrument" [(ngModel)]="instrument">
@@ -51,7 +69,7 @@
                 </div>
             </fieldset>
         </form>
-        <p class="filter-hint">Dates use your local timezone and include the entire day.</p>
+        <p class="filter-hint">Preset ranges end now. Custom start and end times use your local timezone; the end time is exclusive. UTC chart bucket start times are displayed in your computer's local timezone.</p>
 
         @if (error()) {
             <p class="client-error" role="alert">{{ error() }}</p>
@@ -89,8 +107,15 @@
                 <p class="empty-analytics" role="status">No orders match these filters. Adjust or clear the filters to see more activity.</p>
             } @else {
                 <div class="analytics-charts">
-                    <app-order-analytics-chart title="Buy vs Sell" kind="donut" [counts]="data.ordersBySide"></app-order-analytics-chart>
-                    <app-order-analytics-chart title="Orders by instrument" [counts]="data.ordersByInstrument"></app-order-analytics-chart>
+                    <app-order-analytics-chart class="side-chart" title="Buy vs Sell" kind="donut" [counts]="data.ordersBySide"></app-order-analytics-chart>
+                    <app-order-analytics-chart class="instrument-chart" title="Orders by instrument" [counts]="data.ordersByInstrument"></app-order-analytics-chart>
+                    @if (data.tradeCounts.length > 0) {
+                        <section class="trade-counts-chart" aria-label="Trade counts over time">
+                            <app-bar-chart [data]="data.tradeCounts" [interval]="chartInterval()"></app-bar-chart>
+                        </section>
+                    } @else {
+                        <p class="empty-analytics trade-counts-empty" role="status">No trade count data is available for these filters.</p>
+                    }
                     <app-order-analytics-chart class="status-chart" title="Orders by status" direction="horizontal" [counts]="data.ordersByStatus"></app-order-analytics-chart>
                 </div>
             }

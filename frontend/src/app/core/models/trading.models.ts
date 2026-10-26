@@ -250,12 +250,14 @@ export interface OrderAnalyticsResponse {
     ordersByInstrument: Record<string, number>;
     ordersBySide: Record<string, number>;
     ordersByStatus: Record<string, number>;
+    tradeCounts: TradingActivityPoint[];
 }
 
 export interface OrderAnalyticsFilters {
     clientId?: string;
-    from?: string;
-    to?: string;
+    from: string;
+    to: string;
+    interval: TradeInterval;
     instrument?: 'CASH' | 'EQUITY' | 'CRYPTO';
     side?: TransactionType;
     status?: OrderStatus;
