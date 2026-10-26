@@ -333,17 +333,25 @@ export class Transact implements OnInit {
                 cellRenderer: (params: { data: { symbol: string; name: string; instrument?: string } }) => {
                     const container = document.createElement('div');
                     container.style.display = 'flex';
-                    container.style.gap = '0.4rem';
+                    container.style.alignItems = 'center';
+                    container.style.justifyContent = 'center';
+                    container.style.gap = '0.28rem';
+                    container.style.width = '100%';
+                    container.style.height = '100%';
                     for (const side of ['BUY', 'SELL'] as const) {
                         const button = document.createElement('button');
                         button.type = 'button';
                         button.textContent = side === 'BUY' ? 'Buy' : 'Sell';
                         button.style.border = '0';
-                        button.style.borderRadius = '0.3rem';
-                        button.style.padding = '0.35rem 0.6rem';
+                        button.style.borderRadius = '0.24rem';
+                        button.style.padding = '0.28rem 0.56rem';
                         button.style.color = '#08131c';
                         button.style.cursor = 'pointer';
                         button.style.fontWeight = '800';
+                        button.style.fontSize = '0.78rem';
+                        button.style.lineHeight = '1.15';
+                        button.style.whiteSpace = 'nowrap';
+                        button.style.minWidth = '3.1rem';
                         button.style.background = side === 'BUY' ? '#65d6a0' : '#e06c75';
                         button.addEventListener('click', (event) => {
                             event.stopPropagation();
@@ -398,6 +406,13 @@ export class Transact implements OnInit {
             {
                 colId: 'actions', headerName: 'Actions', minWidth: 130, sortable: false,
                 cellRenderer: (params: { data: Order }) => {
+                    const container = document.createElement('div');
+                    container.style.display = 'flex';
+                    container.style.alignItems = 'center';
+                    container.style.justifyContent = 'center';
+                    container.style.width = '100%';
+                    container.style.height = '100%';
+
                     const button = document.createElement('button');
                     const trackingId = params.data.trackingId ?? '';
                     const canCancel = params.data.status === 'SUBMITTED';
@@ -408,11 +423,15 @@ export class Transact implements OnInit {
                         ? 'Tracking ID unavailable'
                         : canCancel ? 'Cancel order' : `Orders in ${params.data.status} status cannot be canceled`;
                     button.style.border = '0';
-                    button.style.borderRadius = '0.3rem';
-                    button.style.padding = '0.35rem 0.6rem';
+                    button.style.borderRadius = '0.24rem';
+                    button.style.padding = '0.28rem 0.56rem';
                     button.style.color = '#08131c';
                     button.style.cursor = button.disabled ? 'default' : 'pointer';
                     button.style.fontWeight = '800';
+                    button.style.fontSize = '0.78rem';
+                    button.style.lineHeight = '1.15';
+                    button.style.whiteSpace = 'nowrap';
+                    button.style.minWidth = '4.2rem';
                     button.style.background = '#f0b45b';
                     button.addEventListener('click', (event) => {
                         event.stopPropagation();
@@ -420,7 +439,8 @@ export class Transact implements OnInit {
                             this.cancelOrder(trackingId);
                         }
                     });
-                    return button;
+                    container.appendChild(button);
+                    return container;
                 },
             },
         ];
