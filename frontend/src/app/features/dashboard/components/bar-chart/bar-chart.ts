@@ -27,13 +27,13 @@ export class BarChartComponent {
   data = input.required<TradingActivityPoint[]>();
   interval = input.required<TradeInterval>();
 
-  private formatTimestamp(timestamp: string): string {
+  private formatTimestamp(timestamp: string, showTimeZone = false): string {
     return new Intl.DateTimeFormat('en-US', {
-      timeZone: 'UTC',
       month: 'short',
       day: 'numeric',
       year: 'numeric',
       ...(this.interval() === 'hour' ? { hour: '2-digit', minute: '2-digit' } as const : {}),
+      ...(showTimeZone ? { hour: '2-digit', minute: '2-digit', timeZoneName: 'short' } as const : {}),
     }).format(new Date(timestamp));
   }
 
@@ -58,9 +58,8 @@ export class BarChartComponent {
         type: 'bar',
         direction: 'vertical',
         data: [...this.data()]
-          .sort((a, b) => Date.parse(a.timestamp) - Date.parse(b.timestamp))
-          .map(point => ({ ...point, label: this.formatTimestamp(point.timestamp) })),
-        xKey: 'label',
+          .sort((a, b) => Date.parse(a.timestamp) - Date.parse(b.timestamp)),
+        xKey: 'timestamp',
         yKey: 'tradeCount',
         yName: 'Number of trades',
         fill: '#007a7a',
@@ -68,7 +67,7 @@ export class BarChartComponent {
         strokeWidth: 1,
         tooltip: {
           renderer: ({ datum }: { datum: TradingActivityPoint }) => ({
-            title: `${this.interval() === 'week' ? 'Week of ' : ''}${this.formatTimestamp(datum.timestamp)} UTC`,
+            title: `${this.interval() === 'week' ? 'Week of ' : ''}${this.formatTimestamp(datum.timestamp, true)}`,
             content: `${datum.tradeCount.toLocaleString()} ${datum.tradeCount === 1 ? 'trade' : 'trades'}`,
           }),
         },
@@ -80,6 +79,7 @@ export class BarChartComponent {
         label: {
           fontSize: 12,
           color: 'rgba(255, 255, 255, 0.7)',
+          formatter: ({ value }: { value: string }) => this.formatTimestamp(value),
         },
       },
       y: {

@@ -64,7 +64,7 @@
 							[disabled]="!selectedAccount()" (click)="setActivityRange(range)">{{ range }}</button>
 					}
 				</div>
-				<p class="activity-hint">Trailing period ending now. Buckets and dates use UTC.</p>
+				<p class="activity-hint">Trailing period ending now. UTC bucket start times are displayed in your computer's local timezone.</p>
 				@if (!selectedAccount()) {
 					<p class="client-status" role="status">Search for a client to view trading activity.</p>
 				} @else if (loadingActivity()) {
