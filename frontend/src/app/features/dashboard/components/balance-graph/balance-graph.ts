@@ -43,13 +43,46 @@ export class BalanceGraph {
     }
 
     const days = { '1D': 1, '1W': 7, '1M': 30, '3M': 90, '1Y': 365 }[range];
-    const cutoff = Date.now() - days * 24 * 60 * 60 * 1000;
-    return data.filter((point) => {
-      if (range === '1D') {
-        return this.to1dTimestamp(point.date) >= cutoff;
+    const now = Date.now();
+    const cutoff = now - days * 24 * 60 * 60 * 1000;
+
+    if (range === '1D') {
+      const parsedPoints = data
+        .map((point) => ({ point, timestamp: this.to1dTimestamp(point.date) }))
+        .filter((entry) => Number.isFinite(entry.timestamp));
+
+      const inWindow = parsedPoints
+        .filter((entry) => entry.timestamp >= cutoff)
+        .map((entry) => entry.point);
+
+      if (inWindow.length > 0) {
+        return inWindow;
       }
-      return new Date(point.date).getTime() >= cutoff;
-    });
+
+      // When there are no updates in the last 24h, keep the latest known value
+      // so users still see current balance context instead of an empty chart.
+      const latestBeforeCutoff = parsedPoints.reduce<{ point: BalanceGraphInterface; timestamp: number } | null>((latest, current) => {
+        if (current.timestamp >= cutoff) {
+          return latest;
+        }
+        if (!latest || current.timestamp > latest.timestamp) {
+          return current;
+        }
+        return latest;
+      }, null);
+
+      if (!latestBeforeCutoff) {
+        return [];
+      }
+
+      const balance = latestBeforeCutoff.point.balance;
+      return [
+        { date: new Date(cutoff).toISOString(), balance },
+        { date: new Date(now).toISOString(), balance },
+      ];
+    }
+
+    return data.filter((point) => new Date(point.date).getTime() >= cutoff);
   });
   readonly isEmpty = computed(() => this.filteredGraphData().length === 0);
   selectRange(range: (typeof this.ranges)[number]): void {
