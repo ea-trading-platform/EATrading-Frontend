@@ -67,6 +67,42 @@ describe('Transact currency and crypto symbols', () => {
         },
     );
 
+    it('uses rolling ISO time bounds from now for all preset ranges', () => {
+        vi.setSystemTime(new Date('2026-10-27T18:00:00.000Z'));
+
+        component.selectMarket('Equities');
+        component.selectSymbol('AAPL');
+
+        expect(getCandles).toHaveBeenLastCalledWith('AAPL', {
+            from: '2026-10-26T18:00:00.000Z',
+            to: '2026-10-27T18:00:00.000Z',
+        });
+
+        component.selectRange('1W');
+        expect(getCandles).toHaveBeenLastCalledWith('AAPL', {
+            from: '2026-10-20T18:00:00.000Z',
+            to: '2026-10-27T18:00:00.000Z',
+        });
+
+        component.selectRange('1M');
+        expect(getCandles).toHaveBeenLastCalledWith('AAPL', {
+            from: '2026-09-27T18:00:00.000Z',
+            to: '2026-10-27T18:00:00.000Z',
+        });
+
+        component.selectRange('3M');
+        expect(getCandles).toHaveBeenLastCalledWith('AAPL', {
+            from: '2026-07-29T18:00:00.000Z',
+            to: '2026-10-27T18:00:00.000Z',
+        });
+
+        component.selectRange('1Y');
+        expect(getCandles).toHaveBeenLastCalledWith('AAPL', {
+            from: '2025-10-27T18:00:00.000Z',
+            to: '2026-10-27T18:00:00.000Z',
+        });
+    });
+
     it.each(['BUY', 'SELL'] as const)('formats a forex %s order without changing the holding', (side) => {
         component.selectMarket('Forex');
         component.state.holdings.set([{

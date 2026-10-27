@@ -42,9 +42,12 @@ export class BalanceGraph {
       return data;
     }
 
-    const days = { '1D': 1, '1W': 7, '1M': 30, '3M': 90, '1Y': 365 }[range];
-    const cutoff = Date.now() - days * 24 * 60 * 60 * 1000;
-    return data.filter((point) => new Date(point.date).getTime() >= cutoff);
+    const days = { '1W': 7, '1M': 30, '3M': 90, '1Y': 365 } as const;
+    const cutoff = range === '1D'
+      ? Date.now() - (24 * 60 * 60 * 1000)
+      : Date.now() - (days[range as keyof typeof days] * 24 * 60 * 60 * 1000);
+
+    return data.filter((point) => this.toTimestamp(point.date) >= cutoff);
   });
   readonly isEmpty = computed(() => this.filteredGraphData().length === 0);
   selectRange(range: (typeof this.ranges)[number]): void {
@@ -150,6 +153,15 @@ export class BalanceGraph {
       },
     },
   }));
+
+  private toTimestamp(value: string): number {
+    // Date-only values are normalized to end-of-day UTC so rolling windows (like 1D)
+    // include the most recent point from the previous day when applicable.
+    const normalized = /^\d{4}-\d{2}-\d{2}$/.test(value)
+      ? `${value}T23:59:59.999Z`
+      : value;
+    return new Date(normalized).getTime();
+  }
 
 
 }
