@@ -259,6 +259,11 @@
 
 .activity-total {
     color: var(--text-light);
+    margin: 0 0 0.5rem;
+}
+
+.activity-chart-slot {
+    min-height: calc(clamp(16rem, 45vw, 26rem) + 2rem);
 }
 
 @media (max-width: 768px) {
@@ -280,5 +285,11 @@
 
     .analytics-charts {
         grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 576px) {
+    .activity-chart-slot {
+        min-height: calc(clamp(14rem, 70vw, 20rem) + 2rem);
     }
 }

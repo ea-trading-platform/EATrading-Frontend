@@ -41,6 +41,10 @@
     color: var(--text-light);
 }
 
+.trade-log-filters option {
+    background: var(--dark-secondary);
+}
+
 .clear-filters-button {
     padding: 0.55rem 0.8rem;
     background: transparent;

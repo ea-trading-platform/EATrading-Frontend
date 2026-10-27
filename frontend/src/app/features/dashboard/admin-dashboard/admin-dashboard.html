@@ -65,21 +65,23 @@
 					}
 				</div>
 				<p class="activity-hint">Trailing period ending now. UTC bucket start times are displayed in your computer's local timezone.</p>
-				@if (!selectedAccount()) {
-					<p class="client-status" role="status">Search for a client to view trading activity.</p>
-				} @else if (loadingActivity()) {
-					<p class="client-status" role="status">Loading trading activity...</p>
-				} @else if (activityError()) {
-					<p class="client-error" role="alert">{{ activityError() }}</p>
-					<button type="button" class="activity-retry" (click)="loadTradingActivity()">Retry</button>
-				} @else if (tradingActivity(); as activity) {
-					<p class="activity-total">{{ totalTrades() | number: '1.0-0' }} trades in this period</p>
-					@if (totalTrades() === 0) {
-						<p class="client-status" role="status">No trades in this period.</p>
-					} @else {
-						<app-bar-chart [data]="activity.points" [interval]="activity.interval"></app-bar-chart>
+				<div class="activity-chart-slot">
+					@if (!selectedAccount()) {
+						<p class="client-status" role="status">Search for a client to view trading activity.</p>
+					} @else if (loadingActivity()) {
+						<p class="client-status" role="status">Loading trading activity...</p>
+					} @else if (activityError()) {
+						<p class="client-error" role="alert">{{ activityError() }}</p>
+						<button type="button" class="activity-retry" (click)="loadTradingActivity()">Retry</button>
+					} @else if (tradingActivity(); as activity) {
+						<p class="activity-total">{{ totalTrades() | number: '1.0-0' }} trades in this period</p>
+						@if (totalTrades() === 0) {
+							<p class="client-status" role="status">No trades in this period.</p>
+						} @else {
+							<app-bar-chart [data]="activity.points" [interval]="activity.interval"></app-bar-chart>
+						}
 					}
-				}
+				</div>
 			</section>
 		</div>
 	</section>
