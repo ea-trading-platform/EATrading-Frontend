@@ -351,6 +351,6 @@ export interface ApiError {
  * Query parameters for candles endpoint
  */
 export interface CandleQuery {
-    from?: string; // ISO 8601 timestamp, defaults to 30 days ago
-    to?: string; // ISO 8601 timestamp, defaults to now
+    from?: string; // YYYY-MM-DD format, defaults to 30 days ago
+    to?: string; // YYYY-MM-DD format, defaults to today
 }

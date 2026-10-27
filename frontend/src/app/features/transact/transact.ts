@@ -744,7 +744,11 @@ export class Transact implements OnInit {
         const to = new Date();
         const from = new Date(to);
         from.setDate(from.getDate() - rangeDays[range]);
-        return { from: from.toISOString(), to: to.toISOString() };
+        return { from: this.toDateParam(from), to: this.toDateParam(to) };
+    }
+
+    private toDateParam(date: Date): string {
+        return date.toISOString().slice(0, 10);
     }
 
     async logout(): Promise<void> {
